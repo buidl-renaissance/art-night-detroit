@@ -3,8 +3,19 @@ import Head from 'next/head';
 import Link from 'next/link';
 import styled from 'styled-components';
 
+interface Event {
+  id: string;
+  title: string;
+  date: string;
+  description: string;
+  image: string;
+  location: string;
+  time: string;
+  url?: string;
+}
+
 const EventsPage = () => {
-  const events = [
+  const events: Event[] = [
     {
       id: 'spot-lite-vol-08',
       title: 'Art Night Detroit x Spotlite Vol. 08',
@@ -23,6 +34,16 @@ const EventsPage = () => {
       location: 'La Ventana Café',
       time: '6:00PM-10:00PM'
     },
+    {
+      id: 'arts-for-the-earth',
+      title: 'Arts for the Earth',
+      date: 'April 26, 2025',
+      description: 'Life is a precious gift, and our source of endless beauty, abundance, and diversity is all created from our Mother Earth.',
+      image: '/images/art-night-spot-lite-vol-07.jpg',
+      location: '2804 WIGHT ST, DETROIT, MI',
+      time: '12PM-2AM',
+      url: 'https://earth.gods.work/'
+    }
   ];
 
   return (
@@ -51,7 +72,7 @@ const EventsPage = () => {
               <EventDate>{event.date} • {event.time}</EventDate>
               <EventLocation>{event.location}</EventLocation>
               <EventDescription>{event.description}</EventDescription>
-              <EventLink href={`/events/${event.id}`}>View Details</EventLink>
+              <EventLink href={event.url ? event.url : `/events/${event.id}`}>View Details</EventLink>
             </EventContent>
           </EventCard>
         ))}
@@ -60,7 +81,7 @@ const EventsPage = () => {
       <CTASection>
         <CTATitle>Want to host an event?</CTATitle>
         <CTADescription>
-          We're always looking for new creative events to feature. Get in touch with us to discuss collaboration opportunities.
+          We&apos;re always looking for new creative events to feature. Get in touch with us to discuss collaboration opportunities.
         </CTADescription>
         <CTAButton href="/contact">Contact Us</CTAButton>
       </CTASection>

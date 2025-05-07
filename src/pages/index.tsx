@@ -18,6 +18,16 @@ const HomePage = () => {
       date: 'April 18, 2025',
       description: 'Gallery showcase at La Ventana Café exploring the boundaries between reality and imagination.',
       image: '/images/a-window-into.jpg'
+    },
+    {
+      id: 'arts-for-the-earth',
+      title: 'Arts for the Earth',
+      date: 'April 26, 2025',
+      description: 'Life is a precious gift, and our source of endless beauty, abundance, and diversity is all created from our Mother Earth.',
+      image: '/images/art-night-spot-lite-vol-07.jpg',
+      location: '2804 WIGHT ST, DETROIT, MI',
+      time: '12PM-2AM',
+      url: 'https://earth.gods.work/'
     }
   ];
 
@@ -51,7 +61,7 @@ const HomePage = () => {
                 <EventTitle>{event.title}</EventTitle>
                 <EventDate>{event.date}</EventDate>
                 <EventDescription>{event.description}</EventDescription>
-                <EventLink href={`/events/${event.id}`}>Learn More</EventLink>
+                <EventLink href={event.url ? event.url : `/events/${event.id}`}>Learn More</EventLink>
               </EventContent>
             </EventCard>
           ))}
