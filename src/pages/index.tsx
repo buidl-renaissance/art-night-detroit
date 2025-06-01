@@ -2,35 +2,11 @@ import React from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import styled from 'styled-components';
+import { events } from './events';
+
 
 const HomePage = () => {
-  const featuredEvents = [
-    {
-      id: 'spot-lite-vol-08',
-      title: 'Art Night Detroit x Spotlite Vol. 08',
-      date: 'April 30, 2025',
-      description: 'Join us for a night of creative projects, visual art showcase, live music, and more!',
-      image: '/images/art-night-spot-lite-vol-08.jpg'
-    },
-    {
-      id: 'a-window-into',
-      title: 'A Window Into...',
-      date: 'April 18, 2025',
-      description: 'Gallery showcase at La Ventana Café exploring the boundaries between reality and imagination.',
-      image: '/images/a-window-into.jpg'
-    },
-    {
-      id: 'arts-for-the-earth',
-      title: 'Arts for the Earth',
-      date: 'April 26, 2025',
-      description: 'Life is a precious gift, and our source of endless beauty, abundance, and diversity is all created from our Mother Earth.',
-      image: '/images/arts-for-earth-blank.jpeg',
-      location: '2804 WIGHT ST, DETROIT, MI',
-      time: '12PM-2AM',
-      url: 'https://earth.gods.work/'
-    }
-  ];
-
+  const featuredEvents = events.slice(0, 3);
   return (
     <PageContainer>
       <Head>

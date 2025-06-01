@@ -14,47 +14,47 @@ interface Event {
   url?: string;
 }
 
-const EventsPage = () => {
-  const events: Event[] = [
-    {
-      id: 'dabls-collector-quest-raffle',
-      title: '15th Annual MBAD African Bead Festival',
-      date: 'June 14, 2025',
-      description: 'Join us for a celebration of African art and culture featuring live art, DJs & performers, food trucks, vendors and community activities.',
-      image: '/images/dabls-collector-quest-raffle.jpg',
-      location: 'Dabls MBAD African Bead Museum, 6559 Grand River Ave, Detroit, MI',
-      time: '10:00AM-9:00PM'
-    },
-    {
-      id: 'spot-lite-vol-08',
-      title: 'Art Night Detroit x Spotlite Vol. 08',
-      date: 'April 30, 2025',
-      description: 'Join us for a night of creative projects, visual art showcase, live music, and more!',
-      image: '/images/art-night-spot-lite-vol-08.jpg',
-      location: 'Spot Lite Detroit',
-      time: '7:30PM-2AM'
-    },
-    {
-      id: 'a-window-into',
-      title: 'A Window Into...',
-      date: 'April 18, 2025',
-      description: 'Gallery showcase at La Ventana Café exploring the boundaries between reality and imagination.',
-      image: '/images/a-window-into.jpg',
-      location: 'La Ventana Café',
-      time: '6:00PM-10:00PM'
-    },
-    {
-      id: 'arts-for-the-earth',
-      title: 'Arts for the Earth',
-      date: 'April 26, 2025',
-      description: 'Life is a precious gift, and our source of endless beauty, abundance, and diversity is all created from our Mother Earth.',
-      image: '/images/arts-for-earth-blank.jpeg',
-      location: '2804 WIGHT ST, DETROIT, MI',
-      time: '12PM-2AM',
-      url: 'https://earth.gods.work/'
-    }
-  ];
+export const events: Event[] = [
+  {
+    id: 'dabls-collector-quest-raffle',
+    title: '15th Annual MBAD African Bead Festival',
+    date: 'June 14, 2025',
+    description: 'Join us for a celebration of African art and culture featuring live art, DJs & performers, food trucks, vendors and community activities.',
+    image: '/images/mbad-festival.jpg',
+    location: 'Dabls MBAD African Bead Museum, 6559 Grand River Ave, Detroit, MI',
+    time: '10:00AM-9:00PM'
+  },
+  {
+    id: 'spot-lite-vol-08',
+    title: 'Art Night Detroit x Spotlite Vol. 08',
+    date: 'April 30, 2025',
+    description: 'Join us for a night of creative projects, visual art showcase, live music, and more!',
+    image: '/images/art-night-spot-lite-vol-08.jpg',
+    location: 'Spot Lite Detroit',
+    time: '7:30PM-2AM'
+  },
+  {
+    id: 'a-window-into',
+    title: 'A Window Into...',
+    date: 'April 18, 2025',
+    description: 'Gallery showcase at La Ventana Café exploring the boundaries between reality and imagination.',
+    image: '/images/a-window-into.jpg',
+    location: 'La Ventana Café',
+    time: '6:00PM-10:00PM'
+  },
+  {
+    id: 'arts-for-the-earth',
+    title: 'Arts for the Earth',
+    date: 'April 26, 2025',
+    description: 'Life is a precious gift, and our source of endless beauty, abundance, and diversity is all created from our Mother Earth.',
+    image: '/images/arts-for-earth-blank.jpeg',
+    location: '2804 WIGHT ST, DETROIT, MI',
+    time: '12PM-2AM',
+    url: 'https://earth.gods.work/'
+  }
+];
 
+const EventsPage = () => {
   return (
     <PageContainer>
       <Head>
