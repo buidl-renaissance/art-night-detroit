@@ -86,6 +86,13 @@ const Title = styled.h1`
   animation: ${shimmer} 3s linear infinite;
   line-height: 1.2;
 
+  span {
+    font-size: 1.5rem;
+    font-family: var(--font-decorative);
+    color: #bb8930;
+    line-height: 0.5;
+  }
+
   @media (min-width: 768px) {
     font-size: 3.5rem;
   }
@@ -99,8 +106,10 @@ const Title = styled.h1`
 const Subtitle = styled.h5`
   font-size: 1.25rem;
   color: #bb8930;
+  font-weight: 400;
+  font-family: var(--font-primary);
   margin-bottom: 24px;
-  animation: ${glow} 3s infinite ease-in-out;
+  /* animation: ${glow} 3s infinite ease-in-out; */
   line-height: 1.5;
 
   @media (min-width: 768px) {
@@ -248,7 +257,7 @@ export default function DablsCollectorQuest() {
     <PageWrapper>
       <PageContainer>
         <HeroSection>
-          <Title>Collector Quest<br />x<br />Dabls Fest</Title>
+          <Title>Collector Quest<br /><span>x</span><br />Dabls Fest</Title>
           <Subtitle>
             Join the ultimate quest where digital meets reality! Complete challenges, earn raffle tickets, and win exclusive prizes.
           </Subtitle>
