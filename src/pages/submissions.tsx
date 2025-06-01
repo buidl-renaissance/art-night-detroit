@@ -535,21 +535,21 @@ const HeroSection = styled.div`
 `;
 
 const HeroTitle = styled.h1`
-  font-family: 'Baloo 2', cursive;
+  font-family: ${props => props.theme.fonts.display};
   font-size: 3rem;
-  color: #333;
+  color: ${props => props.theme.colors.text};
   margin-bottom: 1rem;
 `;
 
 const HeroSubtitle = styled.p`
   font-size: 1.2rem;
-  color: #666;
+  color: ${props => props.theme.colors.textLight};
   max-width: 600px;
   margin: 0 auto;
 `;
 
 const FormContainer = styled.div`
-  background-color: #fff;
+  background-color: ${props => props.theme.colors.background};
   border-radius: 10px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   padding: 2rem;
@@ -567,9 +567,9 @@ const FormSection = styled.div`
 `;
 
 const SectionTitle = styled.h2`
-  font-family: 'Baloo 2', cursive;
+  font-family: ${props => props.theme.fonts.display};
   font-size: 1.5rem;
-  color: #333;
+  color: ${props => props.theme.colors.text};
   margin-bottom: 1.5rem;
 `;
 
@@ -587,13 +587,13 @@ const Label = styled.label`
 const Input = styled.input`
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #ddd;
+  border: 1px solid ${props => props.theme.colors.border};
   border-radius: 4px;
   font-size: 1rem;
   transition: border-color 0.3s;
   
   &:focus {
-    border-color: #6c63ff;
+    border-color: ${props => props.theme.colors.primary};
     outline: none;
   }
 `;
@@ -601,14 +601,14 @@ const Input = styled.input`
 const Select = styled.select`
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #ddd;
+  border: 1px solid ${props => props.theme.colors.border};
   border-radius: 4px;
   font-size: 1rem;
   background-color: white;
   cursor: pointer;
   
   &:focus {
-    border-color: #6c63ff;
+    border-color: ${props => props.theme.colors.primary};
     outline: none;
   }
 `;
@@ -616,14 +616,14 @@ const Select = styled.select`
 const TextArea = styled.textarea`
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #ddd;
+  border: 1px solid ${props => props.theme.colors.border};
   border-radius: 4px;
   font-size: 1rem;
   resize: vertical;
   min-height: 100px;
   
   &:focus {
-    border-color: #6c63ff;
+    border-color: ${props => props.theme.colors.primary};
     outline: none;
   }
 `;
@@ -673,7 +673,7 @@ const SubmitButtonContainer = styled.div`
 `;
 
 const SubmitButton = styled.button`
-  background-color: #6c63ff;
+  background-color: ${props => props.theme.colors.primary};
   color: white;
   border: none;
   border-radius: 4px;
@@ -684,7 +684,7 @@ const SubmitButton = styled.button`
   transition: background-color 0.3s;
   
   &:hover {
-    background-color: #5a52d5;
+    background-color: ${props => props.theme.colors.primaryHover};
   }
 `;
 

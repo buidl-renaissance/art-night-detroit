@@ -248,7 +248,7 @@ export default function DablsCollectorQuest() {
     <PageWrapper>
       <PageContainer>
         <HeroSection>
-          <Title>🔮 Collector Quest x Dabls Fest</Title>
+          <Title>Collector Quest<br />x<br />Dabls Fest</Title>
           <Subtitle>
             Join the ultimate quest where digital meets reality! Complete challenges, earn raffle tickets, and win exclusive prizes.
           </Subtitle>
