@@ -1,19 +1,69 @@
-import React, { useState } from 'react';
+import React, { useState, ChangeEvent } from 'react';
 import Head from 'next/head';
 import styled from 'styled-components';
+
+interface DisplayRequirements {
+  hangingHardware: boolean;
+  tableSpace: boolean;
+  pedestal: boolean;
+}
+
+interface FormData {
+  name: string;
+  artistAlias: string;
+  email: string;
+  phone: string;
+  socialLink: string;
+  artworkTitle: string;
+  medium: string;
+  dimensions: string;
+  price: string;
+  artworkImage: File | null;
+  artworkDescription: string;
+  isForSale: boolean;
+  needsTransportation: boolean;
+  displayRequirements: DisplayRequirements;
+  raffleItemTitle: string;
+  raffleItemDescription: string;
+  estimatedValue: string;
+  raffleItemImage: File | null;
+  openToBundling: boolean;
+  remainAnonymous: boolean;
+  willingToVolunteer: boolean;
+  interestedInFutureEvents: boolean;
+  additionalNotes: string;
+}
+
+interface PaintSplashProps {
+  top: string;
+  left: string;
+  color: string;
+  size: string;
+  rotation: string;
+}
+
+const StyledPaintSplash = styled.div<PaintSplashProps>`
+  position: absolute;
+  width: ${props => props.size};
+  height: ${props => props.size};
+  top: ${props => props.top};
+  left: ${props => props.left};
+  transform: rotate(${props => props.rotation});
+  background-color: ${props => props.color};
+  border-radius: 50%;
+  opacity: 0.6;
+  z-index: 0;
+`;
 
 const SubmissionsPage = () => {
   const [selectedEvent, setSelectedEvent] = useState('');
   const [submissionType, setSubmissionType] = useState('');
-  const [formData, setFormData] = useState({
-    // Basic Info
+  const [formData, setFormData] = useState<FormData>({
     name: '',
     artistAlias: '',
     email: '',
     phone: '',
     socialLink: '',
-    
-    // Gallery Submission
     artworkTitle: '',
     medium: '',
     dimensions: '',
@@ -27,50 +77,52 @@ const SubmissionsPage = () => {
       tableSpace: false,
       pedestal: false
     },
-    
-    // Raffle Submission
     raffleItemTitle: '',
     raffleItemDescription: '',
     estimatedValue: '',
     raffleItemImage: null,
     openToBundling: false,
     remainAnonymous: false,
-    
-    // Additional Questions
     willingToVolunteer: false,
     interestedInFutureEvents: false,
     additionalNotes: ''
   });
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const target = e.target as HTMLInputElement;
+    const { name, value, type } = target;
+    const checked = type === 'checkbox' ? target.checked : undefined;
     
     if (name.includes('.')) {
       const [parent, child] = name.split('.');
-      setFormData({
-        ...formData,
-        [parent]: {
-          ...formData[parent],
-          [child]: type === 'checkbox' ? checked : value
-        }
-      });
+      if (parent === 'displayRequirements') {
+        setFormData(prev => ({
+          ...prev,
+          displayRequirements: {
+            ...prev.displayRequirements,
+            [child]: checked ?? false
+          }
+        }));
+      }
     } else {
-      setFormData({
-        ...formData,
-        [name]: type === 'checkbox' ? checked : value
-      });
+      setFormData(prev => ({
+        ...prev,
+        [name]: checked !== undefined ? checked : value
+      } as FormData));
     }
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, files } = e.target;
-    setFormData({
-      ...formData,
-      [name]: files[0]
-    });
+    if (files) {
+      setFormData(prev => ({
+        ...prev,
+        [name]: files[0]
+      }));
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     console.log('Form submitted:', formData);
     // Here you would typically send the data to your backend
@@ -86,8 +138,8 @@ const SubmissionsPage = () => {
       </Head>
 
       <HeroSection>
-        <PaintSplash top="10%" left="5%" color="#FF6B6B" size="150px" rotation="-15deg" />
-        <PaintSplash top="70%" left="85%" color="#4ECDC4" size="120px" rotation="25deg" />
+        <StyledPaintSplash top="10%" left="5%" color="#FF6B6B" size="150px" rotation="-15deg" />
+        <StyledPaintSplash top="70%" left="85%" color="#4ECDC4" size="120px" rotation="25deg" />
         <HeroTitle>Artist Submissions</HeroTitle>
         <HeroSubtitle>Share your art with the Detroit community</HeroSubtitle>
       </HeroSection>
@@ -480,19 +532,6 @@ const HeroSection = styled.div`
   padding: 4rem 1rem;
   margin-bottom: 2rem;
   overflow: hidden;
-`;
-
-const PaintSplash = styled.div`
-  position: absolute;
-  width: ${props => props.size};
-  height: ${props => props.size};
-  border-radius: 50%;
-  background-color: ${props => props.color};
-  top: ${props => props.top};
-  left: ${props => props.left};
-  transform: rotate(${props => props.rotation});
-  opacity: 0.6;
-  z-index: -1;
 `;
 
 const HeroTitle = styled.h1`
