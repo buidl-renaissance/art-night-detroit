@@ -58,6 +58,70 @@ const PageContainer = styled.div`
   }
 `;
 
+const FestivalSection = styled.div`
+  text-align: center;
+  margin-bottom: 40px;
+  background: rgba(187, 137, 48, 0.1);
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid rgba(187, 137, 48, 0.3);
+`;
+
+const FestivalTitle = styled.h1`
+  font-size: 1.5rem;
+  margin-bottom: 16px;
+  color: transparent;
+  background: linear-gradient(90deg, #bb8930, #b6551c, #bb8930);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: ${shimmer} 3s linear infinite;
+  font-family: var(--font-decorative);
+
+  @media (min-width: 768px) {
+    font-size: 3rem;
+  }
+`;
+
+const EventInfo = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+`;
+
+const EventDetail = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 1rem;
+
+  span {
+    font-size: 1.5rem;
+    animation: ${float} 6s infinite ease-in-out;
+  }
+`;
+
+const FestivalFeatures = styled.div`
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 20px 0;
+  font-size: 1rem;
+
+  span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(187, 137, 48, 0.2);
+    border-radius: 16px;
+    animation: ${float} 6s infinite ease-in-out;
+  }
+`;
+
 const HeroSection = styled.div`
   text-align: center;
   margin-bottom: 40px;
@@ -256,6 +320,35 @@ export default function DablsCollectorQuest() {
   return (
     <PageWrapper>
       <PageContainer>
+        <FestivalSection>
+          <FestivalTitle>15th Annual MBAD African Bead Festival</FestivalTitle>
+          <EventInfo>
+            <EventDetail>
+              <span>🗓️</span>
+              <div>Saturday, June 14, 2025</div>
+            </EventDetail>
+            <EventDetail>
+              <span>🕙</span>
+              <div>10:00 AM – 9:00 PM</div>
+            </EventDetail>
+            <EventDetail>
+              <span>📍</span>
+              <div>
+                Dabls MBAD African Bead Museum
+                <br />
+                6559 Grand River Ave, Detroit, MI
+              </div>
+            </EventDetail>
+          </EventInfo>
+          <FestivalFeatures>
+            <span>🎨 Live Art</span>
+            <span>🎵 DJs & Performers</span>
+            <span>🚚 Food Trucks</span>
+            <span>🛍️ Vendors</span>
+            <span>🤝 Community</span>
+          </FestivalFeatures>
+        </FestivalSection>
+
         <HeroSection>
           <Title>Collector Quest<br /><span>x</span><br />Dabls Fest</Title>
           <Subtitle>

@@ -17,6 +17,15 @@ interface Event {
 const EventsPage = () => {
   const events: Event[] = [
     {
+      id: 'dabls-collector-quest-raffle',
+      title: '15th Annual MBAD African Bead Festival',
+      date: 'June 14, 2025',
+      description: 'Join us for a celebration of African art and culture featuring live art, DJs & performers, food trucks, vendors and community activities.',
+      image: '/images/dabls-collector-quest-raffle.jpg',
+      location: 'Dabls MBAD African Bead Museum, 6559 Grand River Ave, Detroit, MI',
+      time: '10:00AM-9:00PM'
+    },
+    {
       id: 'spot-lite-vol-08',
       title: 'Art Night Detroit x Spotlite Vol. 08',
       date: 'April 30, 2025',
