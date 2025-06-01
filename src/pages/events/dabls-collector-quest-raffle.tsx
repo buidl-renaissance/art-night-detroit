@@ -147,7 +147,7 @@ const HeroSection = styled.div`
 `;
 
 const Title = styled.h1`
-  font-size: 2.5rem;
+  font-size: 3rem;
   margin-top: 2rem;
   margin-bottom: 24px;
   font-family: var(--font-decorative);
