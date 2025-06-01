@@ -1,4 +1,4 @@
-import styled, { keyframes } from 'styled-components';
+import styled, { keyframes } from "styled-components";
 
 const float = keyframes`
   0% { transform: translateY(0px) rotate(0deg); }
@@ -19,7 +19,12 @@ const glow = keyframes`
 `;
 
 const PageWrapper = styled.div`
-  background: linear-gradient(135deg, rgba(58, 38, 6, 0.9) 0%, rgba(108, 58, 20, 0.9) 50%, rgba(58, 38, 6, 0.9) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(58, 38, 6, 0.9) 0%,
+    rgba(108, 58, 20, 0.9) 50%,
+    rgba(58, 38, 6, 0.9) 100%
+  );
   color: #e6e6e6;
   position: relative;
   overflow: hidden;
@@ -27,13 +32,13 @@ const PageWrapper = styled.div`
   min-height: 100vh;
 
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: url('/images/collector-quest-background.png');
+    background-image: url("/images/collector-quest-background.png");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -68,7 +73,7 @@ const FestivalSection = styled.div`
 `;
 
 const FestivalTitle = styled.h1`
-  font-size: 1.5rem;
+  font-size: 2rem;
   margin-bottom: 16px;
   color: transparent;
   background: linear-gradient(90deg, #bb8930, #b6551c, #bb8930);
@@ -96,6 +101,7 @@ const EventDetail = styled.div`
   justify-content: center;
   gap: 8px;
   font-size: 1rem;
+  font-family: var(--font-primary);
 
   span {
     font-size: 1.5rem;
@@ -109,6 +115,7 @@ const FestivalFeatures = styled.div`
   flex-wrap: wrap;
   gap: 8px;
   margin: 20px 0;
+  margin-bottom: 0;
   font-size: 1rem;
 
   span {
@@ -131,6 +138,7 @@ const HeroSection = styled.div`
   margin-left: auto;
   margin-right: auto;
   padding: 0 16px;
+  margin-top: 40px;
 
   @media (min-width: 768px) {
     margin-bottom: 64px;
@@ -140,6 +148,7 @@ const HeroSection = styled.div`
 
 const Title = styled.h1`
   font-size: 2.5rem;
+  margin-top: 2rem;
   margin-bottom: 24px;
   font-family: var(--font-decorative);
   color: transparent;
@@ -194,7 +203,7 @@ const Grid = styled.div`
   z-index: 2;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 16px;
+  /* padding: 0 1rem; */
 
   @media (min-width: 640px) {
     grid-template-columns: repeat(2, 1fr);
@@ -215,17 +224,17 @@ const Card = styled.div`
   background: rgba(58, 38, 6, 0.7);
   border-radius: 12px;
   border: 1px solid rgba(187, 137, 48, 0.3);
-  padding: 24px;
+  padding: 1rem;
   transition: all 0.3s ease;
   height: 100%;
 
   @media (min-width: 768px) {
-    padding: 32px;
-  }
+    padding: 1rem;
+}
 
   &:hover {
     transform: translateY(-5px);
-    box-shadow: 0 12px 24px rgba(0,0,0,0.3);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
     border-color: rgba(187, 137, 48, 0.6);
   }
 `;
@@ -270,26 +279,20 @@ const CardTitle = styled.div`
 const List = styled.ul`
   list-style: none;
   padding: 0;
+  text-align: center;
 `;
 
 const ListItem = styled.li`
   display: flex;
-  align-items: flex-start;
-  margin-bottom: 20px;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  text-align: center;
   
   span {
-    margin-right: 16px;
+    margin-bottom: 0.5rem;
     animation: ${float} 6s infinite ease-in-out;
-    font-size: 1.25rem;
-    flex-shrink: 0;
-  }
-
-  @media (min-width: 768px) {
-    margin-bottom: 24px;
-    
-    span {
-      margin-right: 20px;
-    }
+    font-size: 1.5rem;
   }
 `;
 
@@ -299,20 +302,11 @@ const ItemContent = styled.div`
     color: #e6e6e6;
     font-size: 1rem;
     margin-bottom: 2px;
-
-    @media (min-width: 768px) {
-      font-size: 1.1rem;
-      margin-bottom: 4px;
-    }
   }
   
   .secondary {
     color: #bb8930;
     font-size: 0.875rem;
-
-    @media (min-width: 768px) {
-      font-size: 0.9rem;
-    }
   }
 `;
 
@@ -320,16 +314,22 @@ export default function DablsCollectorQuest() {
   return (
     <PageWrapper>
       <PageContainer>
+        <HeroSection>
+          <Title>
+            Art Night Detroit
+            <br />
+            <span>x</span>
+            <br />
+            Dabls Fest
+          </Title>
+        </HeroSection>
+
         <FestivalSection>
           <FestivalTitle>15th Annual MBAD African Bead Festival</FestivalTitle>
           <EventInfo>
             <EventDetail>
               <span>🗓️</span>
-              <div>Saturday, June 14, 2025</div>
-            </EventDetail>
-            <EventDetail>
-              <span>🕙</span>
-              <div>10:00 AM – 9:00 PM</div>
+              <div>Saturday, June 14, 2025 – 10am - 9pm</div>
             </EventDetail>
             <EventDetail>
               <span>📍</span>
@@ -342,24 +342,26 @@ export default function DablsCollectorQuest() {
           </EventInfo>
           <FestivalFeatures>
             <span>🎨 Live Art</span>
-            <span>🎵 DJs & Performers</span>
+            <span>🎵 Music</span>
             <span>🚚 Food Trucks</span>
             <span>🛍️ Vendors</span>
             <span>🤝 Community</span>
           </FestivalFeatures>
         </FestivalSection>
 
-        <HeroSection>
-          <Title>Collector Quest<br /><span>x</span><br />Dabls Fest</Title>
-          <Subtitle>
-            Join the ultimate quest where digital meets reality! Complete challenges, earn raffle tickets, and win exclusive prizes.
-          </Subtitle>
-        </HeroSection>
-
         <Grid>
           <Card>
             <CardTitle>
-              <img src="/images/ticket.png" alt="Raffle Ticket" className="icon-image" />
+              <Title style={{ fontSize: "2rem" }}>COLLECTOR QUEST</Title>
+              <Subtitle>
+                Join the ultimate quest where digital meets reality! Complete
+                challenges, earn raffle tickets, and win exclusive prizes.
+              </Subtitle>
+              <img
+                src="/images/ticket.png"
+                alt="Raffle Ticket"
+                className="icon-image"
+              />
               <div className="text">Earn Raffle Tickets</div>
             </CardTitle>
             <List>
@@ -411,7 +413,9 @@ export default function DablsCollectorQuest() {
                 <span>📖</span>
                 <ItemContent>
                   <div className="primary">Complete First Lore Quest</div>
-                  <div className="secondary">&quot;Seek the Spirit of Beads&quot;</div>
+                  <div className="secondary">
+                    &quot;Seek the Spirit of Beads&quot;
+                  </div>
                 </ItemContent>
               </ListItem>
               <ListItem>
@@ -478,7 +482,9 @@ export default function DablsCollectorQuest() {
                 <span>✨</span>
                 <ItemContent>
                   <div className="primary">Interactive Experience</div>
-                  <div className="secondary">Leave reflections & earn bonuses</div>
+                  <div className="secondary">
+                    Leave reflections & earn bonuses
+                  </div>
                 </ItemContent>
               </ListItem>
             </List>
