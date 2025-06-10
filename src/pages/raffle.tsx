@@ -15,7 +15,7 @@ const RafflePage: NextPage = () => {
       <PageContainer>
         <HeroSection>
           <MainTitle>Local Artist Raffle</MainTitle>
-          <SubTitle>Support Detroit's Talented Artists</SubTitle>
+          <SubTitle>Support Detroit&apos;s Talented Artists</SubTitle>
           <EventDetails>
             <DetailTitle>MBAD African<br />Bead Festival</DetailTitle>
             <Image src="/images/mbad-dancers.png" alt="MBAD African Bead Museum" width={240} height={240}/>
@@ -31,7 +31,7 @@ const RafflePage: NextPage = () => {
             <TitleEmoji>🎨</TitleEmoji>
             <TitleText>About the Raffle</TitleText>
           </SectionTitle>
-          <BodyText>Support local talent and get a chance to win exclusive, one-of-a-kind artwork donated by Detroit's most inspiring creatives. All proceeds go directly to the artists.</BodyText>
+          <BodyText>Support local talent and get a chance to win exclusive, one-of-a-kind artwork donated by Detroit&apos;s most inspiring creatives. All proceeds go directly to the artists.</BodyText>
           <EventHighlights>
             <DetailItem style={{ fontSize: '3.5rem' }}>🎟️</DetailItem>
             <DetailItem>$10 per Raffle Ticket</DetailItem>
@@ -53,7 +53,7 @@ const RafflePage: NextPage = () => {
               <ArtistInfo>
                 <ArtistName>Amari Johnson</ArtistName>
                 <ArtistBio>Known for vibrant mixed-media pieces celebrating African diaspora</ArtistBio>
-                <ArtworkTitle>Donating: "Spirit of Detroit" - Mixed Media on Canvas</ArtworkTitle>
+                <ArtworkTitle>Donating: &ldquo;Spirit of Detroit&rdquo; - Mixed Media on Canvas</ArtworkTitle>
               </ArtistInfo>
             </ArtistSection>
 
@@ -64,7 +64,7 @@ const RafflePage: NextPage = () => {
               <ArtistInfo>
                 <ArtistName>Maya Thompson</ArtistName>
                 <ArtistBio>Contemporary sculptor working with recycled materials</ArtistBio>
-                <ArtworkTitle>Donating: "Urban Revival" - Metal Sculpture</ArtworkTitle>
+                <ArtworkTitle>Donating: &ldquo;Urban Revival&rdquo; - Metal Sculpture</ArtworkTitle>
               </ArtistInfo>
             </ArtistSection>
 
@@ -75,7 +75,7 @@ const RafflePage: NextPage = () => {
               <ArtistInfo>
                 <ArtistName>Marcus Williams</ArtistName>
                 <ArtistBio>Digital artist and muralist</ArtistBio>
-                <ArtworkTitle>Donating: "Digital Dreams" - Limited Edition Print</ArtworkTitle>
+                <ArtworkTitle>Donating: &ldquo;Digital Dreams&rdquo; - Limited Edition Print</ArtworkTitle>
               </ArtistInfo>
             </ArtistSection>
           </ArtistList>
