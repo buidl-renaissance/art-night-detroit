@@ -14,7 +14,7 @@ const RafflePage: NextPage = () => {
         
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="Local Artist Raffle - MBAD African Bead Festival" />
+        <meta property="og:title" content="Local Artist Raffle - MBAD African Bead Festival x ArtNightDetroit" />
         <meta property="og:description" content="Support Detroit's talented artists at the MBAD African Bead Festival. Win exclusive artwork while supporting local artists." />
         <meta property="og:image" content="/images/mbad-dancers.png" />
         
