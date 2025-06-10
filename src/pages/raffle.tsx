@@ -4,17 +4,29 @@ import Head from 'next/head';
 import Image from 'next/image';
 import Layout from '../components/Layout';
 
-const PageContent = styled.div`
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  max-width: 900px;
-`;
-
 const RafflePage: NextPage = () => {
   return (
     <Layout>
       <Head>
+        <title>Local Artist Raffle - MBAD African Bead Festival</title>
+        <meta name="description" content="Support Detroit's talented artists at the MBAD African Bead Festival. Win exclusive artwork while supporting local artists. Tickets only $10!" />
+        <meta name="keywords" content="Detroit Art, Artist Raffle, MBAD Museum, African Bead Festival, Local Artists, Art Night Detroit" />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Local Artist Raffle - MBAD African Bead Festival" />
+        <meta property="og:description" content="Support Detroit's talented artists at the MBAD African Bead Festival. Win exclusive artwork while supporting local artists." />
+        <meta property="og:image" content="/images/mbad-dancers.png" />
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Local Artist Raffle - MBAD African Bead Festival" />
+        <meta name="twitter:description" content="Support Detroit's talented artists at the MBAD African Bead Festival. Win exclusive artwork while supporting local artists." />
+        <meta name="twitter:image" content="/images/mbad-dancers.png" />
+        
+        {/* Other */}
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#0056b3" />
         <link
           href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600&family=Bungee&family=Amatic+SC:wght@700&display=swap"
           rel="stylesheet"
@@ -140,6 +152,13 @@ const RafflePage: NextPage = () => {
     </Layout>
   );
 };
+
+const PageContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  max-width: 900px;
+`;
 
 const HeroSection = styled.section`
   text-align: center;

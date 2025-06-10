@@ -1,6 +1,7 @@
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { ThemeProvider, createGlobalStyle } from "styled-components";
+import { NextSeo } from "next-seo";
 
 const theme = {
   colors: {
@@ -52,6 +53,20 @@ export default function App({ Component, pageProps }: AppProps) {
     <ThemeProvider theme={theme}>
       <GlobalStyle />
       <Component {...pageProps} />
+      {pageProps.meta && <NextSeo
+        title={pageProps.meta.title}
+        description={pageProps.meta.description}
+        openGraph={{
+          type: "website",
+          title: pageProps.meta.title,
+          description: pageProps.meta.description,
+          images: [
+            {
+              url: pageProps.meta.image,
+            }
+          ]
+        }}
+      />}
     </ThemeProvider>
   );
 }
