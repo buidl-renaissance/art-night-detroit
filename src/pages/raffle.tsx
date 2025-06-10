@@ -2,20 +2,30 @@ import { NextPage } from 'next';
 import styled from 'styled-components';
 import Head from 'next/head';
 import Image from 'next/image';
+import Layout from '../components/Layout';
+
+const PageContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  max-width: 900px;
+`;
 
 const RafflePage: NextPage = () => {
   return (
-    <>
+    <Layout>
       <Head>
         <link
           href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600&family=Bungee&family=Amatic+SC:wght@700&display=swap"
           rel="stylesheet"
         />
       </Head>
-      <PageContainer>
+      <PageContent>
         <HeroSection>
-          <MainTitle>Local Artist Raffle</MainTitle>
-          <SubTitle>Support Detroit&apos;s Talented Artists</SubTitle>
+          <HeroContent>
+            <MainTitle>Local Artist Raffle</MainTitle>
+            <SubTitle>Support Detroit&apos;s Talented Artists</SubTitle>
+          </HeroContent>
           <EventDetails>
             <DetailTitle>MBAD African<br />Bead Festival</DetailTitle>
             <Image src="/images/mbad-dancers.png" alt="MBAD African Bead Museum" width={240} height={240}/>
@@ -27,11 +37,13 @@ const RafflePage: NextPage = () => {
         </HeroSection>
 
         <RaffleSection>
-          <SectionTitle>
-            <TitleEmoji>🎨</TitleEmoji>
-            <TitleText>About the Raffle</TitleText>
-          </SectionTitle>
-          <BodyText>Support local talent and get a chance to win exclusive, one-of-a-kind artwork donated by Detroit&apos;s most inspiring creatives. All proceeds go directly to the artists.</BodyText>
+          <RaffleContent>
+            <SectionTitle>
+              <TitleEmoji>🎨</TitleEmoji>
+              <TitleText>About the Raffle</TitleText>
+            </SectionTitle>
+            <BodyText>Support local talent and get a chance to win exclusive, one-of-a-kind artwork donated by Detroit&apos;s most inspiring creatives. All proceeds go directly to the artists.</BodyText>
+          </RaffleContent>
           <EventHighlights>
             <DetailItem style={{ fontSize: '3.5rem' }}>🎟️</DetailItem>
             <DetailItem>$10 per Raffle Ticket</DetailItem>
@@ -48,7 +60,13 @@ const RafflePage: NextPage = () => {
           <ArtistList>
             <ArtistSection>
               <ArtistImageWrapper>
-                <ArtistImage src="/artists/artist1.jpg" alt="Amari Johnson" />
+                <Image 
+                  src="https://picsum.photos/seed/artist1/800/600"
+                  alt="Amari Johnson"
+                  width={800}
+                  height={600}
+                  style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                />
               </ArtistImageWrapper>
               <ArtistInfo>
                 <ArtistName>Amari Johnson</ArtistName>
@@ -59,7 +77,13 @@ const RafflePage: NextPage = () => {
 
             <ArtistSection>
               <ArtistImageWrapper>
-                <ArtistImage src="/artists/artist2.jpg" alt="Maya Thompson" />
+                <Image 
+                  src="https://picsum.photos/seed/artist2/800/600"
+                  alt="Maya Thompson"
+                  width={800}
+                  height={600}
+                  style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                />
               </ArtistImageWrapper>
               <ArtistInfo>
                 <ArtistName>Maya Thompson</ArtistName>
@@ -70,7 +94,13 @@ const RafflePage: NextPage = () => {
 
             <ArtistSection>
               <ArtistImageWrapper>
-                <ArtistImage src="/artists/artist3.jpg" alt="Marcus Williams" />
+                <Image 
+                  src="https://picsum.photos/seed/artist3/800/600"
+                  alt="Marcus Williams"
+                  width={800}
+                  height={600}
+                  style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                />
               </ArtistImageWrapper>
               <ArtistInfo>
                 <ArtistName>Marcus Williams</ArtistName>
@@ -104,25 +134,31 @@ const RafflePage: NextPage = () => {
             <BodyText>Phone: (313) 550-3518</BodyText>
           </ContactInfo>
         </ContactSection>
-      </PageContainer>
-    </>
+      </PageContent>
+    </Layout>
   );
 };
-
-const PageContainer = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-  font-family: 'Work Sans', sans-serif;
-  color: #FFFFFF;
-  background: #0056b3;
-//   background: #001B3D;
-`;
 
 const HeroSection = styled.section`
   text-align: center;
   margin-bottom: 2rem;
   padding: 3rem 2rem;
   padding-bottom: 1rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+
+  @media (min-width: 768px) {
+    grid-template-columns: 1fr 1fr;
+    text-align: left;
+    align-items: center;
+  }
+`;
+
+const HeroContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 `;
 
 const MainTitle = styled.h1`
@@ -143,12 +179,53 @@ const SubTitle = styled.h2`
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
 `;
 
-const Section = styled.section`
-  padding: 3rem 2rem;
-  background: #002B5C;
-  &:nth-child(odd) {
-    background: #003b7d;
+const EventDetails = styled.div`
+  margin-top: 1.5rem;
+  background: rgba(0, 122, 255, 0.35);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+
+  @media (min-width: 768px) {
+    margin-top: 0;
   }
+`;
+
+const DetailTitle = styled.h2`
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+  font-family: 'Bungee', sans-serif;
+  font-size: 1.8rem;
+  color: #FFDD3C;
+`;
+
+const DetailItem = styled.p`
+  margin: 0.5rem 0;
+  font-weight: 500;
+  font-family: 'Bungee', sans-serif;
+  color: #FFDD3C;
+`;
+
+const RaffleSection = styled.section`
+  background: #0163ce;
+  padding: 3rem 2rem;
+  color: white;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+
+  @media (min-width: 768px) {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+`;
+
+const RaffleContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 `;
 
 const SectionTitle = styled.div`
@@ -177,39 +254,16 @@ const BodyText = styled.p`
   color: #FFDD3C;
 `;
 
-const EventDetails = styled.div`
-  margin-top: 1.5rem;
-  background: rgba(0, 122, 255, 0.35);
-  padding: 1.5rem;
-`;
-
-const DetailTitle = styled.h2`
-  margin-bottom: 1.5rem;
-  font-weight: 500;
-  font-family: 'Bungee', sans-serif;
-  font-size: 1.8rem;
-  color: #FFDD3C;
-`;
-
-const DetailItem = styled.p`
-  margin: 0.5rem 0;
-  font-weight: 500;
-  font-family: 'Bungee', sans-serif;
-  color: #FFDD3C;
-`;
-
-const RaffleSection = styled.section`
-  background: #0163ce;
-  padding: 3rem 2rem;
-  color: white;
-`;
-
 const EventHighlights = styled.div`
   margin: 2rem 0;
   padding: 1.5rem;
   padding-top: 0.5rem;
   background: rgba(0, 122, 255, 0.35);
   text-align: center;
+
+  @media (min-width: 768px) {
+    margin: 0;
+  }
 `;
 
 const RaffleButton = styled.button`
@@ -235,22 +289,40 @@ const RaffleButton = styled.button`
 `;
 
 const ArtistList = styled.div`
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 2rem;
-  margin-top: 1.5rem;
+
+  @media (min-width: 1024px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+`;
+
+const Section = styled.section`
+  padding: 3rem 2rem;
+  background: #002B5C;
+  
+  &:nth-child(odd) {
+    background: #003b7d;
+  }
+
+  @media (min-width: 768px) {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
 `;
 
 const ArtistSection = styled.div`
   display: grid;
-  grid-template-columns: 1fr 2fr;
+  grid-template-columns: 1fr;
   gap: 1.5rem;
   padding: 2rem;
   background: #002B5C;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
+  @media (min-width: 768px) {
+    grid-template-columns: 1fr 2fr;
   }
 `;
 
@@ -260,17 +332,15 @@ const ArtistImageWrapper = styled.div`
   overflow: hidden;
 `;
 
-const ArtistImage = styled.img`
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-`;
-
 const ArtistInfo = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 0.75rem;
+  
+  @media (min-width: 768px) {
+    padding: 0 2rem;
+  }
 `;
 
 const ArtistName = styled.h3`
@@ -280,7 +350,6 @@ const ArtistName = styled.h3`
   color: #FF6B3B;
   margin: 0;
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
-  text-align: center;
   width: 100%;
 `;
 
@@ -315,16 +384,29 @@ const StepItem = styled.li`
   color: #FFDD3C;
 `;
 
-const ContactSection = styled.section`
+const ContactSection = styled(Section)`
   text-align: center;
   padding: 3rem 2rem;
   background: rgba(0, 122, 255, 0.15);
+
+  @media (min-width: 768px) {
+    max-width: 768px;
+    margin: 0 auto;
+    width: 100%;
+  }
 `;
 
 const ContactInfo = styled.div`
   margin-top: 1.5rem;
   padding: 1.5rem;
   background: #002B5C;
+
+  @media (min-width: 768px) {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    align-items: center;
+  }
 `;
 
 export default RafflePage;
