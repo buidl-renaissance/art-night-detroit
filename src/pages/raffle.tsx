@@ -8,7 +8,7 @@ const RafflePage: NextPage = () => {
   return (
     <Layout>
       <Head>
-        <title>Local Artist Raffle - MBAD African Bead Festival</title>
+        <title>Local Artist Raffle - MBAD African Bead Festival x ArtNightDetroit</title>
         <meta name="description" content="Support Detroit's talented artists at the MBAD African Bead Festival. Win exclusive artwork while supporting local artists. Tickets only $10!" />
         <meta name="keywords" content="Detroit Art, Artist Raffle, MBAD Museum, African Bead Festival, Local Artists, Art Night Detroit" />
         
