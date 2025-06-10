@@ -29,10 +29,12 @@ const RafflePage: NextPage = () => {
           <EventDetails>
             <DetailTitle>MBAD African<br />Bead Festival</DetailTitle>
             <Image src="/images/mbad-dancers.png" alt="MBAD African Bead Museum" width={240} height={240}/>
-            <DetailItem>Saturday, June 14th</DetailItem>
-            <DetailItem>10AM - 9PM</DetailItem>
-            <DetailItem>MBAD African Bead Museum</DetailItem>
-            <DetailItem>Detroit, MI</DetailItem>
+            <DetailedItems>
+                <DetailItem>Saturday, June 14th</DetailItem>
+                <DetailItem>10AM - 9PM</DetailItem>
+                <DetailItem>MBAD African Bead Museum</DetailItem>
+                <DetailItem>Detroit, MI</DetailItem>
+            </DetailedItems>
           </EventDetails>
         </HeroSection>
 
@@ -146,7 +148,6 @@ const HeroSection = styled.section`
   padding-bottom: 1rem;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 2rem;
 
   @media (min-width: 768px) {
     grid-template-columns: 1fr 1fr;
@@ -158,7 +159,6 @@ const HeroSection = styled.section`
 const HeroContent = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 1rem;
 `;
 
 const MainTitle = styled.h1`
@@ -186,7 +186,6 @@ const EventDetails = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
 
   @media (min-width: 768px) {
     margin-top: 0;
@@ -201,8 +200,14 @@ const DetailTitle = styled.h2`
   color: #FFDD3C;
 `;
 
+const DetailedItems = styled.div`
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+`;
+
 const DetailItem = styled.p`
-  margin: 0.5rem 0;
+  margin: 0.25rem 0;
   font-weight: 500;
   font-family: 'Bungee', sans-serif;
   color: #FFDD3C;
@@ -225,25 +230,25 @@ const RaffleSection = styled.section`
 const RaffleContent = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
 `;
 
 const SectionTitle = styled.div`
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 `;
 
 const TitleEmoji = styled.div`
-  font-size: 3rem;
+  font-size: 2.5rem;
   margin-bottom: 0.5rem;
 `;
 
 const TitleText = styled.h2`
   font-family: 'Bungee', sans-serif;
   font-weight: 600;
-  font-size: 2rem;
+  font-size: 1.8rem;
   color: #FF6B3B;
   margin: 0;
+  margin-bottom: 2rem;
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
 `;
 
@@ -255,7 +260,7 @@ const BodyText = styled.p`
 `;
 
 const EventHighlights = styled.div`
-  margin: 2rem 0;
+  margin: 1rem 0;
   padding: 1.5rem;
   padding-top: 0.5rem;
   background: rgba(0, 122, 255, 0.35);
@@ -271,14 +276,14 @@ const RaffleButton = styled.button`
   color: white;
   padding: 1rem 2rem;
   border: none;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-family: 'Bungee', sans-serif;
   font-weight: 400;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(255, 107, 59, 0.3);
   margin: auto;
-  margin-top: 2rem;
+  margin-top: 1rem;
   display: block;
 
   &:hover {
