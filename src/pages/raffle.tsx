@@ -31,18 +31,13 @@ const RafflePage: NextPage = () => {
             <TitleEmoji>🎨</TitleEmoji>
             <TitleText>About the Raffle</TitleText>
           </SectionTitle>
-          <BodyText>Support local talent and get a chance to win exclusive, one-of-a-kind artwork donated by Detroit's most inspiring creatives. All proceeds go directly to supporting community art initiatives and the MBAD African Bead Museum's ongoing programs.</BodyText>
+          <BodyText>Support local talent and get a chance to win exclusive, one-of-a-kind artwork donated by Detroit's most inspiring creatives. All proceeds go directly to the artists.</BodyText>
           <EventHighlights>
             <DetailItem style={{ fontSize: '3.5rem' }}>🎟️</DetailItem>
             <DetailItem>$10 per Raffle Ticket</DetailItem>
             <DetailItem>Winners Announced at 8 PM</DetailItem>
+            <RaffleButton>Purchase Raffle Tickets</RaffleButton>
           </EventHighlights>
-          <StepsList>
-            <StepItem>Multiple chances to win unique artworks</StepItem>
-            <StepItem>Direct support to local artists and community</StepItem>
-            <StepItem>Each ticket enters you in all artwork drawings</StepItem>
-          </StepsList>
-          <RaffleButton>Purchase Raffle Tickets</RaffleButton>
         </RaffleSection>
 
         <Section>
