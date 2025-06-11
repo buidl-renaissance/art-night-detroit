@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import styled from 'styled-components';
 import PageContainer from '@/components/PageContainer';
+import RaffleCountdown from '@/components/RaffleCountdown';
 
 interface Raffle {
   id: string;
@@ -61,32 +62,6 @@ const RaffleDescription = styled.p`
   color: ${({ theme }) => theme.colors.text.light};
   margin-bottom: 2rem;
   line-height: 1.6;
-`;
-
-const RaffleDetails = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
-`;
-
-const Detail = styled.div`
-  background: ${({ theme }) => theme.colors.background.secondary};
-  padding: 1rem;
-  border-radius: 8px;
-  text-align: center;
-`;
-
-const Label = styled.div`
-  color: ${({ theme }) => theme.colors.text.light};
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
-`;
-
-const Value = styled.div`
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-size: 1.2rem;
-  font-weight: bold;
 `;
 
 const ArtistsGrid = styled.div`
@@ -446,22 +421,7 @@ export default function RafflePage() {
           <RaffleDescription>{raffle.description}</RaffleDescription>
         </RaffleHeader>
 
-        <RaffleDetails>
-          <Detail>
-            <Label>Status</Label>
-            <Value>{raffle.status}</Value>
-          </Detail>
-          <Detail>
-            <Label>Ends</Label>
-            <Value>
-              {new Date(raffle.end_date).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              })}
-            </Value>
-          </Detail>
-        </RaffleDetails>
+        <RaffleCountdown endDate={raffle.end_date} />
 
         {unusedTickets.length > 0 && (
           <TicketSection>

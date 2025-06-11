@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import styled from 'styled-components';
 import PageContainer from '@/components/PageContainer';
+import RaffleCountdown from '@/components/RaffleCountdown';
 
 interface RaffleTicket {
   id: string;
@@ -39,6 +40,107 @@ interface AvailableRaffle {
   status: 'draft' | 'active' | 'ended';
 }
 
+// Header Components
+const DashboardHeader = styled.div`
+  margin-bottom: 40px;
+  text-align: center;
+`;
+
+const Title = styled.h1`
+  font-size: 2.5rem;
+  color: ${({ theme }) => theme.colors.primary};
+  margin-bottom: 8px;
+  font-family: var(--font-decorative);
+`;
+
+const TicketCount = styled.div`
+  font-size: 1.4rem;
+  color: #FFD700;
+  font-weight: 600;
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  &::before {
+    content: "🎟️";
+    font-size: 1.6rem;
+  }
+`;
+
+const SectionHeader = styled.div`
+  margin-bottom: 32px;
+  text-align: center;
+`;
+
+const SectionTitle = styled.h2`
+  font-size: 1.5rem;
+  color: ${({ theme }) => theme.colors.primary};
+  margin-bottom: 8px;
+  font-family: var(--font-decorative);
+`;
+
+const SectionSubtitle = styled.p`
+  font-size: 1.1rem;
+  color: ${({ theme }) => theme.colors.text.light};
+`;
+
+// Raffle Grid Components
+const RaffleGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+`;
+
+const RaffleCard = styled.div`
+  background: ${({ theme }) => theme.colors.background.secondary};
+  border-radius: 12px;
+  padding: 24px;
+  cursor: pointer;
+  transition: transform 0.2s;
+
+  &:hover {
+    transform: translateY(-4px);
+  }
+`;
+
+const RaffleHeader = styled.div`
+  margin-bottom: 16px;
+`;
+
+const RaffleName = styled.h3`
+  font-size: 1.4rem;
+  color: ${({ theme }) => theme.colors.text.primary};
+  margin-bottom: 8px;
+`;
+
+const RaffleDescription = styled.p`
+  color: ${({ theme }) => theme.colors.text.light};
+  font-size: 1rem;
+  margin-bottom: 20px;
+  line-height: 1.5;
+`;
+
+const EnterRaffleButton = styled.button`
+  background: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.background.primary};
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 16px;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.9;
+  }
+`;
+
+// Modal Components
 const Modal = styled.div`
   position: fixed;
   top: 0;
@@ -87,6 +189,7 @@ const CloseButton = styled.button`
   }
 `;
 
+// Ticket Components
 const TicketList = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -110,6 +213,40 @@ const TicketNumber = styled.div`
 const TicketDate = styled.div`
   font-size: 0.8rem;
   color: ${({ theme }) => theme.colors.text.light};
+`;
+
+// Empty State Components
+const EmptyState = styled.div`
+  text-align: center;
+  padding: 60px 20px;
+  background: ${({ theme }) => theme.colors.background.secondary};
+  border-radius: 24px;
+  margin-bottom: 40px;
+`;
+
+const EmptyStateIcon = styled.div`
+  font-size: 3rem;
+  margin-bottom: 20px;
+`;
+
+const EmptyStateText = styled.h2`
+  font-size: 1.5rem;
+  color: ${({ theme }) => theme.colors.primary};
+  margin-bottom: 8px;
+  font-family: var(--font-decorative);
+`;
+
+const EmptyStateSubtext = styled.p`
+  color: ${({ theme }) => theme.colors.text.light};
+  font-size: 1.1rem;
+`;
+
+// Loading State
+const LoadingMessage = styled.div`
+  text-align: center;
+  color: ${({ theme }) => theme.colors.text.light};
+  font-size: 1.2rem;
+  padding: 40px;
 `;
 
 export default function Dashboard() {
@@ -276,146 +413,18 @@ export default function Dashboard() {
               
               <RaffleDescription>{raffle.description}</RaffleDescription>
               
-              <RaffleDetails>
-                <Detail>
-                  <Label>Ends</Label>
-                  <Value>
-                    {new Date(raffle.end_date).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </Value>
-                </Detail>
-              </RaffleDetails>
+              <RaffleCountdown endDate={raffle.end_date} label="Raffle Ends" />
+              
+              <EnterRaffleButton onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/raffles/${raffle.id}`);
+              }}>
+                Enter Raffle
+              </EnterRaffleButton>
             </RaffleCard>
           ))}
         </RaffleGrid>
       )}
     </PageContainer>
   );
-}
-
-const DashboardHeader = styled.div`
-  margin-bottom: 40px;
-`;
-
-const Title = styled.h1`
-  font-size: 2.5rem;
-  color: #ffd700;
-  margin-bottom: 8px;
-  font-family: var(--font-decorative);
-`;
-
-const TicketCount = styled.div`
-  font-size: 1.2rem;
-  color: #e0e0e0;
-`;
-
-const LoadingMessage = styled.div`
-  text-align: center;
-  color: #e0e0e0;
-  font-size: 1.2rem;
-  padding: 40px;
-`;
-
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 60px 20px;
-  background: rgba(255, 215, 0, 0.1);
-  border-radius: 24px;
-  margin-bottom: 40px;
-`;
-
-const EmptyStateIcon = styled.div`
-  font-size: 3rem;
-  margin-bottom: 20px;
-`;
-
-const EmptyStateText = styled.h2`
-  font-size: 1.5rem;
-  color: #ffd700;
-  margin-bottom: 8px;
-  font-family: var(--font-decorative);
-`;
-
-const EmptyStateSubtext = styled.p`
-  color: #e0e0e0;
-  font-size: 1.1rem;
-`;
-
-const SectionHeader = styled.div`
-  margin-bottom: 32px;
-`;
-
-const SectionTitle = styled.h2`
-  font-size: 2rem;
-  color: #ffd700;
-  margin-bottom: 8px;
-  font-family: var(--font-decorative);
-`;
-
-const SectionSubtitle = styled.p`
-  font-size: 1.1rem;
-  color: #e0e0e0;
-`;
-
-const RaffleGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 24px;
-`;
-
-const RaffleCard = styled.div`
-  background: rgba(255, 215, 0, 0.1);
-  border-radius: 16px;
-  padding: 24px;
-  cursor: pointer;
-  transition: transform 0.2s;
-
-  &:hover {
-    transform: translateY(-4px);
-  }
-`;
-
-const RaffleHeader = styled.div`
-  margin-bottom: 16px;
-`;
-
-const RaffleName = styled.h3`
-  font-size: 1.4rem;
-  color: #ffffff;
-  margin-bottom: 8px;
-`;
-
-const RaffleDescription = styled.p`
-  color: #e0e0e0;
-  font-size: 1rem;
-  margin-bottom: 20px;
-  line-height: 1.5;
-`;
-
-const RaffleDetails = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 20px;
-`;
-
-const Detail = styled.div`
-  background: rgba(255, 215, 0, 0.05);
-  padding: 12px;
-  border-radius: 8px;
-`;
-
-const Label = styled.div`
-  color: #e0e0e0;
-  font-size: 0.9rem;
-  margin-bottom: 4px;
-`;
-
-const Value = styled.div`
-  color: #ffd700;
-  font-size: 1.1rem;
-  font-weight: 600;
-`; 
+} 
