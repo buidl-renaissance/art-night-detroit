@@ -187,7 +187,7 @@ const HeroSection = styled.section`
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.35);
+    background: rgba(0, 0, 0, 0.2);
     z-index: 1;
   }
 
@@ -238,7 +238,7 @@ const SubTitle = styled.h2`
 
 const EventDetails = styled.div`
   margin-top: 1.5rem;
-  background: rgba(0, 122, 255, 0.25);
+  background: rgba(5, 76, 152, 0.5);
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
@@ -382,7 +382,7 @@ const Section = styled.section`
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(0, 0, 0, 0.2);
       z-index: 1;
     }
   }

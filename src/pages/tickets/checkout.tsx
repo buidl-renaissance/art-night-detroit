@@ -3,6 +3,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import styled from 'styled-components';
 import { loadStripe } from '@stripe/stripe-js';
 import PageContainer from '@/components/PageContainer';
+import AuthModal from '@/components/auth/AuthModal';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -174,6 +175,29 @@ const CheckoutButton = styled.button`
   }
 `;
 
+const Modal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+  background: ${({ theme }) => theme.colors.background.primary};
+  border-radius: 12px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+`;
+
 interface RaffleInfo {
   id: string;
   name: string;
@@ -212,6 +236,7 @@ export default function Checkout() {
   const [error, setError] = useState<string | null>(null);
   const [raffleInfo, setRaffleInfo] = useState<RaffleInfo | null>(null);
   const [artistInfo, setArtistInfo] = useState<ArtistInfo | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -219,6 +244,13 @@ export default function Checkout() {
       const params = new URLSearchParams(window.location.search);
       const raffleId = params.get('raffle_id');
       const raffleArtistId = params.get('raffle_artist_id');
+
+      // Check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setShowAuthModal(true);
+        return;
+      }
 
       if (raffleId) {
         const { data: raffle, error: raffleError } = await supabase
@@ -341,6 +373,13 @@ export default function Checkout() {
 
   return (
     <PageContainer theme="dark">
+      {showAuthModal && (
+        <Modal>
+          <ModalContent>
+            <AuthModal />
+          </ModalContent>
+        </Modal>
+      )}
       <CheckoutContainer>
         <h1>Raffle Tickets</h1>
         
