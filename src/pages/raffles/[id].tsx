@@ -428,7 +428,7 @@ export default function RafflePage() {
       ) : (
         <BottomBar>
           <ButtonContainer>
-            <PurchaseButton onClick={() => router.push(`/raffles/${id}/purchase`)}>
+            <PurchaseButton onClick={() => router.push(`/tickets/checkout?raffleId=${id}`)}>
               Purchase Tickets
             </PurchaseButton>
           </ButtonContainer>
