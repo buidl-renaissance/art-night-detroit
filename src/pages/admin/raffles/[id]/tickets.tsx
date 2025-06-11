@@ -9,10 +9,8 @@ interface Ticket {
   ticket_number: number;
   user_id: string;
   created_at: string;
-  user: {
-    email: string;
-    full_name: string | null;
-  };
+  email: string;
+  full_name: string | null;
 }
 
 interface TicketResponse {
@@ -20,10 +18,8 @@ interface TicketResponse {
   ticket_number: number;
   user_id: string;
   created_at: string;
-  user: {
-    email: string;
-    full_name: string | null;
-  };
+  email: string;
+  full_name: string | null;
 }
 
 interface Raffle {
@@ -77,19 +73,7 @@ export default function RaffleTickets() {
 
         // Fetch tickets
         const { data: ticketsData, error: ticketsError } = await supabase
-          .from('tickets')
-          .select(`
-            id,
-            ticket_number,
-            user_id,
-            created_at,
-            user:profiles (
-              email,
-              full_name
-            )
-          `)
-          .eq('raffle_id', id)
-          .order('ticket_number', { ascending: true });
+          .rpc('get_tickets_with_profiles', { raffle_id: id });
 
         if (ticketsError) throw ticketsError;
         
@@ -163,8 +147,8 @@ export default function RaffleTickets() {
             {tickets.map((ticket) => (
               <tr key={ticket.id}>
                 <Td>#{ticket.ticket_number}</Td>
-                <Td>{ticket.user.full_name || 'Anonymous'}</Td>
-                <Td>{ticket.user.email}</Td>
+                <Td>{ticket.full_name || 'Anonymous'}</Td>
+                <Td>{ticket.email}</Td>
                 <Td>
                   {new Date(ticket.created_at).toLocaleDateString('en-US', {
                     year: 'numeric',
