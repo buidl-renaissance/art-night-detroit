@@ -56,9 +56,9 @@ const VideographerPage = () => {
       <RolesGrid>
         {Object.entries(roles).map(([key, role]) => (
           <RoleCard key={key} onClick={() => setSelectedRole(key as 'videographer' | 'archivist')}>
-            <RoleTitle>
+        <RoleTitle>
               <span>{role.emoji}</span> {role.title}
-            </RoleTitle>
+        </RoleTitle>
             <RoleDescription>{role.description}</RoleDescription>
             <LearnMoreButton>Learn More</LearnMoreButton>
           </RoleCard>
@@ -69,24 +69,24 @@ const VideographerPage = () => {
         <Modal onClick={() => setSelectedRole(null)}>
           <ModalContent onClick={e => e.stopPropagation()}>
             <CloseButton onClick={() => setSelectedRole(null)}>×</CloseButton>
-            <RoleTitle>
+        <RoleTitle>
               <span>{roles[selectedRole].emoji}</span> {roles[selectedRole].title}
-            </RoleTitle>
+        </RoleTitle>
             <RoleDescription>{roles[selectedRole].description}</RoleDescription>
-            
+
             <SectionTitle>Responsibilities</SectionTitle>
-            <ResponsibilitiesList>
+        <ResponsibilitiesList>
               {roles[selectedRole].responsibilities.map((item, i) => (
                 <li key={i}>{item}</li>
               ))}
-            </ResponsibilitiesList>
+        </ResponsibilitiesList>
 
             <SectionTitle>Qualifications</SectionTitle>
-            <QualificationsList>
+        <QualificationsList>
               {roles[selectedRole].qualifications.map((item, i) => (
                 <li key={i}>{item}</li>
               ))}
-            </QualificationsList>
+        </QualificationsList>
           </ModalContent>
         </Modal>
       )}

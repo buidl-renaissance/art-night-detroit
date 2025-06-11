@@ -10,7 +10,6 @@ interface RaffleFormData {
   start_date: string;
   end_date: string;
   max_tickets: number;
-  ticket_price: number;
 }
 
 export default function CreateRaffle() {
@@ -19,8 +18,8 @@ export default function CreateRaffle() {
     description: '',
     start_date: '',
     end_date: '',
+    price_per_ticket: 10,
     max_tickets: 100,
-    ticket_price: 0,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +53,7 @@ export default function CreateRaffle() {
         .from('raffles')
         .insert([{
           ...formData,
+          slug: formData.name.toLowerCase().replace(/ /g, '-'),
           created_by: session.user.id,
           status: 'draft'
         }])
@@ -74,7 +74,7 @@ export default function CreateRaffle() {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'max_tickets' || name === 'ticket_price' ? Number(value) : value
+      [name]: name === 'max_tickets' ? Number(value) : value
     }));
   };
 
@@ -152,19 +152,6 @@ export default function CreateRaffle() {
             />
           </FormGroup>
 
-          <FormGroup>
-            <Label htmlFor="ticket_price">Ticket Price ($)</Label>
-            <Input
-              id="ticket_price"
-              name="ticket_price"
-              type="number"
-              min="0"
-              step="0.01"
-              value={formData.ticket_price}
-              onChange={handleChange}
-              required
-            />
-          </FormGroup>
         </FormRow>
 
         <ButtonGroup>

@@ -11,7 +11,6 @@ interface Raffle {
   start_date: string;
   end_date: string;
   max_tickets: number;
-  ticket_price: number;
   status: 'draft' | 'active' | 'ended';
   created_at: string;
 }
@@ -136,10 +135,6 @@ export default function RafflesAdmin() {
                 <Detail>
                   <Label>Max Tickets</Label>
                   <Value>{raffle.max_tickets}</Value>
-                </Detail>
-                <Detail>
-                  <Label>Ticket Price</Label>
-                  <Value>${raffle.ticket_price.toFixed(2)}</Value>
                 </Detail>
               </RaffleDetails>
 

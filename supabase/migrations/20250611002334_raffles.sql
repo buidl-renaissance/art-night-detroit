@@ -18,4 +18,4 @@ alter table raffles enable row level security;
 
 -- Create trigger to automatically update updated_at
 create trigger handle_updated_at before update on raffles
-  for each row execute procedure moddatetime (updated_at);
+  for each row execute function moddatetime();

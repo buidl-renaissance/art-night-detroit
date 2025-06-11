@@ -12,4 +12,10 @@ alter table profiles enable row level security;
 
 -- Create trigger to automatically update updated_at
 create trigger handle_updated_at before update on profiles
-  for each row execute procedure moddatetime (updated_at);
+  for each row execute function moddatetime();
+
+-- Add RLS policy for public read access
+create policy "Users can view their own profile"
+  on profiles
+  for select
+  using (auth.uid() = id);
