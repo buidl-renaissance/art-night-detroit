@@ -12,6 +12,12 @@ interface RaffleTicket {
   created_at: string;
 }
 
+interface UnusedTicket {
+  id: string;
+  ticket_number: number;
+  created_at: string;
+}
+
 interface RaffleTicketWithEvent {
   id: string;
   event_id: string;
@@ -33,10 +39,85 @@ interface AvailableRaffle {
   status: 'draft' | 'active' | 'ended';
 }
 
+const Modal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+  background: ${({ theme }) => theme.colors.background.primary};
+  border-radius: 12px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+`;
+
+const ModalHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+`;
+
+const ModalTitle = styled.h2`
+  color: ${({ theme }) => theme.colors.primary};
+  margin: 0;
+`;
+
+const CloseButton = styled.button`
+  background: none;
+  border: none;
+  color: ${({ theme }) => theme.colors.text.light};
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  
+  &:hover {
+    color: ${({ theme }) => theme.colors.text.primary};
+  }
+`;
+
+const TicketList = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+`;
+
+const TicketItem = styled.div`
+  background: ${({ theme }) => theme.colors.background.secondary};
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+`;
+
+const TicketNumber = styled.div`
+  font-family: monospace;
+  font-size: 1.2rem;
+  color: ${({ theme }) => theme.colors.primary};
+  margin-bottom: 0.5rem;
+`;
+
+const TicketDate = styled.div`
+  font-size: 0.8rem;
+  color: ${({ theme }) => theme.colors.text.light};
+`;
+
 export default function Dashboard() {
-  const [tickets, setTickets] = useState<RaffleTicket[]>([]);
+  const [, setTickets] = useState<RaffleTicket[]>([]);
+  const [unusedTickets, setUnusedTickets] = useState<UnusedTicket[]>([]);
   const [availableRaffles, setAvailableRaffles] = useState<AvailableRaffle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
   const router = useRouter();
   const supabase = createClientComponentClient();
 
@@ -75,6 +156,20 @@ export default function Dashboard() {
           ticket_number: ticket.ticket_number,
           created_at: ticket.created_at
         })));
+      }
+
+      // Fetch unused tickets
+      const { data: unusedTicketsData, error: unusedTicketsError } = await supabase
+        .from('tickets')
+        .select('id, ticket_number, created_at')
+        .eq('user_id', session.user.id)
+        .is('raffle_id', null)
+        .order('created_at', { ascending: false });
+
+      if (unusedTicketsError) {
+        console.error('Error fetching unused tickets:', unusedTicketsError);
+      } else {
+        setUnusedTickets(unusedTicketsData || []);
       }
 
       // Fetch available raffles
@@ -129,34 +224,36 @@ export default function Dashboard() {
 
   return (
     <PageContainer theme="dark" width="medium">
+
+      {showModal && (
+        <Modal onClick={() => setShowModal(false)}>
+          <ModalContent onClick={e => e.stopPropagation()}>
+            <ModalHeader>
+              <ModalTitle>Your Ticket Numbers</ModalTitle>
+              <CloseButton onClick={() => setShowModal(false)}>&times;</CloseButton>
+            </ModalHeader>
+            <TicketList>
+              {unusedTickets.map((ticket) => (
+                <TicketItem key={ticket.id}>
+                  <TicketNumber>#{ticket.ticket_number}</TicketNumber>
+                  <TicketDate>
+                    {new Date(ticket.created_at).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    })}
+                  </TicketDate>
+                </TicketItem>
+              ))}
+            </TicketList>
+          </ModalContent>
+        </Modal>
+      )}
+
       <DashboardHeader>
         <Title>Your Raffle Tickets</Title>
-        <TicketCount>{tickets.length} Tickets</TicketCount>
+        <TicketCount>{unusedTickets.length} Tickets Available</TicketCount>
       </DashboardHeader>
-
-      {tickets.length === 0 ? (
-        <EmptyState>
-          <EmptyStateIcon>🎟️</EmptyStateIcon>
-          <EmptyStateText>You haven&apos;t entered any raffles yet</EmptyStateText>
-          <EmptyStateSubtext>Check out our available raffles below to get started!</EmptyStateSubtext>
-        </EmptyState>
-      ) : (
-        <TicketGrid>
-          {tickets.map((ticket) => (
-            <TicketCard key={ticket.id}>
-              <TicketNumber>#{ticket.ticket_number}</TicketNumber>
-              <EventName>{ticket.event_name}</EventName>
-              <TicketDate>
-                {new Date(ticket.created_at).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-              </TicketDate>
-            </TicketCard>
-          ))}
-        </TicketGrid>
-      )}
 
       <SectionHeader>
         <SectionTitle>Available Raffles</SectionTitle>
@@ -175,9 +272,6 @@ export default function Dashboard() {
             <RaffleCard key={raffle.id} onClick={() => router.push(`/raffles/${raffle.id}`)}>
               <RaffleHeader>
                 <RaffleName>{raffle.name}</RaffleName>
-                <TicketCount>
-                  {raffle.tickets_sold} / {raffle.max_tickets} tickets sold
-                </TicketCount>
               </RaffleHeader>
               
               <RaffleDescription>{raffle.description}</RaffleDescription>
@@ -193,13 +287,7 @@ export default function Dashboard() {
                     })}
                   </Value>
                 </Detail>
-                <Detail>
-                  <Label>Remaining</Label>
-                  <Value>{raffle.max_tickets - raffle.tickets_sold}</Value>
-                </Detail>
               </RaffleDetails>
-
-              <EnterButton>Enter Raffle</EnterButton>
             </RaffleCard>
           ))}
         </RaffleGrid>
@@ -254,42 +342,6 @@ const EmptyStateText = styled.h2`
 const EmptyStateSubtext = styled.p`
   color: #e0e0e0;
   font-size: 1.1rem;
-`;
-
-const TicketGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 24px;
-  margin-bottom: 40px;
-`;
-
-const TicketCard = styled.div`
-  background: rgba(255, 215, 0, 0.1);
-  border-radius: 16px;
-  padding: 24px;
-  transition: transform 0.2s;
-
-  &:hover {
-    transform: translateY(-4px);
-  }
-`;
-
-const TicketNumber = styled.div`
-  font-size: 2rem;
-  color: #ffd700;
-  font-family: var(--font-decorative);
-  margin-bottom: 12px;
-`;
-
-const EventName = styled.h3`
-  font-size: 1.2rem;
-  color: #ffffff;
-  margin-bottom: 8px;
-`;
-
-const TicketDate = styled.div`
-  font-size: 0.9rem;
-  color: #e0e0e0;
 `;
 
 const SectionHeader = styled.div`
@@ -366,21 +418,4 @@ const Value = styled.div`
   color: #ffd700;
   font-size: 1.1rem;
   font-weight: 600;
-`;
-
-const EnterButton = styled.button`
-  width: 100%;
-  background: #ffd700;
-  color: #121212;
-  border: none;
-  padding: 12px;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
-
-  &:hover {
-    background: #ffed4a;
-  }
 `; 
