@@ -396,7 +396,7 @@ export default function Dashboard() {
       <DashboardHeader>
         <Title>Your Raffle Tickets</Title>
         <TicketCount>{unusedTickets.length} Tickets Available</TicketCount>
-        <BuyTicketsButton onClick={() => router.push('/tickets/buy')}>
+        <BuyTicketsButton onClick={() => router.push('/tickets/checkout')}>
           Buy Raffle Tickets
         </BuyTicketsButton>
       </DashboardHeader>

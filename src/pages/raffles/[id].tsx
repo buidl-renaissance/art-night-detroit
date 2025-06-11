@@ -1,38 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/router';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import styled from 'styled-components';
 import PageContainer from '@/components/PageContainer';
 import RaffleCountdown from '@/components/RaffleCountdown';
 import FullScreenLoader from '@/components/FullScreenLoader';
 import QuantityControls from '@/components/QuantityControls';
-
-interface Raffle {
-  id: string;
-  name: string;
-  description: string;
-  start_date: string;
-  end_date: string;
-  max_tickets: number;
-  status: 'draft' | 'active' | 'ended';
-  tickets_sold: number;
-}
-
-interface Artist {
-  id: string;
-  name: string;
-  bio: string;
-  image_url: string;
-  raffle_artist_id: string;
-  total_tickets?: number;
-  user_tickets?: number;
-}
-
-interface UnusedTicket {
-  id: string;
-  ticket_number: number;
-  created_at: string;
-}
+import { useRaffleData } from '@/hooks/useRaffleData';
+import { useRaffleTicketManager } from '@/hooks/useRaffleTicketManager';
 
 const RaffleContainer = styled.div`
   max-width: 800px;
@@ -231,119 +205,18 @@ const SectionSubtitle = styled.p`
 `;
 
 export default function RafflePage() {
-  const [raffle, setRaffle] = useState<Raffle | null>(null);
-  const [artists, setArtists] = useState<Artist[]>([]);
-  const [unusedTickets, setUnusedTickets] = useState<UnusedTicket[]>([]);
-  const [ticketCounts, setTicketCounts] = useState<{ [key: string]: number }>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { id } = router.query;
-  const supabase = createClientComponentClient();
+  const [artistQuantities, setArtistQuantities] = useState<{ [artistId: string]: number }>({});
+  
+  const { raffle, artists, unusedTickets, loading } = useRaffleData(id);
+  const { error, submitTickets } = useRaffleTicketManager({
+    raffleId: id,
+    unusedTickets
+  });
 
-  useEffect(() => {
-    const fetchRaffleData = async () => {
-      if (!id) return;
-
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
-        const response = await fetch(`/api/raffles/${id}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        if (!response.ok) {
-          if (response.status === 401) {
-            router.push('/login');
-            return;
-          }
-          throw new Error('Failed to fetch raffle data');
-        }
-
-        const data = await response.json();
-        setRaffle(data.raffle);
-        setArtists(data.artists);
-        setUnusedTickets(data.unusedTickets);
-        setLoading(false);
-      } catch (err) {
-        console.error('Error fetching raffle data:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load raffle data');
-        setLoading(false);
-      }
-    };
-
-    fetchRaffleData();
-  }, [id, router]);
-
-  const handleTicketCountChange = (artistId: string, count: number) => {
-    setTicketCounts(prev => ({
-      ...prev,
-      [artistId]: count
-    }));
-  };
-
-  const handleIncrement = (artistId: string) => {
-    setTicketCounts(prev => ({
-      ...prev,
-      [artistId]: (prev[artistId] || 0) + 1
-    }));
-  };
-
-  const handleDecrement = (artistId: string) => {
-    setTicketCounts(prev => ({
-      ...prev,
-      [artistId]: Math.max(0, (prev[artistId] || 0) - 1)
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Get all tickets that have been allocated
-    const totalTicketsRequested = Object.values(ticketCounts).reduce((sum, count) => sum + count, 0);
-    if (totalTicketsRequested === 0) return;
-
-    setError(null);
-
-    try {
-      // For each artist, submit their tickets
-      for (const [artistId, count] of Object.entries(ticketCounts)) {
-        if (count === 0) continue;
-
-        // Get the next batch of tickets for this artist
-        const ticketIds = unusedTickets
-          .slice(0, count)
-          .map(ticket => ticket.id);
-
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
-
-        const response = await fetch(`/api/raffles/${id}/submit-tickets`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            artistId,
-            ticketIds,
-          }),
-        });
-
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || 'Failed to submit tickets');
-        }
-      }
-
-      // Refresh the page to show updated data
-      router.reload();
-    } catch (err) {
-      console.error('Error submitting tickets:', err);
-      setError(err instanceof Error ? err.message : 'Failed to submit tickets. Please try again.');
-    }
-  };
+  const totalTicketsRequested = Object.values(artistQuantities).reduce((sum, count) => sum + count, 0);
+  const remainingTickets = unusedTickets.length - totalTicketsRequested;
 
   if (loading) {
     return <FullScreenLoader label="Loading raffle details..." />;
@@ -356,6 +229,13 @@ export default function RafflePage() {
       </PageContainer>
     );
   }
+
+  const handleQuantityChange = (artistId: string, quantity: number) => {
+    setArtistQuantities(prev => ({
+      ...prev,
+      [artistId]: quantity
+    }));
+  };
 
   return (
     <PageContainer theme="dark">
@@ -396,12 +276,10 @@ export default function RafflePage() {
                   </TicketInfo>
                   {unusedTickets.length > 0 && (
                     <QuantityControls
-                      quantity={ticketCounts[artist.id] || 0}
+                      quantity={artistQuantities[artist.id] || 0}
                       min={0}
-                      max={unusedTickets.length}
-                      onIncrement={() => handleIncrement(artist.id)}
-                      onDecrement={() => handleDecrement(artist.id)}
-                      onChange={(value) => handleTicketCountChange(artist.id, value)}
+                      max={remainingTickets + (artistQuantities[artist.id] || 0)}
+                      onChange={(value) => handleQuantityChange(artist.id, value)}
                     />
                   )}
                 </ArtistInfo>
@@ -414,15 +292,15 @@ export default function RafflePage() {
         <BottomBar>
           <ButtonContainer>
             <SubmitButton
-              onClick={handleSubmit}
-              disabled={Object.values(ticketCounts).every(count => count === 0)}
+              onClick={() => submitTickets(artistQuantities)}
+              disabled={totalTicketsRequested === 0}
             >
-              Submit {Object.values(ticketCounts).reduce((sum, count) => sum + count, 0)} Ticket{Object.values(ticketCounts).reduce((sum, count) => sum + count, 0) === 1 ? '' : 's'}
+              Submit {totalTicketsRequested} Ticket{totalTicketsRequested === 1 ? '' : 's'}
             </SubmitButton>
             {error && <ErrorMessage>{error}</ErrorMessage>}
           </ButtonContainer>
           <AvailableTickets>
-            Available Tickets: {unusedTickets.length}
+            Available Tickets: {remainingTickets}
           </AvailableTickets>
         </BottomBar>
       ) : (

@@ -229,20 +229,8 @@ export default function Checkout() {
     fetchRaffleAndArtistInfo();
   }, []);
 
-  const handleQuantityChange = (value: number) => {
-    setQuantity(value);
-  };
-
-  const incrementQuantity = () => {
-    if (quantity < 10) {
-      setQuantity(quantity + 1);
-    }
-  };
-
-  const decrementQuantity = () => {
-    if (quantity > 1) {
-      setQuantity(quantity - 1);
-    }
+  const handleQuantityChange = (newQuantity: number) => {
+    setQuantity(newQuantity);
   };
 
   const handleCheckout = async () => {
@@ -339,8 +327,6 @@ export default function Checkout() {
             quantity={quantity}
             min={1}
             max={100}
-            onIncrement={incrementQuantity}
-            onDecrement={decrementQuantity}
             onChange={handleQuantityChange}
           />
         </TicketSelector>

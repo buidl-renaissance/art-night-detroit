@@ -9,6 +9,7 @@ interface Artist {
   name: string;
   bio: string;
   image_url: string;
+  instagram_handle?: string;
 }
 
 const AddArtistContainer = styled.div`
@@ -259,7 +260,8 @@ export default function AddArtist() {
   const [formData, setFormData] = useState({
     name: '',
     bio: '',
-    image_url: ''
+    image_url: '',
+    instagram_handle: ''
   });
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
@@ -527,6 +529,18 @@ export default function AddArtist() {
                 value={formData.bio}
                 onChange={handleInputChange}
                 required
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <Label htmlFor="instagram_handle">Instagram Handle</Label>
+              <Input
+                type="text"
+                id="instagram_handle"
+                name="instagram_handle"
+                value={formData.instagram_handle}
+                onChange={handleInputChange}
+                placeholder="@username"
               />
             </FormGroup>
 

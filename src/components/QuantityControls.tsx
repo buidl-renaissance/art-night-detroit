@@ -71,8 +71,6 @@ interface QuantityControlsProps {
   quantity: number;
   min?: number;
   max?: number;
-  onIncrement: () => void;
-  onDecrement: () => void;
   onChange: (value: number) => void;
 }
 
@@ -80,10 +78,20 @@ const QuantityControls: React.FC<QuantityControlsProps> = ({
   quantity,
   min = 1,
   max = 10,
-  onIncrement,
-  onDecrement,
   onChange,
 }) => {
+  const handleIncrement = () => {
+    if (quantity < max) {
+      onChange(quantity + 1);
+    }
+  };
+
+  const handleDecrement = () => {
+    if (quantity > min) {
+      onChange(quantity - 1);
+    }
+  };
+
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
     if (!isNaN(value) && value >= min && value <= max) {
@@ -94,7 +102,7 @@ const QuantityControls: React.FC<QuantityControlsProps> = ({
   return (
     <ControlsContainer>
       <QuantityButton 
-        onClick={onDecrement}
+        onClick={handleDecrement}
         disabled={quantity <= min}
       >
         -
@@ -107,7 +115,7 @@ const QuantityControls: React.FC<QuantityControlsProps> = ({
         onChange={handleQuantityChange}
       />
       <QuantityButton 
-        onClick={onIncrement}
+        onClick={handleIncrement}
         disabled={quantity >= max}
       >
         +
