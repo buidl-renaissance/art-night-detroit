@@ -174,6 +174,10 @@ const SubmitButton = styled.button`
   }
 `;
 
+const PurchaseButton = styled(SubmitButton)`
+  background: ${({ theme }) => theme.colors.primary};
+`;
+
 const ButtonContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -406,7 +410,7 @@ export default function RafflePage() {
           </ArtistsGrid>
         </TicketSection>
       </RaffleContainer>
-      {unusedTickets.length > 0 && (
+      {unusedTickets.length > 0 ? (
         <BottomBar>
           <ButtonContainer>
             <SubmitButton
@@ -420,6 +424,14 @@ export default function RafflePage() {
           <AvailableTickets>
             Available Tickets: {unusedTickets.length}
           </AvailableTickets>
+        </BottomBar>
+      ) : (
+        <BottomBar>
+          <ButtonContainer>
+            <PurchaseButton onClick={() => router.push(`/raffles/${id}/purchase`)}>
+              Purchase Tickets
+            </PurchaseButton>
+          </ButtonContainer>
         </BottomBar>
       )}
     </PageContainer>

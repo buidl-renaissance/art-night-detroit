@@ -79,22 +79,6 @@ export default async function handler(
       return res.status(500).json({ error: 'Error updating tickets' });
     }
 
-    // Create ticket votes
-    const ticketVotes = ticketIds.map((ticketId) => ({
-      ticket_id: ticketId,
-      raffle_id: req.query.id,
-      artist_id: artistId,
-      created_at: new Date().toISOString(),
-    }));
-
-    const { error: voteError } = await supabase
-      .from('ticket_votes')
-      .insert(ticketVotes);
-
-    if (voteError) {
-      return res.status(500).json({ error: 'Error creating ticket votes' });
-    }
-
     return res.status(200).json({ success: true });
   } catch (error) {
     console.error('Error submitting tickets:', error);
