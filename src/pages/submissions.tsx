@@ -543,7 +543,7 @@ const HeroTitle = styled.h1`
 
 const HeroSubtitle = styled.p`
   font-size: 1.2rem;
-  color: ${props => props.theme.colors.textLight};
+  color: ${props => props.theme.colors.text.light};
   max-width: 600px;
   margin: 0 auto;
 `;

@@ -7,6 +7,8 @@ const theme = {
   colors: {
     primary: "#6c63ff",
     primaryHover: "#5a52d5",
+    error: "#dc2626",
+    errorHover: "#b91c1c",
     text: {
       primary: "#ffffff",
       light: "#a0a0a0",
