@@ -1,15 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { createClient } from '@supabase/supabase-js';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-05-28.basil',
 });
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 export default async function handler(
   req: NextApiRequest,
@@ -20,35 +16,51 @@ export default async function handler(
   }
 
   try {
-    const { raffleId, quantity, price } = req.body;
+    // Get the current session
+    const supabase = createServerComponentClient({ cookies });
+    const { data: { session } } = await supabase.auth.getSession();
 
-    // Get the current user from the request
-    const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      return res.status(401).json({ error: 'No authorization header' });
+    if (!session) {
+      return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
-    if (authError || !user) {
-      return res.status(401).json({ error: 'Unauthorized' });
+    const { quantity, price, raffleId, artistId } = req.body;
+
+    if (!quantity || !price) {
+      return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Get raffle details
-    const { data: raffle, error: raffleError } = await supabase
-      .from('raffles')
-      .select('*')
-      .eq('id', raffleId)
-      .single();
+    // If raffleId is provided, verify the raffle exists and is active
+    if (raffleId) {
+      const { data: raffle, error: raffleError } = await supabase
+        .from('raffles')
+        .select('id, name, status')
+        .eq('id', raffleId)
+        .single();
 
-    if (raffleError || !raffle) {
-      return res.status(404).json({ error: 'Raffle not found' });
+      if (raffleError || !raffle) {
+        return res.status(404).json({ error: 'Raffle not found' });
+      }
+
+      if (raffle.status !== 'active') {
+        return res.status(400).json({ error: 'Raffle is not active' });
+      }
     }
 
-    if (raffle.status !== 'active') {
-      return res.status(400).json({ error: 'Raffle is not active' });
+    // If artistId is provided, verify the artist exists
+    if (artistId) {
+      const { data: artist, error: artistError } = await supabase
+        .from('artists')
+        .select('id, name')
+        .eq('id', artistId)
+        .single();
+
+      if (artistError || !artist) {
+        return res.status(404).json({ error: 'Artist not found' });
+      }
     }
 
-    // Create Stripe checkout session
+    // Create a checkout session
     const checkoutSession = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -56,27 +68,32 @@ export default async function handler(
           price_data: {
             currency: 'usd',
             product_data: {
-              name: `${raffle.name} - Raffle Ticket${quantity > 1 ? 's' : ''}`,
-              description: `Purchase ${quantity} ticket${quantity > 1 ? 's' : ''} for ${raffle.name}`,
+              name: raffleId ? 'Raffle Ticket' : 
+                    artistId ? 'Artist Support Ticket' : 
+                    'Art Night Detroit Ticket',
+              description: raffleId ? 'Ticket for specific raffle' :
+                          artistId ? 'Ticket to support specific artist' :
+                          'General admission ticket for voting in artist raffles',
             },
-            unit_amount: Math.round(price * 100), // Convert to cents
+            unit_amount: price * 100, // Convert to cents
           },
           quantity,
         },
       ],
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/raffles/${raffleId}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/raffles/${raffleId}/checkout`,
+      success_url: `${req.headers.origin}/tickets/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.origin}/tickets/checkout${raffleId ? `?raffle_id=${raffleId}` : ''}${artistId ? `?artist_id=${artistId}` : ''}`,
       metadata: {
-        raffleId,
-        userId: user.id,
+        userId: session.user.id,
         quantity,
+        raffleId: raffleId || '',
+        artistId: artistId || '',
       },
     });
 
-    res.status(200).json({ sessionId: checkoutSession.id });
+    return res.status(200).json({ sessionId: checkoutSession.id });
   } catch (error) {
     console.error('Error creating checkout session:', error);
-    res.status(500).json({ error: 'Error creating checkout session' });
+    return res.status(500).json({ error: 'Error creating checkout session' });
   }
 } 
