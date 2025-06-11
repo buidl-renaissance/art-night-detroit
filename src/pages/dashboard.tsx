@@ -4,6 +4,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import styled from 'styled-components';
 import PageContainer from '@/components/PageContainer';
 import RaffleCountdown from '@/components/RaffleCountdown';
+import FullScreenLoader from '@/components/FullScreenLoader';
 
 interface RaffleTicket {
   id: string;
@@ -66,6 +67,23 @@ const TicketCount = styled.div`
   &::before {
     content: "🎟️";
     font-size: 1.6rem;
+  }
+`;
+
+const BuyTicketsButton = styled.button`
+  background: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.background.primary};
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 16px;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.9;
   }
 `;
 
@@ -241,14 +259,6 @@ const EmptyStateSubtext = styled.p`
   font-size: 1.1rem;
 `;
 
-// Loading State
-const LoadingMessage = styled.div`
-  text-align: center;
-  color: ${({ theme }) => theme.colors.text.light};
-  font-size: 1.2rem;
-  padding: 40px;
-`;
-
 export default function Dashboard() {
   const [, setTickets] = useState<RaffleTicket[]>([]);
   const [unusedTickets, setUnusedTickets] = useState<UnusedTicket[]>([]);
@@ -352,11 +362,7 @@ export default function Dashboard() {
   }, [router, supabase]);
 
   if (loading) {
-    return (
-      <PageContainer theme="dark" width="medium">
-        <LoadingMessage>Loading your dashboard...</LoadingMessage>
-      </PageContainer>
-    );
+    return <FullScreenLoader label="Loading your dashboard..." />;
   }
 
   return (
@@ -390,6 +396,9 @@ export default function Dashboard() {
       <DashboardHeader>
         <Title>Your Raffle Tickets</Title>
         <TicketCount>{unusedTickets.length} Tickets Available</TicketCount>
+        <BuyTicketsButton onClick={() => router.push('/tickets/buy')}>
+          Buy Raffle Tickets
+        </BuyTicketsButton>
       </DashboardHeader>
 
       <SectionHeader>

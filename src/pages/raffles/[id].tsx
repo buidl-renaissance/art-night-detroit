@@ -4,6 +4,8 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import styled from 'styled-components';
 import PageContainer from '@/components/PageContainer';
 import RaffleCountdown from '@/components/RaffleCountdown';
+import FullScreenLoader from '@/components/FullScreenLoader';
+import QuantityControls from '@/components/QuantityControls';
 
 interface Raffle {
   id: string;
@@ -22,16 +24,8 @@ interface Artist {
   bio: string;
   image_url: string;
   raffle_artist_id: string;
-}
-
-interface ArtistData {
-  id: string;
-  artists: {
-    id: string;
-    name: string;
-    bio: string;
-    image_url: string;
-  };
+  total_tickets?: number;
+  user_tickets?: number;
 }
 
 interface UnusedTicket {
@@ -75,8 +69,10 @@ const ArtistCard = styled.div`
   background: ${({ theme }) => theme.colors.background.secondary};
   border-radius: 12px;
   overflow: hidden;
-  cursor: pointer;
   transition: transform 0.2s;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 2rem;
 
   &:hover {
     transform: translateY(-4px);
@@ -91,85 +87,69 @@ const ArtistImage = styled.img`
 
 const ArtistInfo = styled.div`
   padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  flex: 1;
+`;
+
+const ArtistHeader = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 `;
 
 const ArtistName = styled.h3`
   font-size: 1.3rem;
   color: ${({ theme }) => theme.colors.text.primary};
-  margin-bottom: 0.5rem;
+  margin: 0;
 `;
 
 const ArtistBio = styled.p`
   color: ${({ theme }) => theme.colors.text.light};
   font-size: 0.9rem;
   line-height: 1.5;
-  margin-bottom: 1rem;
+  margin: 0;
 `;
 
-const TicketInputContainer = styled.div`
+const TotalTickets = styled.div`
+  color: ${({ theme }) => theme.colors.text.light};
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+`;
+
+const TicketInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: ${({ theme }) => theme.colors.background.primary};
+  border-radius: 8px;
+  margin-top: auto;
+`;
+
+const TicketCount = styled.div`
+  color: ${({ theme }) => theme.colors.primary};
+  font-size: 1.1rem;
+  font-weight: 600;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-top: 1rem;
-  width: 100%;
+
+  &::before {
+    content: "🎟️";
+  }
 `;
 
-const TicketInput = styled.input`
-  flex: 1;
-  padding: 0.5rem;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 4px;
-  background: ${({ theme }) => theme.colors.background.primary};
+const TicketValue = styled.span`
   color: ${({ theme }) => theme.colors.text.primary};
-  font-size: 1rem;
-  text-align: center;
-
-  /* Hide default number input arrows */
-  &::-webkit-inner-spin-button,
-  &::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
-  -moz-appearance: textfield;
-`;
-
-const ArrowButton = styled.button`
-  background: ${({ theme }) => theme.colors.background.primary};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  color: ${({ theme }) => theme.colors.text.primary};
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  border-radius: 4px;
-  font-size: 1.5rem;
-  font-weight: bold;
-  padding: 0;
-  transition: all 0.2s;
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.background.secondary};
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+  font-weight: 600;
 `;
 
 const TicketSection = styled.div`
   margin-top: 3rem;
   padding-top: 2rem;
   border-top: 1px solid ${({ theme }) => theme.colors.border};
-`;
-
-const TicketForm = styled.form`
-  background: ${({ theme }) => theme.colors.background.secondary};
-  /* padding: 1rem; */
-  border-radius: 12px;
-  margin-top: 1.5rem;
 `;
 
 const SubmitButton = styled.button`
@@ -222,9 +202,28 @@ const BottomBar = styled.div`
 `;
 
 const AvailableTickets = styled.div`
-  font-size: 1.2rem;
+  font-size: 0.9rem;
   color: ${({ theme }) => theme.colors.text.primary};
   font-weight: bold;
+`;
+
+const SectionHeader = styled.div`
+  margin-bottom: 2rem;
+  text-align: center;
+`;
+
+const SectionTitle = styled.h2`
+  font-size: 2rem;
+  color: ${({ theme }) => theme.colors.primary};
+  margin-bottom: 1rem;
+  line-height: 1.2;
+`;
+
+const SectionSubtitle = styled.p`
+  font-size: 1.2rem;
+  color: ${({ theme }) => theme.colors.text.light};
+  margin-bottom: 2rem;
+  line-height: 1.6;
 `;
 
 export default function RafflePage() {
@@ -234,7 +233,6 @@ export default function RafflePage() {
   const [ticketCounts, setTicketCounts] = useState<{ [key: string]: number }>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
   const { id } = router.query;
   const supabase = createClientComponentClient();
@@ -244,103 +242,55 @@ export default function RafflePage() {
       if (!id) return;
 
       try {
-        // Get the current session
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          router.push('/login');
-          return;
+        const token = session?.access_token;
+        const response = await fetch(`/api/raffles/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (!response.ok) {
+          if (response.status === 401) {
+            router.push('/login');
+            return;
+          }
+          throw new Error('Failed to fetch raffle data');
         }
 
-        // Fetch raffle details
-        const { data: raffleData, error: raffleError } = await supabase
-          .from('raffles')
-          .select('*')
-          .eq('id', id)
-          .single();
-
-        if (raffleError) throw raffleError;
-
-        // Get ticket count
-        const { count } = await supabase
-          .from('tickets')
-          .select('*', { count: 'exact', head: true })
-          .eq('raffle_id', id);
-
-        setRaffle({
-          ...raffleData,
-          tickets_sold: count || 0
-        });
-
-        // Fetch artists in the raffle
-        const { data: artistsData, error: artistsError } = await supabase
-          .from('raffle_artists')
-          .select(`
-            id,
-            artists (
-              id,
-              name,
-              bio,
-              image_url
-            )
-          `)
-          .eq('raffle_id', id);
-
-        if (artistsError) throw artistsError;
-
-        // Type assertion to handle the nested artists data
-        const formattedArtists = (artistsData as unknown as ArtistData[]).map(ra => ({
-          id: ra.artists.id,
-          name: ra.artists.name,
-          bio: ra.artists.bio,
-          image_url: ra.artists.image_url,
-          raffle_artist_id: ra.id
-        }));
-
-        setArtists(formattedArtists);
-
-        // Fetch unused tickets
-        const { data: ticketsData, error: ticketsError } = await supabase
-          .from('tickets')
-          .select('id, ticket_number, created_at')
-          .eq('user_id', session.user.id)
-          .is('raffle_id', null)
-          .order('created_at', { ascending: false });
-
-        if (ticketsError) throw ticketsError;
-        setUnusedTickets(ticketsData || []);
-
+        const data = await response.json();
+        setRaffle(data.raffle);
+        setArtists(data.artists);
+        setUnusedTickets(data.unusedTickets);
+        setLoading(false);
       } catch (err) {
         console.error('Error fetching raffle data:', err);
-        setError('Failed to load raffle details');
-      } finally {
+        setError(err instanceof Error ? err.message : 'Failed to load raffle data');
         setLoading(false);
       }
     };
 
-    if (router.isReady) {
-      fetchRaffleData();
-    }
-  }, [id, router.isReady]);
+    fetchRaffleData();
+  }, [id, router]);
 
   const handleTicketCountChange = (artistId: string, count: number) => {
     setTicketCounts(prev => ({
       ...prev,
-      [artistId]: Math.max(0, Math.min(count, unusedTickets.length))
+      [artistId]: count
     }));
   };
 
   const handleIncrement = (artistId: string) => {
-    const currentCount = ticketCounts[artistId] || 0;
-    if (currentCount < unusedTickets.length) {
-      handleTicketCountChange(artistId, currentCount + 1);
-    }
+    setTicketCounts(prev => ({
+      ...prev,
+      [artistId]: (prev[artistId] || 0) + 1
+    }));
   };
 
   const handleDecrement = (artistId: string) => {
-    const currentCount = ticketCounts[artistId] || 0;
-    if (currentCount > 0) {
-      handleTicketCountChange(artistId, currentCount - 1);
-    }
+    setTicketCounts(prev => ({
+      ...prev,
+      [artistId]: Math.max(0, (prev[artistId] || 0) - 1)
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -350,7 +300,6 @@ export default function RafflePage() {
     const totalTicketsRequested = Object.values(ticketCounts).reduce((sum, count) => sum + count, 0);
     if (totalTicketsRequested === 0) return;
 
-    setSubmitting(true);
     setError(null);
 
     try {
@@ -389,27 +338,17 @@ export default function RafflePage() {
     } catch (err) {
       console.error('Error submitting tickets:', err);
       setError(err instanceof Error ? err.message : 'Failed to submit tickets. Please try again.');
-    } finally {
-      setSubmitting(false);
     }
   };
 
   if (loading) {
-    return (
-      <PageContainer theme="dark">
-        <RaffleContainer>
-          <p>Loading raffle details...</p>
-        </RaffleContainer>
-      </PageContainer>
-    );
+    return <FullScreenLoader label="Loading raffle details..." />;
   }
 
-  if (error || !raffle) {
+  if (!raffle) {
     return (
-      <PageContainer theme="dark">
-        <RaffleContainer>
-          <ErrorMessage>{error || 'Raffle not found'}</ErrorMessage>
-        </RaffleContainer>
+      <PageContainer theme="dark" width="medium">
+        <ErrorMessage>Raffle not found</ErrorMessage>
       </PageContainer>
     );
   }
@@ -424,59 +363,60 @@ export default function RafflePage() {
 
         <RaffleCountdown endDate={raffle.end_date} />
 
-        {unusedTickets.length > 0 && (
-          <TicketSection>
-            <h2>Submit Tickets</h2>
-            <TicketForm onSubmit={handleSubmit}>
-              <ArtistsGrid>
-                {artists.map((artist) => (
-                  <ArtistCard key={artist.id}>
-                    <ArtistImage src={artist.image_url} alt={artist.name} />
-                    <ArtistInfo>
-                      <ArtistName>{artist.name}</ArtistName>
-                      <ArtistBio>{artist.bio}</ArtistBio>
-                      <TicketInputContainer>
-                        <ArrowButton
-                          type="button"
-                          onClick={() => handleDecrement(artist.id)}
-                          disabled={(ticketCounts[artist.id] || 0) === 0}
-                        >
-                          -
-                        </ArrowButton>
-                        <TicketInput
-                          type="number"
-                          min="0"
-                          max={unusedTickets.length}
-                          value={ticketCounts[artist.id] || 0}
-                          onChange={(e) => handleTicketCountChange(artist.id, parseInt(e.target.value) || 0)}
-                        />
-                        <ArrowButton
-                          type="button"
-                          onClick={() => handleIncrement(artist.id)}
-                          disabled={(ticketCounts[artist.id] || 0) >= unusedTickets.length}
-                        >
-                          +
-                        </ArrowButton>
-                      </TicketInputContainer>
-                    </ArtistInfo>
-                  </ArtistCard>
-                ))}
-              </ArtistsGrid>
-              <ButtonContainer>
-                <SubmitButton
-                  type="submit"
-                  disabled={Object.values(ticketCounts).reduce((sum, count) => sum + count, 0) === 0 || submitting}
-                  >
-                  {submitting ? 'Submitting...' : 'Submit Tickets'}
-                </SubmitButton>
-                {error && <ErrorMessage>{error}</ErrorMessage>}
-              </ButtonContainer>
-            </TicketForm>
-          </TicketSection>
-        )}
+        <TicketSection>
+          <SectionHeader>
+            <SectionTitle>Select Artists</SectionTitle>
+            <SectionSubtitle>
+              {unusedTickets.length > 0 
+                ? `You have ${unusedTickets.length} ticket${unusedTickets.length === 1 ? '' : 's'} to assign`
+                : 'You have no tickets available to assign'}
+            </SectionSubtitle>
+          </SectionHeader>
+
+          <ArtistsGrid>
+            {artists.map((artist) => (
+              <ArtistCard key={artist.id}>
+                <ArtistImage src={artist.image_url} alt={artist.name} />
+                <ArtistInfo>
+                  <ArtistHeader>
+                    <ArtistName>{artist.name}</ArtistName>
+                    <ArtistBio>{artist.bio}</ArtistBio>
+                    <TotalTickets>
+                      {artist.total_tickets || 0} total ticket{artist.total_tickets === 1 ? '' : 's'} entered
+                    </TotalTickets>
+                  </ArtistHeader>
+                  <TicketInfo>
+                    <TicketCount>
+                      Your Ticket Entries: <TicketValue>{artist.user_tickets || 0}</TicketValue>
+                    </TicketCount>
+                  </TicketInfo>
+                  {unusedTickets.length > 0 && (
+                    <QuantityControls
+                      quantity={ticketCounts[artist.id] || 0}
+                      min={0}
+                      max={unusedTickets.length}
+                      onIncrement={() => handleIncrement(artist.id)}
+                      onDecrement={() => handleDecrement(artist.id)}
+                      onChange={(value) => handleTicketCountChange(artist.id, value)}
+                    />
+                  )}
+                </ArtistInfo>
+              </ArtistCard>
+            ))}
+          </ArtistsGrid>
+        </TicketSection>
       </RaffleContainer>
       {unusedTickets.length > 0 && (
         <BottomBar>
+          <ButtonContainer>
+            <SubmitButton
+              onClick={handleSubmit}
+              disabled={Object.values(ticketCounts).every(count => count === 0)}
+            >
+              Submit {Object.values(ticketCounts).reduce((sum, count) => sum + count, 0)} Ticket{Object.values(ticketCounts).reduce((sum, count) => sum + count, 0) === 1 ? '' : 's'}
+            </SubmitButton>
+            {error && <ErrorMessage>{error}</ErrorMessage>}
+          </ButtonContainer>
           <AvailableTickets>
             Available Tickets: {unusedTickets.length}
           </AvailableTickets>
