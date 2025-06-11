@@ -164,11 +164,25 @@ const PageContent = styled.div`
 
 const HeroSection = styled.section`
   text-align: center;
-  margin-bottom: 2rem;
   padding: 3rem 2rem;
-  padding-bottom: 1rem;
   display: grid;
   grid-template-columns: 1fr;
+  background-image: url('/images/mbad-background.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 1;
+  }
 
   @media (min-width: 768px) {
     grid-template-columns: 1fr 1fr;
@@ -180,6 +194,8 @@ const HeroSection = styled.section`
 const HeroContent = styled.div`
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 2;
 `;
 
 const MainTitle = styled.h1`
@@ -202,11 +218,13 @@ const SubTitle = styled.h2`
 
 const EventDetails = styled.div`
   margin-top: 1.5rem;
-  background: rgba(0, 122, 255, 0.35);
+  background: rgba(0, 122, 255, 0.25);
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: relative;
+  z-index: 2;
 
   @media (min-width: 768px) {
     margin-top: 0;
@@ -330,6 +348,24 @@ const Section = styled.section`
   
   &:nth-child(odd) {
     background: #003b7d;
+      background-image: url('/images/mbad-background.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 1;
+  }
+
+
   }
 
   @media (min-width: 768px) {
