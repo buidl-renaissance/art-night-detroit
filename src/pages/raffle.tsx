@@ -394,7 +394,7 @@ const Section = styled.section`
     margin: 0 auto;
     width: 100%;
 
-    &:nth-child(odd) {
+    &:nth-child(even) {
       background: none;
       &::before {
         display: none;
