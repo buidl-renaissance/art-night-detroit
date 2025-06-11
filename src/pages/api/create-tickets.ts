@@ -1,11 +1,15 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-05-28.basil',
 });
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export default async function handler(
   req: NextApiRequest,
@@ -16,11 +20,18 @@ export default async function handler(
   }
 
   try {
-    // Get the current session
-    const supabase = createServerComponentClient({ cookies });
-    const { data: { session } } = await supabase.auth.getSession();
+    // Get the authorization token from headers
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Missing or invalid authorization token' });
+    }
 
-    if (!session) {
+    const token = authHeader.split(' ')[1];
+    
+    // Get the user from the token
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+
+    if (userError || !user) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
@@ -42,7 +53,7 @@ export default async function handler(
     }
 
     // Verify the session belongs to the current user
-    if (checkoutSession.metadata?.userId !== session.user.id) {
+    if (checkoutSession.metadata?.userId !== user.id) {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
@@ -54,16 +65,32 @@ export default async function handler(
       return res.status(400).json({ error: 'Invalid quantity' });
     }
 
-    // Create tickets
-    const tickets = Array.from({ length: quantity }, () => ({
-      user_id: session.user.id,
+    // Get the last ticket number
+    const { data: lastTicket, error: lastTicketError } = await supabase
+      .from('tickets')
+      .select('ticket_number')
+      .order('ticket_number', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (lastTicketError && lastTicketError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+      throw lastTicketError;
+    }
+
+    // Start from 1 if no tickets exist, otherwise increment from last ticket number
+    const startTicketNumber = lastTicket ? lastTicket.ticket_number + 1 : 1;
+
+    // Create tickets with sequential ticket numbers
+    const tickets = Array.from({ length: quantity }, (_, index) => ({
+      user_id: user.id,
+      ticket_number: startTicketNumber + index,
       created_at: new Date().toISOString(),
     }));
 
-    const { error: ticketError } = await supabase
+    const { error: ticketError, data: createdTickets } = await supabase
       .from('tickets')
       .insert(tickets)
-      .select();
+      .select('ticket_number');
 
     if (ticketError) {
       throw ticketError;
@@ -87,7 +114,7 @@ export default async function handler(
       const ticketVotes = Array.from({ length: quantity }, () => ({
         raffle_id: raffleId,
         artist_id: artistId,
-        user_id: session.user.id,
+        user_id: user.id,
         created_at: new Date().toISOString(),
       }));
 
@@ -100,7 +127,10 @@ export default async function handler(
       }
     }
 
-    return res.status(200).json({ ticketCount: quantity });
+    return res.status(200).json({ 
+      ticketCount: quantity,
+      tickets: createdTickets 
+    });
   } catch (error) {
     console.error('Error creating tickets:', error);
     return res.status(500).json({ error: 'Error creating tickets' });

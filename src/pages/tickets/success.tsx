@@ -31,6 +31,29 @@ const SuccessContainer = styled.div`
   }
 `;
 
+const TicketList = styled.div`
+  margin: 2rem 0;
+  padding: 1rem;
+  background: ${({ theme }) => theme.colors.background.secondary};
+  border-radius: 8px;
+  text-align: left;
+
+  h3 {
+    margin-bottom: 1rem;
+    color: ${({ theme }) => theme.colors.primary};
+  }
+`;
+
+const TicketNumber = styled.div`
+  padding: 0.5rem;
+  margin: 0.5rem 0;
+  background: ${({ theme }) => theme.colors.background.primary};
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 1.1rem;
+  color: ${({ theme }) => theme.colors.text.primary};
+`;
+
 const Button = styled.button`
   padding: 1rem 2rem;
   border: none;
@@ -50,10 +73,15 @@ const Button = styled.button`
   }
 `;
 
+interface Ticket {
+  ticket_number: number;
+}
+
 export default function Success() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [ticketCount, setTicketCount] = useState<number | null>(null);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const router = useRouter();
   const supabase = createClientComponentClient();
 
@@ -88,8 +116,9 @@ export default function Success() {
           throw new Error(errorData.error || 'Failed to create tickets');
         }
 
-        const { ticketCount } = await response.json();
+        const { ticketCount, tickets } = await response.json();
         setTicketCount(ticketCount);
+        setTickets(tickets);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
@@ -136,6 +165,16 @@ export default function Success() {
           <div className="ticket-count">
             {ticketCount} ticket{ticketCount > 1 ? 's' : ''} added to your account
           </div>
+        )}
+        {tickets.length > 0 && (
+          <TicketList>
+            <h3>Your Ticket Numbers:</h3>
+            {tickets.map((ticket) => (
+              <TicketNumber key={ticket.ticket_number}>
+                Ticket #{ticket.ticket_number}
+              </TicketNumber>
+            ))}
+          </TicketList>
         )}
         <Button onClick={() => router.push('/dashboard')}>
           View My Tickets

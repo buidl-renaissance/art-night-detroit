@@ -1,11 +1,15 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-05-28.basil',
 });
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export default async function handler(
   req: NextApiRequest,
@@ -16,11 +20,18 @@ export default async function handler(
   }
 
   try {
-    // Get the current session
-    const supabase = createServerComponentClient({ cookies });
-    const { data: { session } } = await supabase.auth.getSession();
+    // Get the authorization token from headers
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Missing or invalid authorization token' });
+    }
 
-    if (!session) {
+    const token = authHeader.split(' ')[1];
+    
+    // Get the user from the token
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+
+    if (userError || !user) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
@@ -30,11 +41,14 @@ export default async function handler(
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    let raffleDetails = null;
+    let artistDetails = null;
+
     // If raffleId is provided, verify the raffle exists and is active
     if (raffleId) {
       const { data: raffle, error: raffleError } = await supabase
         .from('raffles')
-        .select('id, name, status')
+        .select('id, name, description, status')
         .eq('id', raffleId)
         .single();
 
@@ -45,19 +59,23 @@ export default async function handler(
       if (raffle.status !== 'active') {
         return res.status(400).json({ error: 'Raffle is not active' });
       }
+
+      raffleDetails = raffle;
     }
 
-    // If artistId is provided, verify the artist exists
+    // If artistId is provided, verify the artist exists and get details
     if (artistId) {
       const { data: artist, error: artistError } = await supabase
         .from('artists')
-        .select('id, name')
+        .select('id, name, bio')
         .eq('id', artistId)
         .single();
 
       if (artistError || !artist) {
         return res.status(404).json({ error: 'Artist not found' });
       }
+
+      artistDetails = artist;
     }
 
     // Create a checkout session
@@ -68,12 +86,14 @@ export default async function handler(
           price_data: {
             currency: 'usd',
             product_data: {
-              name: raffleId ? 'Raffle Ticket' : 
-                    artistId ? 'Artist Support Ticket' : 
+              name: raffleDetails ? `${raffleDetails.name} Raffle Ticket` : 
+                    artistDetails ? `Support ${artistDetails.name}` : 
                     'Art Night Detroit Ticket',
-              description: raffleId ? 'Ticket for specific raffle' :
-                          artistId ? 'Ticket to support specific artist' :
-                          'General admission ticket for voting in artist raffles',
+              description: raffleDetails ? 
+                          `Ticket for ${raffleDetails.name} raffle. ${raffleDetails.description}` :
+                          artistDetails ? 
+                          `Support ${artistDetails.name} in their artistic journey. ${artistDetails.bio}` :
+                          'Art raffle ticket for voting in artist raffles',
             },
             unit_amount: price * 100, // Convert to cents
           },
@@ -84,10 +104,12 @@ export default async function handler(
       success_url: `${req.headers.origin}/tickets/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.origin}/tickets/checkout${raffleId ? `?raffle_id=${raffleId}` : ''}${artistId ? `?artist_id=${artistId}` : ''}`,
       metadata: {
-        userId: session.user.id,
+        userId: user.id,
         quantity,
         raffleId: raffleId || '',
         artistId: artistId || '',
+        raffleName: raffleDetails?.name || '',
+        artistName: artistDetails?.name || '',
       },
     });
 
