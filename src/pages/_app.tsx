@@ -7,10 +7,15 @@ const theme = {
   colors: {
     primary: "#6c63ff",
     primaryHover: "#5a52d5",
-    text: "#333",
-    textLight: "#666",
-    border: "#ddd",
-    background: "#fff",
+    text: {
+      primary: "#ffffff",
+      light: "#a0a0a0",
+    },
+    border: "#2a2a2a",
+    background: {
+      primary: "#121212",
+      secondary: "#1e1e1e",
+    },
   },
   fonts: {
     primary: "'Inter', sans-serif",
@@ -33,8 +38,8 @@ const GlobalStyle = createGlobalStyle`
 
   body {
     font-family: ${props => props.theme.fonts.primary};
-    color: ${props => props.theme.colors.text};
-    background-color: #f5f5f5;
+    color: ${props => props.theme.colors.text.primary};
+    background-color: ${props => props.theme.colors.background.secondary};
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }

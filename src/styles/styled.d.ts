@@ -5,10 +5,15 @@ declare module 'styled-components' {
     colors: {
       primary: string;
       primaryHover: string;
-      text: string;
-      textLight: string;
+      text: {
+        primary: string;
+        light: string;
+      };
       border: string;
-      background: string;
+      background: {
+        primary: string;
+        secondary: string;
+      };
     };
     fonts: {
       primary: string;
