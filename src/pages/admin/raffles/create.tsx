@@ -10,6 +10,7 @@ interface RaffleFormData {
   start_date: string;
   end_date: string;
   max_tickets: number;
+  price_per_ticket: number;
 }
 
 export default function CreateRaffle() {
