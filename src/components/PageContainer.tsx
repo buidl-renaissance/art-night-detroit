@@ -1,5 +1,5 @@
 import styled from 'styled-components';
-import { ReactNode, CSSProperties } from 'react';
+import { ReactNode } from 'react';
 
 export type ContainerWidth = 'narrow' | 'medium' | 'wide' | 'full';
 export type ThemeMode = 'light' | 'dark';
@@ -9,18 +9,16 @@ interface PageContainerProps {
   width?: ContainerWidth;
   theme?: ThemeMode;
   className?: string;
-  containerStyle?: CSSProperties;
-  wrapperStyle?: CSSProperties;
 }
 
 const getMaxWidth = (width: ContainerWidth) => {
   switch (width) {
     case 'narrow':
-      return '600px';
+      return '800px';
     case 'medium':
-      return '900px';
-    case 'wide':
       return '1200px';
+    case 'wide':
+      return '1600px';
     case 'full':
       return '100%';
     default:
@@ -30,19 +28,22 @@ const getMaxWidth = (width: ContainerWidth) => {
 
 const Wrapper = styled.div<{ $themeMode: ThemeMode }>`
   width: 100%;
+  min-height: 100vh;
   background: ${({ $themeMode }) => $themeMode === 'dark' ? '#121212' : '#ffffff'};
   color: ${({ $themeMode }) => $themeMode === 'dark' ? '#ffffff' : '#121212'};
 `;
 
 const Container = styled.div<{ $width: ContainerWidth }>`
   margin: 0 auto;
-  padding: 40px 16px;
+  padding: 3rem 2rem;
   width: 100%;
   max-width: ${({ $width }) => getMaxWidth($width)};
+  display: flex;
+  flex-direction: column;
   
   /* Responsive padding */
   @media (min-width: 768px) {
-    padding: 40px 32px;
+    padding: 60px 32px;
   }
 `;
 
@@ -50,13 +51,11 @@ export const PageContainer = ({
   children, 
   width = 'medium', 
   theme = 'light',
-  className,
-  containerStyle,
-  wrapperStyle
+  className 
 }: PageContainerProps) => {
   return (
-    <Wrapper $themeMode={theme} style={wrapperStyle}>
-      <Container $width={width} className={className} style={containerStyle}>
+    <Wrapper $themeMode={theme}>
+      <Container $width={width} className={className}>
         {children}
       </Container>
     </Wrapper>
