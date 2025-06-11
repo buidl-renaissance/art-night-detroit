@@ -55,6 +55,7 @@ const RaffleTitle = styled.h1`
   font-size: 2.5rem;
   color: ${({ theme }) => theme.colors.primary};
   margin-bottom: 1rem;
+  line-height: 1.2;
 `;
 
 const RaffleDescription = styled.p`

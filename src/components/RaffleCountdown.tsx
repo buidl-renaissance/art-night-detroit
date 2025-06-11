@@ -30,8 +30,9 @@ const CountdownContainer = styled.div`
 
 const Label = styled.div`
   color: ${({ theme }) => theme.colors.text.light};
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   margin-bottom: 0.5rem;
+  text-transform: uppercase;
 `;
 
 const DateTimeDisplay = styled.div`
