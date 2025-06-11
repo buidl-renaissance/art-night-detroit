@@ -8,7 +8,7 @@ import { useRouter } from 'next/router';
 const RafflePage: NextPage = () => {
   const router = useRouter();
   return (
-    <Layout>
+    <Layout width="full">
       <Head>
         <title>Local Artist Raffle - MBAD African Bead Festival x ArtNightDetroit</title>
         <meta name="description" content="Support Detroit's talented artists at the MBAD African Bead Festival. Win exclusive artwork while supporting local artists. Tickets only $10!" />
@@ -52,104 +52,106 @@ const RafflePage: NextPage = () => {
           </EventDetails>
         </HeroSection>
 
-        <RaffleSection>
-          <RaffleContent>
+        <MainContent>
+          <RaffleSection>
+            <RaffleContent>
+              <SectionTitle>
+                <TitleEmoji>🎨</TitleEmoji>
+                <TitleText>About the Raffle</TitleText>
+              </SectionTitle>
+              <BodyText>Support local talent and get a chance to win exclusive, one-of-a-kind artwork donated by Detroit&apos;s most inspiring creatives. All proceeds go directly to the artists.</BodyText>
+            </RaffleContent>
+            <EventHighlights>
+              <DetailItem style={{ fontSize: '3.5rem' }}>🎟️</DetailItem>
+              <DetailItem>$10 per Raffle Ticket</DetailItem>
+              <DetailItem>Winners Announced at 8 PM</DetailItem>
+              <RaffleButton onClick={() => router.push('/tickets/checkout?raffle_id=3c102268-f3b3-4fe5-8762-c57fbb9ed701')}>Purchase Raffle Tickets</RaffleButton>
+            </EventHighlights>
+          </RaffleSection>
+
+          <Section>
             <SectionTitle>
-              <TitleEmoji>🎨</TitleEmoji>
-              <TitleText>About the Raffle</TitleText>
+              <TitleEmoji>✨</TitleEmoji>
+              <TitleText>Featured Artists</TitleText>
             </SectionTitle>
-            <BodyText>Support local talent and get a chance to win exclusive, one-of-a-kind artwork donated by Detroit&apos;s most inspiring creatives. All proceeds go directly to the artists.</BodyText>
-          </RaffleContent>
-          <EventHighlights>
-            <DetailItem style={{ fontSize: '3.5rem' }}>🎟️</DetailItem>
-            <DetailItem>$10 per Raffle Ticket</DetailItem>
-            <DetailItem>Winners Announced at 8 PM</DetailItem>
-            <RaffleButton onClick={() => router.push('/tickets/checkout?raffle_id=3c102268-f3b3-4fe5-8762-c57fbb9ed701')}>Purchase Raffle Tickets</RaffleButton>
-          </EventHighlights>
-        </RaffleSection>
+            <ArtistList>
+              <ArtistSection>
+                <ArtistImageWrapper>
+                  <Image 
+                    src="https://picsum.photos/seed/artist1/800/600"
+                    alt="Amari Johnson"
+                    width={800}
+                    height={600}
+                    style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                  />
+                </ArtistImageWrapper>
+                <ArtistInfo>
+                  <ArtistName>Amari Johnson</ArtistName>
+                  <ArtistBio>Known for vibrant mixed-media pieces celebrating African diaspora</ArtistBio>
+                  <ArtworkTitle>Donating: &ldquo;Spirit of Detroit&rdquo; - Mixed Media on Canvas</ArtworkTitle>
+                </ArtistInfo>
+              </ArtistSection>
 
-        <Section>
-          <SectionTitle>
-            <TitleEmoji>✨</TitleEmoji>
-            <TitleText>Featured Artists</TitleText>
-          </SectionTitle>
-          <ArtistList>
-            <ArtistSection>
-              <ArtistImageWrapper>
-                <Image 
-                  src="https://picsum.photos/seed/artist1/800/600"
-                  alt="Amari Johnson"
-                  width={800}
-                  height={600}
-                  style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-                />
-              </ArtistImageWrapper>
-              <ArtistInfo>
-                <ArtistName>Amari Johnson</ArtistName>
-                <ArtistBio>Known for vibrant mixed-media pieces celebrating African diaspora</ArtistBio>
-                <ArtworkTitle>Donating: &ldquo;Spirit of Detroit&rdquo; - Mixed Media on Canvas</ArtworkTitle>
-              </ArtistInfo>
-            </ArtistSection>
+              <ArtistSection>
+                <ArtistImageWrapper>
+                  <Image 
+                    src="https://picsum.photos/seed/artist2/800/600"
+                    alt="Maya Thompson"
+                    width={800}
+                    height={600}
+                    style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                  />
+                </ArtistImageWrapper>
+                <ArtistInfo>
+                  <ArtistName>Maya Thompson</ArtistName>
+                  <ArtistBio>Contemporary sculptor working with recycled materials</ArtistBio>
+                  <ArtworkTitle>Donating: &ldquo;Urban Revival&rdquo; - Metal Sculpture</ArtworkTitle>
+                </ArtistInfo>
+              </ArtistSection>
 
-            <ArtistSection>
-              <ArtistImageWrapper>
-                <Image 
-                  src="https://picsum.photos/seed/artist2/800/600"
-                  alt="Maya Thompson"
-                  width={800}
-                  height={600}
-                  style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-                />
-              </ArtistImageWrapper>
-              <ArtistInfo>
-                <ArtistName>Maya Thompson</ArtistName>
-                <ArtistBio>Contemporary sculptor working with recycled materials</ArtistBio>
-                <ArtworkTitle>Donating: &ldquo;Urban Revival&rdquo; - Metal Sculpture</ArtworkTitle>
-              </ArtistInfo>
-            </ArtistSection>
+              <ArtistSection>
+                <ArtistImageWrapper>
+                  <Image 
+                    src="https://picsum.photos/seed/artist3/800/600"
+                    alt="Marcus Williams"
+                    width={800}
+                    height={600}
+                    style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                  />
+                </ArtistImageWrapper>
+                <ArtistInfo>
+                  <ArtistName>Marcus Williams</ArtistName>
+                  <ArtistBio>Digital artist and muralist</ArtistBio>
+                  <ArtworkTitle>Donating: &ldquo;Digital Dreams&rdquo; - Limited Edition Print</ArtworkTitle>
+                </ArtistInfo>
+              </ArtistSection>
+            </ArtistList>
+          </Section>
 
-            <ArtistSection>
-              <ArtistImageWrapper>
-                <Image 
-                  src="https://picsum.photos/seed/artist3/800/600"
-                  alt="Marcus Williams"
-                  width={800}
-                  height={600}
-                  style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-                />
-              </ArtistImageWrapper>
-              <ArtistInfo>
-                <ArtistName>Marcus Williams</ArtistName>
-                <ArtistBio>Digital artist and muralist</ArtistBio>
-                <ArtworkTitle>Donating: &ldquo;Digital Dreams&rdquo; - Limited Edition Print</ArtworkTitle>
-              </ArtistInfo>
-            </ArtistSection>
-          </ArtistList>
-        </Section>
+          <Section>
+            <SectionTitle>
+              <TitleEmoji>🏆</TitleEmoji>
+              <TitleText>How to Participate</TitleText>
+            </SectionTitle>
+            <StepsList>
+              <StepItem>1. Purchase your raffle tickets online or at the event</StepItem>
+              <StepItem>2. View the artwork on display at the festival or check social media for updates</StepItem>
+              <StepItem>3. Winners will be announced at 8 PM</StepItem>
+              <StepItem>4. Winners can claim their artwork at the event or coordinate with Art Night Detroit to pick up their artwork</StepItem>
+            </StepsList>
+          </Section>
 
-        <Section>
-          <SectionTitle>
-            <TitleEmoji>🏆</TitleEmoji>
-            <TitleText>How to Participate</TitleText>
-          </SectionTitle>
-          <StepsList>
-            <StepItem>1. Purchase your raffle tickets online or at the event</StepItem>
-            <StepItem>2. View the artwork on display at the festival or check social media for updates</StepItem>
-            <StepItem>3. Winners will be announced at 8 PM</StepItem>
-            <StepItem>4. Winners can claim their artwork at the event or coordinate with Art Night Detroit to pick up their artwork</StepItem>
-          </StepsList>
-        </Section>
-
-        <ContactSection>
-          <SectionTitle>
-            <TitleEmoji>📩</TitleEmoji>
-            <TitleText>Questions About the Raffle?</TitleText>
-          </SectionTitle>
-          <ContactInfo>
-            <BodyText>Email: john@artnightdetroit.com</BodyText>
-            <BodyText>Phone: (313) 550-3518</BodyText>
-          </ContactInfo>
-        </ContactSection>
+          <ContactSection>
+            <SectionTitle>
+              <TitleEmoji>📩</TitleEmoji>
+              <TitleText>Questions About the Raffle?</TitleText>
+            </SectionTitle>
+            <ContactInfo>
+              <BodyText>Email: john@artnightdetroit.com</BodyText>
+              <BodyText>Phone: (313) 550-3518</BodyText>
+            </ContactInfo>
+          </ContactSection>
+        </MainContent>
       </PageContent>
     </Layout>
   );
@@ -159,7 +161,12 @@ const PageContent = styled.div`
   display: flex;
   flex-direction: column;
   flex: 1;
-  max-width: 900px;
+  max-width: 100%;
+  min-height: 100vh;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+  }
 `;
 
 const HeroSection = styled.section`
@@ -185,9 +192,22 @@ const HeroSection = styled.section`
   }
 
   @media (min-width: 768px) {
-    grid-template-columns: 1fr 1fr;
-    text-align: left;
-    align-items: center;
+    width: 500px;
+    min-height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    grid-template-columns: 1fr;
+    text-align: center;
+    padding: 2rem;
+  }
+`;
+
+const MainContent = styled.div`
+  @media (min-width: 768px) {
+    margin-left: 500px;
+    width: calc(100% - 500px);
+    padding: 2rem;
   }
 `;
 
@@ -261,8 +281,13 @@ const RaffleSection = styled.section`
   gap: 2rem;
 
   @media (min-width: 768px) {
+    background: none;
+    color: ${props => props.theme.colors.text.primary};
     grid-template-columns: 1fr 1fr;
     align-items: start;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
   }
 `;
 
@@ -336,10 +361,6 @@ const ArtistList = styled.div`
   display: grid;
   grid-template-columns: 1fr;
   gap: 2rem;
-
-  @media (min-width: 1024px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
 `;
 
 const Section = styled.section`
@@ -348,30 +369,37 @@ const Section = styled.section`
   
   &:nth-child(odd) {
     background: #003b7d;
-      background-image: url('/images/mbad-background.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  position: relative;
+    background-image: url('/images/mbad-background.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    position: relative;
 
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.3);
-    z-index: 1;
-  }
-
-
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.3);
+      z-index: 1;
+    }
   }
 
   @media (min-width: 768px) {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 2rem;
+    background: none;
+    padding: 4rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+
+    &:nth-child(odd) {
+      background: none;
+      &::before {
+        display: none;
+      }
+    }
   }
 `;
 
@@ -452,7 +480,8 @@ const ContactSection = styled(Section)`
   background: rgba(0, 122, 255, 0.15);
 
   @media (min-width: 768px) {
-    max-width: 768px;
+    background: none;
+    max-width: 1200px;
     margin: 0 auto;
     width: 100%;
   }
