@@ -178,7 +178,7 @@ interface RaffleInfo {
   id: string;
   name: string;
   description: string;
-  image_url: string;
+  image_url?: string;
 }
 
 interface ArtistInfo {
@@ -186,6 +186,24 @@ interface ArtistInfo {
   name: string;
   bio: string;
   image_url: string;
+  raffle_artist_id: string;
+}
+
+interface RaffleArtistResponse {
+  id: string;
+  artists: {
+    id: string;
+    name: string;
+    bio: string;
+    image_url: string;
+  };
+}
+
+interface SupabaseError {
+  message: string;
+  details?: string;
+  hint?: string;
+  code?: string;
 }
 
 export default function Checkout() {
@@ -200,12 +218,12 @@ export default function Checkout() {
     const fetchRaffleAndArtistInfo = async () => {
       const params = new URLSearchParams(window.location.search);
       const raffleId = params.get('raffle_id');
-      const artistId = params.get('artist_id');
+      const raffleArtistId = params.get('raffle_artist_id');
 
       if (raffleId) {
         const { data: raffle, error: raffleError } = await supabase
           .from('raffles')
-          .select('id, name, description, image_url')
+          .select('id, name, description')
           .eq('id', raffleId)
           .single();
 
@@ -214,15 +232,29 @@ export default function Checkout() {
         }
       }
 
-      if (artistId) {
-        const { data: artist, error: artistError } = await supabase
-          .from('artists')
-          .select('id, name, bio, image_url')
-          .eq('id', artistId)
-          .single();
+      if (raffleArtistId) {
+        const { data: raffleArtist, error: raffleArtistError } = await supabase
+          .from('raffle_artists')
+          .select(`
+            id,
+            artists (
+              id,
+              name,
+              bio,
+              image_url
+            )
+          `)
+          .eq('id', raffleArtistId)
+          .single() as { data: RaffleArtistResponse | null, error: SupabaseError | null };
 
-        if (!artistError && artist) {
-          setArtistInfo(artist);
+        if (!raffleArtistError && raffleArtist) {
+          setArtistInfo({
+            id: raffleArtist.artists.id,
+            name: raffleArtist.artists.name,
+            bio: raffleArtist.artists.bio,
+            image_url: raffleArtist.artists.image_url,
+            raffle_artist_id: raffleArtist.id
+          });
         }
       }
     };
@@ -271,7 +303,7 @@ export default function Checkout() {
           quantity,
           price: TICKET_PRICE,
           raffleId: raffleInfo?.id,
-          artistId: artistInfo?.id,
+          raffleArtistId: artistInfo?.raffle_artist_id,
         }),
       });
 
@@ -310,13 +342,13 @@ export default function Checkout() {
   return (
     <PageContainer theme="dark">
       <CheckoutContainer>
-        <h1>Purchase Tickets</h1>
+        <h1>Raffle Tickets</h1>
         
         <TicketInfo>
           <h2>
-            {raffleInfo ? `${raffleInfo.name} Tickets` : 
+            {raffleInfo ? `${raffleInfo.name} Art Raffle Tickets` : 
              artistInfo ? `Support ${artistInfo.name}` : 
-             'General Admission Tickets'}
+             'General Raffle Tickets'}
           </h2>
           {raffleInfo && (
             <p>{raffleInfo.description}</p>

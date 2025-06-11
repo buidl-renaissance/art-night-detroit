@@ -3,8 +3,10 @@ import styled from 'styled-components';
 import Head from 'next/head';
 import Image from 'next/image';
 import Layout from '../components/Layout';
+import { useRouter } from 'next/router';
 
 const RafflePage: NextPage = () => {
+  const router = useRouter();
   return (
     <Layout>
       <Head>
@@ -62,7 +64,7 @@ const RafflePage: NextPage = () => {
             <DetailItem style={{ fontSize: '3.5rem' }}>🎟️</DetailItem>
             <DetailItem>$10 per Raffle Ticket</DetailItem>
             <DetailItem>Winners Announced at 8 PM</DetailItem>
-            <RaffleButton>Purchase Raffle Tickets</RaffleButton>
+            <RaffleButton onClick={() => router.push('/tickets/checkout?raffle_id=3c102268-f3b3-4fe5-8762-c57fbb9ed701')}>Purchase Raffle Tickets</RaffleButton>
           </EventHighlights>
         </RaffleSection>
 
