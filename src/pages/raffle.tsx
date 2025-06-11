@@ -367,7 +367,7 @@ const Section = styled.section`
   padding: 3rem 2rem;
   background: #002B5C;
   
-  &:nth-child(odd) {
+  &:nth-child(even) {
     background: #003b7d;
     background-image: url('/images/mbad-background.png');
     background-size: cover;
