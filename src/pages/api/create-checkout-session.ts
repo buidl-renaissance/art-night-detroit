@@ -1,15 +1,10 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { createClient } from '@supabase/supabase-js';
+import { getAuthorizedClient } from '@/lib/getAuthorizedClient';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-05-28.basil',
 });
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 export default async function handler(
   req: NextApiRequest,
@@ -20,16 +15,7 @@ export default async function handler(
   }
 
   try {
-    // Get the authorization token from headers
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Missing or invalid authorization token' });
-    }
-
-    const token = authHeader.split(' ')[1];
-    
-    // Get the user from the token
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    const { supabase, user, error: userError } = await getAuthorizedClient(req);
 
     if (userError || !user) {
       return res.status(401).json({ error: 'Not authenticated' });
@@ -78,6 +64,32 @@ export default async function handler(
       artistDetails = artist;
     }
 
+    console.log('create-checkout-session order:', {
+      user_id: user.id,
+        number_of_tickets: quantity,
+        status: 'pending',
+        raffle_id: raffleId || null,
+        artist_id: artistId || null
+    })
+
+    // Create ticket order first
+    const { data: order, error: orderError } = await supabase
+      .from('ticket_orders')
+      .insert({
+        user_id: user.id,
+        number_of_tickets: quantity,
+        status: 'pending',
+        raffle_id: raffleId || null,
+        artist_id: artistId || null
+      })
+      .select()
+      .single();
+
+    if (orderError) {
+      console.error('Error creating ticket order:', orderError);
+      return res.status(500).json({ error: 'Error creating ticket order' });
+    }
+
     // Create a checkout session
     const checkoutSession = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -86,6 +98,11 @@ export default async function handler(
           price_data: {
             currency: 'usd',
             product_data: {
+              metadata: {
+                raffle_id: raffleId ?? null,
+                artist_id: artistId ?? null,
+                order_id: order.id
+              },
               name: raffleDetails ? `${raffleDetails.name} Raffle Ticket` : 
                     artistDetails ? `Support ${artistDetails.name}` : 
                     'Art Night Detroit Ticket',
@@ -101,10 +118,11 @@ export default async function handler(
         },
       ],
       mode: 'payment',
-      success_url: `${req.headers.origin}/tickets/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.origin}/tickets/checkout${raffleId ? `?raffle_id=${raffleId}` : ''}${artistId ? `?artist_id=${artistId}` : ''}`,
+      success_url: `${req.headers.origin}/tickets/success?order_id=${order.id}`,
+      cancel_url: `${req.headers.origin}/tickets/checkout${raffleId ? `?raffle_id=${raffleId}` : ''}${artistId ? `&artist_id=${artistId}` : ''}`,
       metadata: {
         userId: user.id,
+        orderId: order.id,
         quantity,
         raffleId: raffleId || '',
         artistId: artistId || '',
@@ -113,7 +131,21 @@ export default async function handler(
       },
     });
 
-    return res.status(200).json({ sessionId: checkoutSession.id });
+    // Update order with stripe session id
+    const { error: updateError } = await supabase
+      .from('ticket_orders')
+      .update({ stripe_checkout_session_id: checkoutSession.id })
+      .eq('id', order.id);
+
+    if (updateError) {
+      console.error('Error updating order with session ID:', updateError);
+      // Continue anyway since the order exists and session is created
+    }
+
+    return res.status(200).json({ 
+      sessionId: checkoutSession.id,
+      orderId: order.id 
+    });
   } catch (error) {
     console.error('Error creating checkout session:', error);
     return res.status(500).json({ error: 'Error creating checkout session' });

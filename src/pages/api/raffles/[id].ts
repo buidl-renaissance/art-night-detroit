@@ -71,6 +71,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       [curr.artist_id]: curr.total_tickets
     }), {} as Record<string, number>);
 
+    // Get user's submitted tickets if authenticated
+    let userTicketsMap: Record<string, number> = {};
+    try {
+      const { supabase, user } = await getAuthorizedClient(req);
+      if (user) {
+        const { data: userTickets, error: userTicketsError } = await supabase
+          .rpc('get_user_artist_tickets', {
+            raffle_id_param: id,
+            user_id_param: user.id
+          });
+
+        if (!userTicketsError) {
+          userTicketsMap = (userTickets || []).reduce((acc: Record<string, number>, curr: { artist_id: string; user_tickets: number }) => ({
+            ...acc,
+            [curr.artist_id]: curr.user_tickets
+          }), {} as Record<string, number>);
+        }
+      }
+    } catch {
+      // Ignore auth errors - user is anonymous
+    }
+
     // Combine artist data with ticket totals
     const artistsWithTickets = (artistsData as unknown as ArtistData[]).map(artist => ({
       id: artist.artists.id,
@@ -78,7 +100,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       bio: artist.artists.bio,
       image_url: artist.artists.image_url,
       raffle_artist_id: artist.id,
-      total_tickets: ticketTotalsMap[artist.artists.id] || 0
+      total_tickets: ticketTotalsMap[artist.artists.id] || 0,
+      user_tickets: userTicketsMap[artist.artists.id] || 0
     }));
 
     // If there's an auth token, get user-specific data

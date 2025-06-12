@@ -88,8 +88,9 @@ const ArtistBio = styled.p`
 
 const TotalTickets = styled.div`
   color: ${({ theme }) => theme.colors.text.light};
-  font-size: 0.8rem;
+  font-size: 1rem;
   margin-top: 0.5rem;
+  text-align: center;
 `;
 
 const TicketInfo = styled.div`
@@ -100,6 +101,7 @@ const TicketInfo = styled.div`
   background: ${({ theme }) => theme.colors.background.primary};
   border-radius: 8px;
   margin-top: auto;
+  text-align: center;
 `;
 
 const TicketCount = styled.div`
@@ -108,6 +110,7 @@ const TicketCount = styled.div`
   font-weight: 600;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
 
   &::before {
@@ -266,7 +269,7 @@ export default function RafflePage() {
                     <ArtistName>{artist.name}</ArtistName>
                     <ArtistBio>{artist.bio}</ArtistBio>
                     <TotalTickets>
-                      {artist.total_tickets || 0} total ticket{artist.total_tickets === 1 ? '' : 's'} entered
+                      Tickets entered: {artist.total_tickets || 0}
                     </TotalTickets>
                   </ArtistHeader>
                   <TicketInfo>
