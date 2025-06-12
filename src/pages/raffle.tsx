@@ -161,16 +161,12 @@ const RafflePage: NextPage = () => {
                     <ArtistInfo>
                       <ArtistName>{artist.name}</ArtistName>
                       <ArtistBio>{artist.bio}</ArtistBio>
-                      {/* <ArtworkTitle>
-                        Donating: &ldquo;
-                        {artist.artwork_title || "Featured Artwork"}&rdquo;
-                      </ArtworkTitle> */}
-                      {raffle && (
-                        <BuyTicketsButton
-                          onClick={() => router.push(`/tickets/checkout?raffle_id=${raffle.id}&raffle_artist_id=${artist.raffle_artist_id}`)}
+                      {raffle?.id && artist.raffle_artist_id && (
+                        <ReadMoreButton
+                          onClick={() => router.push(`/raffle/${raffle.id}/artist/${artist.raffle_artist_id}`)}
                         >
-                          Buy Tickets
-                        </BuyTicketsButton>
+                          Read More
+                        </ReadMoreButton>
                       )}
                     </ArtistInfo>
                   </ArtistSection>
@@ -511,15 +507,7 @@ const ArtistBio = styled.p`
   margin: 0 0 1rem;
 `;
 
-// const ArtworkTitle = styled.h3`
-//   font-family: 'Amatic SC', cursive;
-//   font-size: 1.5rem;
-//   color: #ff6b3b;
-//   margin: 0;
-//   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-// `;
-
-const BuyTicketsButton = styled.button`
+const ReadMoreButton = styled.button`
   background-color: #ff6b3b;
   color: white;
   padding: 0.75rem 1.5rem;

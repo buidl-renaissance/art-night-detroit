@@ -18,7 +18,7 @@ const ContentContainer = styled.div<{ width: 'small' | 'medium' | 'large' | 'ful
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  width: ${({ width }) => width === 'small' ? '500px' : width === 'large' ? '1200px' : width === 'full' ? '100%' : '800px'};
+  max-width: ${({ width }) => width === 'small' ? '500px' : width === 'large' ? '1200px' : width === 'full' ? '100%' : '800px'};
 `;
 
 const Layout = ({ children, width = 'large' }: LayoutProps) => {
