@@ -44,12 +44,13 @@ const AuthModal = () => {
     setError(null);
 
     try {
+      const redirectTo = router.query.redirect_to as string || window.location.pathname;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
           queryParams: {
-            redirect_to: router.query.redirect_to as string || window.location.pathname
+            redirect_to: encodeURIComponent(redirectTo)
           }
         },
       });

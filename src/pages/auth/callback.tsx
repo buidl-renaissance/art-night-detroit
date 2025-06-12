@@ -13,10 +13,16 @@ export default function AuthCallback() {
         console.error('Error during auth callback:', error);
         router.push('/login?error=Authentication failed');
       } else {
-        // Get the redirect path from the URL
-        const redirectTo = router.query.redirect_to as string;
+        // Get the redirect path from the URL hash
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const redirectTo = hashParams.get('redirect_to') || router.query.redirect_to as string;
+        
         // If there's a redirect path, go there, otherwise go to dashboard
-        router.push(redirectTo || '/dashboard');
+        if (redirectTo) {
+          router.push(decodeURIComponent(redirectTo));
+        } else {
+          router.push('/dashboard');
+        }
       }
     };
 
