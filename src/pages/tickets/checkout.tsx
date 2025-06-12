@@ -181,8 +181,8 @@ export default function Checkout() {
       const raffleArtistId = params.get('raffle_artist_id');
 
       // Check if user is authenticated
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
         setShowAuthModal(true);
         return;
       }
