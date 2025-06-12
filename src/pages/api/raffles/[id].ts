@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getAuthorizedClient } from '@/lib/getAuthorizedClient';
+import { createClient } from '@supabase/supabase-js';
 
 interface ArtistData {
   id: string;
@@ -11,6 +12,12 @@ interface ArtistData {
   };
 }
 
+interface UnusedTicket {
+  id: string;
+  ticket_number: number;
+  created_at: string;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -19,10 +26,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { id } = req.query;
 
   try {
-    const { supabase, user } = await getAuthorizedClient(req);
+    // Create a public client for anonymous access
+    const publicClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
 
     // Fetch raffle details
-    const { data: raffleData, error: raffleError } = await supabase
+    const { data: raffleData, error: raffleError } = await publicClient
       .from('raffles')
       .select('*')
       .eq('id', id)
@@ -31,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (raffleError) throw raffleError;
 
     // Fetch artists with their total ticket counts
-    const { data: artistsData, error: artistsError } = await supabase
+    const { data: artistsData, error: artistsError } = await publicClient
       .from('raffle_artists')
       .select(`
         id,
@@ -47,31 +58,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (artistsError) throw artistsError;
 
     // Get ticket totals from the function
-    const { data: ticketTotals, error: totalsError } = await supabase
+    const { data: ticketTotals, error: totalsError } = await publicClient
       .rpc('get_artist_ticket_totals', {
         raffle_id_param: id
       });
 
     if (totalsError) throw totalsError;
 
-    // Get user's ticket totals
-    const { data: userTicketTotals, error: userTotalsError } = await supabase
-      .rpc('get_user_artist_tickets', {
-        raffle_id_param: id,
-        user_id_param: user?.id
-      });
-
-    if (userTotalsError) throw userTotalsError;
-
     // Create maps of artist_id to ticket counts
     const ticketTotalsMap = (ticketTotals || []).reduce((acc: Record<string, number>, curr: { artist_id: string; total_tickets: number }) => ({
       ...acc,
       [curr.artist_id]: curr.total_tickets
-    }), {} as Record<string, number>);
-
-    const userTicketTotalsMap = (userTicketTotals || []).reduce((acc: Record<string, number>, curr: { artist_id: string; user_tickets: number }) => ({
-      ...acc,
-      [curr.artist_id]: curr.user_tickets
     }), {} as Record<string, number>);
 
     // Combine artist data with ticket totals
@@ -81,24 +78,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       bio: artist.artists.bio,
       image_url: artist.artists.image_url,
       raffle_artist_id: artist.id,
-      total_tickets: ticketTotalsMap[artist.artists.id] || 0,
-      user_tickets: userTicketTotalsMap[artist.artists.id] || 0
+      total_tickets: ticketTotalsMap[artist.artists.id] || 0
     }));
 
-    // Fetch unused tickets for the current user
-    const { data: unusedTicketsData, error: unusedTicketsError } = await supabase
-      .from('tickets')
-      .select('id, ticket_number, created_at')
-      .eq('user_id', user?.id)
-      .eq('status', 'active')
-      .order('created_at', { ascending: false });
+    // If there's an auth token, get user-specific data
+    let unusedTickets: UnusedTicket[] = [];
+    try {
+      const { supabase, user } = await getAuthorizedClient(req);
+      if (user) {
+        const { data: unusedTicketsData, error: unusedTicketsError } = await supabase
+          .from('tickets')
+          .select('id, ticket_number, created_at')
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false });
 
-    if (unusedTicketsError) throw unusedTicketsError;
+        if (!unusedTicketsError) {
+          unusedTickets = unusedTicketsData || [];
+        }
+      }
+    } catch {
+      // Ignore auth errors - user is anonymous
+    }
 
     return res.status(200).json({
       raffle: raffleData,
       artists: artistsWithTickets,
-      unusedTickets: unusedTicketsData || []
+      unusedTickets
     });
 
   } catch (err) {
