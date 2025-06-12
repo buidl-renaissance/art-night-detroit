@@ -6,7 +6,6 @@ import Head from "next/head";
 import Layout from "@/components/Layout";
 import { useEffect, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { useAuth } from "@/hooks/useAuth";
 
 interface Artist {
   id: string;
