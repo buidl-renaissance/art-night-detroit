@@ -150,26 +150,6 @@ const HeroSubtitle = styled.p`
   }
 `;
 
-const HeroCTA = styled(Link)`
-  display: inline-block;
-  background-color: #F7DC6F;
-  color: #333;
-  font-weight: 600;
-  font-size: 1.2rem;
-  padding: 1rem 2.5rem;
-  border-radius: 50px;
-  text-decoration: none;
-  position: relative;
-  z-index: 1;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-  
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-  }
-`;
-
 const SectionTitle = styled.h2`
   font-family: 'Baloo 2', cursive;
   font-size: 2.8rem;
