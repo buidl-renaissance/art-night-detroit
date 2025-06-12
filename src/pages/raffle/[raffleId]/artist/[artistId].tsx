@@ -103,12 +103,6 @@ const ArtistPage: NextPage = () => {
   }, [raffleId, artistId, supabase]);
 
   const handleBuyTickets = () => {
-    if (!user) {
-      router.push(
-        `/auth/login?redirect_to=${encodeURIComponent(router.asPath)}`
-      );
-      return;
-    }
     router.push(
       `/tickets/checkout?raffle_id=${raffleId}&raffle_artist_id=${artistId}`
     );
