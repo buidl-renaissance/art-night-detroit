@@ -40,6 +40,9 @@ const Login = () => {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            redirect_to: router.query.redirect_to as string
+          }
         },
       });
 

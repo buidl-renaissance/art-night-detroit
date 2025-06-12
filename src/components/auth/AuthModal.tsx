@@ -49,7 +49,7 @@ const AuthModal = () => {
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
           queryParams: {
-            redirect_to: window.location.pathname
+            redirect_to: router.query.redirect_to as string || window.location.pathname
           }
         },
       });
