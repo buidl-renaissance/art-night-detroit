@@ -42,7 +42,6 @@ const ArtistPage: NextPage = () => {
   const [raffle, setRaffle] = useState<Raffle | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
   const supabase = createClientComponentClient();
 
   useEffect(() => {
