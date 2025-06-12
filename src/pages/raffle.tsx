@@ -207,7 +207,9 @@ const RafflePage: NextPage = () => {
                 value={
                   typeof window !== "undefined" ? window.location.href : ""
                 }
-                size={200}
+                bgColor="#002b5c"
+                fgColor="#ffdd3c"
+                size={300}
               />
               <QRCodeLabel>Scan to share this page</QRCodeLabel>
             </QRCodeWrapper>
@@ -564,16 +566,13 @@ const ContactInfo = styled.div`
 const QRCodeWrapper = styled.div`
   margin-top: 2rem;
   padding: 1.5rem;
-  background: white;
   display: inline-block;
-  border-radius: 8px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 `;
 
 const QRCodeLabel = styled.p`
   font-family: "Work Sans", sans-serif;
   font-size: 1.1rem;
-  color: #002b5c;
+  color: #ffdd3c;
   margin-top: 1rem;
   font-weight: 500;
 `;
