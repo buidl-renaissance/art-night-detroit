@@ -4,9 +4,33 @@ import Head from 'next/head';
 import Image from 'next/image';
 import Layout from '../components/Layout';
 import { useRouter } from 'next/router';
+import QRCode from 'react-qr-code';
+import { useRaffleData } from '../hooks/useRaffleData';
 
 const RafflePage: NextPage = () => {
   const router = useRouter();
+  const { raffle, artists, loading, error } = useRaffleData('3c102268-f3b3-4fe5-8762-c57fbb9ed701');
+
+  if (loading) {
+    return (
+      <Layout width="full">
+        <PageContent>
+          <LoadingMessage>Loading raffle data...</LoadingMessage>
+        </PageContent>
+      </Layout>
+    );
+  }
+
+  if (error) {
+    return (
+      <Layout width="full">
+        <PageContent>
+          <ErrorMessage>{error}</ErrorMessage>
+        </PageContent>
+      </Layout>
+    );
+  }
+
   return (
     <Layout width="full">
       <Head>
@@ -59,13 +83,13 @@ const RafflePage: NextPage = () => {
                 <TitleEmoji>🎨</TitleEmoji>
                 <TitleText>About the Raffle</TitleText>
               </SectionTitle>
-              <BodyText>Support local talent and get a chance to win exclusive, one-of-a-kind artwork donated by Detroit&apos;s most inspiring creatives. All proceeds go directly to the artists.</BodyText>
+              <BodyText>{raffle?.description || 'Support local talent and get a chance to win exclusive, one-of-a-kind artwork donated by Detroit\'s most inspiring creatives. All proceeds go directly to the artists.'}</BodyText>
             </RaffleContent>
             <EventHighlights>
               <DetailItem style={{ fontSize: '3.5rem' }}>🎟️</DetailItem>
-              <DetailItem>$10 per Raffle Ticket</DetailItem>
+              <DetailItem>${raffle?.price_per_ticket || 10} per Raffle Ticket</DetailItem>
               <DetailItem>Winners Announced at 8 PM</DetailItem>
-              <RaffleButton onClick={() => router.push('/tickets/checkout?raffle_id=3c102268-f3b3-4fe5-8762-c57fbb9ed701')}>Purchase Raffle Tickets</RaffleButton>
+              <RaffleButton onClick={() => router.push(`/tickets/checkout?raffle_id=${raffle?.id}`)}>Purchase Raffle Tickets</RaffleButton>
             </EventHighlights>
           </RaffleSection>
 
@@ -75,56 +99,24 @@ const RafflePage: NextPage = () => {
               <TitleText>Featured Artists</TitleText>
             </SectionTitle>
             <ArtistList>
-              <ArtistSection>
-                <ArtistImageWrapper>
-                  <Image 
-                    src="https://picsum.photos/seed/artist1/800/600"
-                    alt="Amari Johnson"
-                    width={800}
-                    height={600}
-                    style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-                  />
-                </ArtistImageWrapper>
-                <ArtistInfo>
-                  <ArtistName>Amari Johnson</ArtistName>
-                  <ArtistBio>Known for vibrant mixed-media pieces celebrating African diaspora</ArtistBio>
-                  <ArtworkTitle>Donating: &ldquo;Spirit of Detroit&rdquo; - Mixed Media on Canvas</ArtworkTitle>
-                </ArtistInfo>
-              </ArtistSection>
-
-              <ArtistSection>
-                <ArtistImageWrapper>
-                  <Image 
-                    src="https://picsum.photos/seed/artist2/800/600"
-                    alt="Maya Thompson"
-                    width={800}
-                    height={600}
-                    style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-                  />
-                </ArtistImageWrapper>
-                <ArtistInfo>
-                  <ArtistName>Maya Thompson</ArtistName>
-                  <ArtistBio>Contemporary sculptor working with recycled materials</ArtistBio>
-                  <ArtworkTitle>Donating: &ldquo;Urban Revival&rdquo; - Metal Sculpture</ArtworkTitle>
-                </ArtistInfo>
-              </ArtistSection>
-
-              <ArtistSection>
-                <ArtistImageWrapper>
-                  <Image 
-                    src="https://picsum.photos/seed/artist3/800/600"
-                    alt="Marcus Williams"
-                    width={800}
-                    height={600}
-                    style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-                  />
-                </ArtistImageWrapper>
-                <ArtistInfo>
-                  <ArtistName>Marcus Williams</ArtistName>
-                  <ArtistBio>Digital artist and muralist</ArtistBio>
-                  <ArtworkTitle>Donating: &ldquo;Digital Dreams&rdquo; - Limited Edition Print</ArtworkTitle>
-                </ArtistInfo>
-              </ArtistSection>
+              {artists.map((artist) => (
+                <ArtistSection key={artist.id}>
+                  <ArtistImageWrapper>
+                    <Image 
+                      src={artist.image_url || `https://picsum.photos/seed/${artist.id}/800/600`}
+                      alt={artist.name}
+                      width={800}
+                      height={600}
+                      style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                    />
+                  </ArtistImageWrapper>
+                  <ArtistInfo>
+                    <ArtistName>{artist.name}</ArtistName>
+                    <ArtistBio>{artist.bio}</ArtistBio>
+                    <ArtworkTitle>Donating: &ldquo;{artist.artwork_title || 'Featured Artwork'}&rdquo;</ArtworkTitle>
+                  </ArtistInfo>
+                </ArtistSection>
+              ))}
             </ArtistList>
           </Section>
 
@@ -150,6 +142,10 @@ const RafflePage: NextPage = () => {
               <BodyText>Email: john@artnightdetroit.com</BodyText>
               <BodyText>Phone: (313) 550-3518</BodyText>
             </ContactInfo>
+            <QRCodeWrapper>
+              <QRCode value={typeof window !== 'undefined' ? window.location.href : ''} size={200} />
+              <QRCodeLabel>Scan to share this page</QRCodeLabel>
+            </QRCodeWrapper>
           </ContactSection>
         </MainContent>
       </PageContent>
@@ -498,6 +494,37 @@ const ContactInfo = styled.div`
     gap: 2rem;
     align-items: center;
   }
+`;
+
+const QRCodeWrapper = styled.div`
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: white;
+  display: inline-block;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+`;
+
+const QRCodeLabel = styled.p`
+  font-family: 'Work Sans', sans-serif;
+  font-size: 1.1rem;
+  color: #002B5C;
+  margin-top: 1rem;
+  font-weight: 500;
+`;
+
+const LoadingMessage = styled.div`
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+  color: #FFDD3C;
+`;
+
+const ErrorMessage = styled.div`
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+  color: #FF6B3B;
 `;
 
 export default RafflePage;

@@ -11,6 +11,7 @@ interface Raffle {
   max_tickets: number;
   status: 'draft' | 'active' | 'ended';
   tickets_sold: number;
+  price_per_ticket: number;
 }
 
 interface Artist {
@@ -21,6 +22,7 @@ interface Artist {
   raffle_artist_id: string;
   total_tickets?: number;
   user_tickets?: number;
+  artwork_title?: string;
 }
 
 interface UnusedTicket {
