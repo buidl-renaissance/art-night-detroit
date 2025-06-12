@@ -161,10 +161,17 @@ const RafflePage: NextPage = () => {
                     <ArtistInfo>
                       <ArtistName>{artist.name}</ArtistName>
                       <ArtistBio>{artist.bio}</ArtistBio>
-                      <ArtworkTitle>
+                      {/* <ArtworkTitle>
                         Donating: &ldquo;
                         {artist.artwork_title || "Featured Artwork"}&rdquo;
-                      </ArtworkTitle>
+                      </ArtworkTitle> */}
+                      {raffle && (
+                        <BuyTicketsButton
+                          onClick={() => router.push(`/tickets/checkout?raffle_id=${raffle.id}&raffle_artist_id=${artist.raffle_artist_id}`)}
+                        >
+                          Buy Tickets
+                        </BuyTicketsButton>
+                      )}
                     </ArtistInfo>
                   </ArtistSection>
                 ))}
@@ -465,16 +472,12 @@ const Section = styled.section`
 `;
 
 const ArtistSection = styled.div`
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-  padding: 2rem;
+  position: relative;
+  margin-bottom: 4rem;
   background: #002b5c;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-
-  @media (min-width: 768px) {
-    grid-template-columns: 1fr 2fr;
-  }
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 `;
 
 const ArtistImageWrapper = styled.div`
@@ -484,14 +487,10 @@ const ArtistImageWrapper = styled.div`
 `;
 
 const ArtistInfo = styled.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.75rem;
-
-  @media (min-width: 768px) {
-    padding: 0 2rem;
-  }
+  position: relative;
+  padding: 2rem;
+  z-index: 2;
+  pointer-events: auto;
 `;
 
 const ArtistName = styled.h3`
@@ -505,20 +504,42 @@ const ArtistName = styled.h3`
 `;
 
 const ArtistBio = styled.p`
-  font-family: "Work Sans", sans-serif;
-  font-size: 1.2rem;
+  font-family: 'Work Sans', sans-serif;
+  font-size: 1.1rem;
   line-height: 1.6;
   color: #ffdd3c;
-  margin: 0;
+  margin: 0 0 1rem;
 `;
 
-const ArtworkTitle = styled.p`
-  font-family: "Amatic SC", cursive;
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #ff6b3b;
-  margin: 0;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+// const ArtworkTitle = styled.h3`
+//   font-family: 'Amatic SC', cursive;
+//   font-size: 1.5rem;
+//   color: #ff6b3b;
+//   margin: 0;
+//   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+// `;
+
+const BuyTicketsButton = styled.button`
+  background-color: #ff6b3b;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  font-size: 1rem;
+  font-family: 'Bungee', sans-serif;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 107, 59, 0.3);
+  border-radius: 8px;
+  margin-top: 1rem;
+  position: relative;
+  width: 100%;
+  z-index: 3;
+
+  &:hover {
+    background-color: #ffdd3c;
+    color: #002b5c;
+    transform: translateY(-2px);
+  }
 `;
 
 const StepsList = styled.ul`
