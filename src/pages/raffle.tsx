@@ -204,9 +204,7 @@ const RafflePage: NextPage = () => {
             </ContactInfo>
             <QRCodeWrapper>
               <QRCode
-                value={
-                  typeof window !== "undefined" ? window.location.href : ""
-                }
+                value="https://artnightdetroit.com/raffle"
                 bgColor="#002b5c"
                 fgColor="#ffdd3c"
                 size={300}
