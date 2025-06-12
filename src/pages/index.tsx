@@ -6,7 +6,10 @@ import { events } from './events';
 
 
 const HomePage = () => {
-  const featuredEvents = events.slice(0, 3);
+  const today = new Date();
+  const futureEvents = events.filter(event => new Date(event.date) >= today);
+  const pastEvents = events.filter(event => new Date(event.date) < today);
+
   return (
     <PageContainer>
       <Head>
@@ -19,16 +22,26 @@ const HomePage = () => {
         <PaintSplash top="10%" left="5%" color="#87CEEB" size="150px" rotation="-15deg" />
         <PaintSplash top="70%" left="85%" color="#F7DC6F" size="120px" rotation="25deg" />
         <PaintSplash top="85%" left="15%" color="#8E44AD" size="100px" rotation="10deg" />
-        <HeroTitle>Art Night Detroit</HeroTitle>
+        <img src="/images/art-night-detroit-logo.png" alt="Art Night Detroit" width={300} height={300} />
         <HeroSubtitle>Discover creative events in the heart of Detroit</HeroSubtitle>
-        <HeroCTA href="/events">Start Creating</HeroCTA>
+        {/* <HeroCTA href="/events">Start Creating</HeroCTA> */}
       </HeroSection>
 
+      <RaffleSection>
+        <RaffleContent>
+          <RaffleTitle>Win Amazing Art Prizes!</RaffleTitle>
+          <RaffleDescription>
+            Enter our monthly raffle for a chance to win exclusive artwork and creative experiences. 
+            Support local artists and take home something special.
+          </RaffleDescription>
+          <RaffleCTA href="/raffle">Enter Raffle</RaffleCTA>
+        </RaffleContent>
+      </RaffleSection>
+
       <EventsSection>
-        {/* <BrushStroke /> */}
-        <SectionTitle>Past Events</SectionTitle>
+        <SectionTitle>Upcoming Events</SectionTitle>
         <EventsGrid>
-          {featuredEvents.map(event => (
+          {futureEvents.map(event => (
             <EventCard key={event.id}>
               <EventImageWrapper>
                 <EventImage src={event.image} alt={event.title} />
@@ -38,6 +51,23 @@ const HomePage = () => {
                 <EventDate>{event.date}</EventDate>
                 <EventDescription>{event.description}</EventDescription>
                 <EventLink href={event.url ? event.url : `/events/${event.id}`}>Learn More</EventLink>
+              </EventContent>
+            </EventCard>
+          ))}
+        </EventsGrid>
+
+        <SectionTitle style={{ marginTop: '5rem' }}>Past Events</SectionTitle>
+        <EventsGrid>
+          {pastEvents.map(event => (
+            <EventCard key={event.id}>
+              <EventImageWrapper>
+                <EventImage src={event.image} alt={event.title} />
+              </EventImageWrapper>
+              <EventContent>
+                <EventTitle>{event.title}</EventTitle>
+                <EventDate>{event.date}</EventDate>
+                <EventDescription>{event.description}</EventDescription>
+                <EventLink href={event.url ? event.url : `/events/${event.id}`}>View Details</EventLink>
               </EventContent>
             </EventCard>
           ))}
@@ -98,7 +128,7 @@ const PaintSplash = styled.div<{
 `;
 
 const HeroSection = styled.section`
-  background: linear-gradient(135deg, #3498DB 0%, #8E44AD 100%);
+  /* background: linear-gradient(135deg, #3498DB 0%, #8E44AD 100%); */
   color: white;
   padding: 10rem 2rem;
   text-align: center;
@@ -106,20 +136,6 @@ const HeroSection = styled.section`
   overflow: hidden;
   border-bottom-left-radius: 30px;
   border-bottom-right-radius: 30px;
-`;
-
-const HeroTitle = styled.h1`
-  font-family: 'Baloo 2', cursive;
-  font-size: 4.5rem;
-  margin-bottom: 1rem;
-  font-weight: 700;
-  position: relative;
-  z-index: 1;
-  text-shadow: 3px 3px 0px rgba(0,0,0,0.1);
-  
-  @media (max-width: 768px) {
-    font-size: 2.8rem;
-  }
 `;
 
 const HeroSubtitle = styled.p`
@@ -404,5 +420,68 @@ const FooterLink = styled(Link)`
     &:after {
       width: 100%;
     }
+  }
+`;
+
+const RaffleSection = styled.section`
+  background: linear-gradient(135deg, #8E44AD 0%, #3498DB 100%);
+  padding: 5rem 2rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  margin: 0 2rem;
+  border-radius: 30px;
+  
+  @media (max-width: 768px) {
+    padding: 3rem 1rem;
+    margin: 0 1rem;
+  }
+`;
+
+const RaffleContent = styled.div`
+  max-width: 800px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+`;
+
+const RaffleTitle = styled.h2`
+  font-family: 'Baloo 2', cursive;
+  font-size: 3.2rem;
+  margin-bottom: 1.5rem;
+  color: white;
+  text-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+  
+  @media (max-width: 768px) {
+    font-size: 2.4rem;
+  }
+`;
+
+const RaffleDescription = styled.p`
+  font-size: 1.4rem;
+  color: white;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+  
+  @media (max-width: 768px) {
+    font-size: 1.2rem;
+  }
+`;
+
+const RaffleCTA = styled(Link)`
+  display: inline-block;
+  background-color: #F7DC6F;
+  color: #333;
+  font-weight: 600;
+  font-size: 1.2rem;
+  padding: 1rem 2.5rem;
+  border-radius: 50px;
+  text-decoration: none;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
   }
 `;
