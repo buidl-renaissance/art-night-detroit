@@ -161,6 +161,16 @@ const RafflePage: NextPage = () => {
                     <ArtistInfo>
                       <ArtistName>{artist.name}</ArtistName>
                       <ArtistBio>{artist.bio}</ArtistBio>
+                      {artist.instagram_handle && (
+                        <InstagramLink
+                          href={`https://instagram.com/${artist.instagram_handle}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                        >
+                          @{artist.instagram_handle}
+                        </InstagramLink>
+                      )}
                       {raffle?.id && artist.raffle_artist_id && (
                         <ReadMoreButton
                           onClick={() => router.push(`/raffle/${raffle.id}/artist/${artist.raffle_artist_id}`)}
@@ -505,6 +515,24 @@ const ArtistBio = styled.p`
   line-height: 1.6;
   color: #ffdd3c;
   margin: 0 0 1rem;
+`;
+
+const InstagramLink = styled.a`
+  color: ${({ theme }) => theme.colors.primary};
+  font-size: 0.9rem;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &::before {
+    content: "📸";
+  }
 `;
 
 const ReadMoreButton = styled.button`

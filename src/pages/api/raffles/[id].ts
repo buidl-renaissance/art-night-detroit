@@ -9,6 +9,7 @@ interface ArtistData {
     name: string;
     bio: string;
     image_url: string;
+    instagram_handle: string;
   };
 }
 
@@ -50,7 +51,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           id,
           name,
           bio,
-          image_url
+          image_url,
+          instagram_handle
         )
       `)
       .eq('raffle_id', id);
@@ -99,6 +101,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       name: artist.artists.name,
       bio: artist.artists.bio,
       image_url: artist.artists.image_url,
+      instagram_handle: artist.artists.instagram_handle,
       raffle_artist_id: artist.id,
       total_tickets: ticketTotalsMap[artist.artists.id] || 0,
       user_tickets: userTicketsMap[artist.artists.id] || 0

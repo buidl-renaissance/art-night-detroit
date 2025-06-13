@@ -8,6 +8,18 @@ import QuantityControls from '@/components/QuantityControls';
 import { useRaffleData } from '@/hooks/useRaffleData';
 import { useRaffleTicketManager } from '@/hooks/useRaffleTicketManager';
 
+interface Artist  {
+  id: string;
+  name: string;
+  bio: string;
+  image_url: string;
+  raffle_artist_id: string;
+  total_tickets?: number;
+  user_tickets?: number;
+  artwork_title?: string;
+  instagram_handle?: string;
+}
+
 const RaffleContainer = styled.div`
   max-width: 800px;
   margin: 0 auto;
@@ -207,6 +219,24 @@ const SectionSubtitle = styled.p`
   line-height: 1.6;
 `;
 
+const InstagramLink = styled.a`
+  color: ${({ theme }) => theme.colors.primary};
+  font-size: 0.9rem;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &::before {
+    content: "📸";
+  }
+`;
+
 export default function RafflePage() {
   const router = useRouter();
   const { id } = router.query;
@@ -261,13 +291,22 @@ export default function RafflePage() {
           </SectionHeader>
 
           <ArtistsGrid>
-            {artists.map((artist) => (
+            {artists.map((artist: Artist) => (
               <ArtistCard key={artist.id}>
                 <ArtistImage src={artist.image_url} alt={artist.name} />
                 <ArtistInfo>
                   <ArtistHeader>
                     <ArtistName>{artist.name}</ArtistName>
                     <ArtistBio>{artist.bio}</ArtistBio>
+                    {artist.instagram_handle && (
+                      <InstagramLink 
+                        href={`https://instagram.com/${artist.instagram_handle.replace('@', '').replace('https://instagram.com/', '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {artist.instagram_handle}
+                      </InstagramLink>
+                    )}
                     <TotalTickets>
                       Tickets entered: {artist.total_tickets || 0}
                     </TotalTickets>

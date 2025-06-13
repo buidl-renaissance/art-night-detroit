@@ -23,6 +23,7 @@ interface Artist {
   total_tickets?: number;
   user_tickets?: number;
   artwork_title?: string;
+  instagram_handle?: string;
 }
 
 interface UnusedTicket {
