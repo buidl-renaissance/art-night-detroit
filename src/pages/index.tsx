@@ -34,7 +34,7 @@ const HomePage = () => {
             Enter our monthly raffle for a chance to win exclusive artwork and creative experiences. 
             Support local artists and take home something special.
           </RaffleDescription>
-          <RaffleCTA href="/raffle">Enter Raffle</RaffleCTA>
+          <RaffleCTA href="/raffles/3c102268-f3b3-4fe5-8762-c57fbb9ed701">Enter Raffle</RaffleCTA>
         </RaffleContent>
       </RaffleSection>
 
