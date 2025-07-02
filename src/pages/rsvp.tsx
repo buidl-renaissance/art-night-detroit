@@ -226,14 +226,13 @@ const RSVPPage = () => {
           {event.end_date && ` - ${formatEventTime(event.end_date)}`}
         </HeroSubtitle>
         {event.location && <HeroLocation>{event.location}</HeroLocation>}
-                 {rsvpStats && event?.attendance_limit && (
-           <SpotsRemainingBadge>
-             {event.attendance_limit - rsvpStats.confirmed > 0 
-               ? `${event.attendance_limit - rsvpStats.confirmed} Spots Remaining`
-               : 'No Spots Remaining'
-             }
-           </SpotsRemainingBadge>
-         )}
+        {rsvpStats &&
+          event?.attendance_limit &&
+          event.attendance_limit - rsvpStats.confirmed > 0 && (
+            <SpotsRemainingBadge>
+              {`${event.attendance_limit - rsvpStats.confirmed} Spots Remaining`}
+            </SpotsRemainingBadge>
+          )}
       </HeroSection>
 
       <RSVPContainer>
@@ -242,8 +241,7 @@ const RSVPPage = () => {
             <SuccessMessage>
               {lastRsvpStatus === "waitlisted"
                 ? "Thank you! You've been added to the waitlist. We'll notify you if a spot becomes available."
-                : "Thank you for your RSVP! We'll see you at the event."
-              }
+                : "Thank you for your RSVP! We'll see you at the event."}
             </SuccessMessage>
           )}
           {formStatus === "error" && (
@@ -300,10 +298,11 @@ const RSVPPage = () => {
             />
           </FormGroup>
           <SubmitButton type="submit">
-            {rsvpStats && event?.attendance_limit && event.attendance_limit - rsvpStats.confirmed <= 0
-              ? 'Join Waitlist'
-              : 'Submit RSVP'
-            }
+            {rsvpStats &&
+            event?.attendance_limit &&
+            event.attendance_limit - rsvpStats.confirmed <= 0
+              ? "Join Waitlist"
+              : "Submit RSVP"}
           </SubmitButton>
         </RSVPForm>
       </RSVPContainer>
