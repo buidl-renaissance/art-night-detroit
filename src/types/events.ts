@@ -6,6 +6,7 @@ export interface Event {
   end_date?: string;
   location?: string;
   status: 'draft' | 'scheduled' | 'active' | 'ended';
+  attendance_limit?: number;
   image_url?: string;
   external_url?: string;
   time_start?: string;

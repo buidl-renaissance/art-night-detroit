@@ -154,7 +154,8 @@ export default function NewEvent() {
     start_date: getCurrentLocalDateTimeString(),
     end_date: '',
     location: '',
-    status: 'draft'
+    status: 'draft',
+    attendance_limit: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -208,7 +209,8 @@ export default function NewEvent() {
       const eventData = {
         ...formData,
         start_date: formatDateTimeForDatabase(formData.start_date),
-        end_date: formData.end_date ? formatDateTimeForDatabase(formData.end_date) : null
+        end_date: formData.end_date ? formatDateTimeForDatabase(formData.end_date) : null,
+        attendance_limit: formData.attendance_limit ? parseInt(formData.attendance_limit) : null
       };
 
       const { error } = await supabase
@@ -299,6 +301,22 @@ export default function NewEvent() {
               onChange={handleInputChange}
               placeholder="Enter event location"
             />
+          </FormGroup>
+
+          <FormGroup>
+            <label htmlFor="attendance_limit">Attendance Limit (Optional)</label>
+            <input
+              type="number"
+              id="attendance_limit"
+              name="attendance_limit"
+              value={formData.attendance_limit}
+              onChange={handleInputChange}
+              placeholder="Enter maximum number of attendees"
+              min="1"
+            />
+            <small style={{ color: '#666', fontSize: '0.9rem', marginTop: '0.25rem', display: 'block' }}>
+              Leave empty for unlimited attendance. When limit is reached, new RSVPs will be added to waitlist.
+            </small>
           </FormGroup>
 
           <FormGroup>

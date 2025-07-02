@@ -212,6 +212,7 @@ interface Event {
   end_date: string;
   location: string;
   status: 'draft' | 'scheduled' | 'active' | 'ended';
+  attendance_limit?: number;
 }
 
 export default function EditEvent() {
@@ -222,7 +223,8 @@ export default function EditEvent() {
     start_date: '',
     end_date: '',
     location: '',
-    status: 'draft'
+    status: 'draft',
+    attendance_limit: ''
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -277,7 +279,8 @@ export default function EditEvent() {
         start_date: data.start_date ? formatDateTimeForInput(data.start_date) : '',
         end_date: data.end_date ? formatDateTimeForInput(data.end_date) : '',
         location: data.location || '',
-        status: data.status
+        status: data.status,
+        attendance_limit: data.attendance_limit ? data.attendance_limit.toString() : ''
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -310,7 +313,8 @@ export default function EditEvent() {
       const eventData = {
         ...formData,
         start_date: formatDateTimeForDatabase(formData.start_date),
-        end_date: formData.end_date ? formatDateTimeForDatabase(formData.end_date) : null
+        end_date: formData.end_date ? formatDateTimeForDatabase(formData.end_date) : null,
+        attendance_limit: formData.attendance_limit ? parseInt(formData.attendance_limit) : null
       };
 
       const { error } = await supabase
@@ -425,6 +429,22 @@ export default function EditEvent() {
               onChange={handleInputChange}
               placeholder="Enter event location"
             />
+          </FormGroup>
+
+          <FormGroup>
+            <label htmlFor="attendance_limit">Attendance Limit (Optional)</label>
+            <input
+              type="number"
+              id="attendance_limit"
+              name="attendance_limit"
+              value={formData.attendance_limit}
+              onChange={handleInputChange}
+              placeholder="Enter maximum number of attendees"
+              min="1"
+            />
+            <small style={{ color: '#666', fontSize: '0.9rem', marginTop: '0.25rem', display: 'block' }}>
+              Leave empty for unlimited attendance. When limit is reached, new RSVPs will be added to waitlist.
+            </small>
           </FormGroup>
 
           <FormGroup>

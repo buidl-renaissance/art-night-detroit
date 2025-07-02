@@ -18,21 +18,34 @@ const RSVPPage = () => {
     null
   );
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [rsvpStats, setRsvpStats] = useState<{
+    remaining_spots: number | null;
+    confirmed: number;
+    waitlisted: number;
+  } | null>(null);
+  const [lastRsvpStatus, setLastRsvpStatus] = useState<string>("confirmed");
 
   // Hardcoded event ID
   const EVENT_ID = "744f84a0-9e72-478f-9ff1-8a8e0360e3c5";
-  
+
   const { fetchEvent } = useEvents();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadEvent = async () => {
+    const loadEventAndStats = async () => {
       try {
         const eventData = await fetchEvent(EVENT_ID);
         if (eventData) {
           setEvent(eventData);
+
+          // Load RSVP stats
+          const statsResponse = await fetch(`/api/rsvps/${EVENT_ID}/stats`);
+          if (statsResponse.ok) {
+            const statsData = await statsResponse.json();
+            setRsvpStats(statsData.stats.counts);
+          }
         } else {
           setError("Event not found");
         }
@@ -43,7 +56,7 @@ const RSVPPage = () => {
       }
     };
 
-    loadEvent();
+    loadEventAndStats();
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -57,59 +70,64 @@ const RSVPPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormStatus(null);
-    
+
     try {
-      const response = await fetch('/api/rsvp', {
-        method: 'POST',
+      const response = await fetch("/api/rsvp", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           event_id: EVENT_ID,
-          ...formData
+          ...formData,
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        setErrorMessage(data.error || 'Failed to submit RSVP');
-        throw new Error(data.error || 'Failed to submit RSVP');
+        setErrorMessage(data.error || "Failed to submit RSVP");
+        throw new Error(data.error || "Failed to submit RSVP");
       }
 
       setFormStatus("success");
       setErrorMessage("");
+      setLastRsvpStatus(data.status || "confirmed");
       setFormData({
         handle: "",
         name: "",
         phone: "",
         email: "",
       });
-      
-      // Redirect to success page with event name
+
+      // Redirect to success page with event name and status
       setTimeout(() => {
-        router.push(`/rsvp/success?eventName=${encodeURIComponent(event?.name || '')}`);
+        const params = new URLSearchParams({
+          eventName: event?.name || "",
+          status: data.status || "confirmed",
+        });
+        router.push(`/rsvp/success?${params.toString()}`);
       }, 1500);
     } catch (error) {
-      console.error('RSVP submission error:', error);
+      console.error("RSVP submission error:", error);
       setFormStatus("error");
     }
   };
 
   const formatEventDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
   const formatEventTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
+    return new Date(dateString).toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
     });
   };
 
@@ -127,9 +145,7 @@ const RSVPPage = () => {
     return (
       <PageContainer>
         <ErrorContainer>
-          <ErrorMessage>
-            {error || "Event not found"}
-          </ErrorMessage>
+          <ErrorMessage>{error || "Event not found"}</ErrorMessage>
           <BackLink href="/events">← Back to Events</BackLink>
         </ErrorContainer>
       </PageContainer>
@@ -142,39 +158,60 @@ const RSVPPage = () => {
         <title>RSVP | {event.name} | Art Night Detroit</title>
         <meta
           name="description"
-          content={`RSVP to ${event.name} - ${event.description || 'Join us for this amazing event'}`}
+          content={`RSVP to ${event.name} - ${event.description || "Join us for this amazing event"}`}
         />
-        
+
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://artnightdetroit.com/rsvp" />
-        <meta property="og:title" content={`RSVP | ${event.name} | Art Night Detroit`} />
-        <meta property="og:description" content={`RSVP to ${event.name} - ${event.description || 'Join us for this amazing event'}`} />
+        <meta
+          property="og:title"
+          content={`RSVP | ${event.name} | Art Night Detroit`}
+        />
+        <meta
+          property="og:description"
+          content={`RSVP to ${event.name} - ${event.description || "Join us for this amazing event"}`}
+        />
         <meta property="og:image" content="/images/art-night-07-02-25.png" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:site_name" content="Art Night Detroit" />
-        
+
         {/* Twitter */}
         <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:url" content="https://artnightdetroit.com/rsvp" />
-        <meta property="twitter:title" content={`RSVP | ${event.name} | Art Night Detroit`} />
-        <meta property="twitter:description" content={`RSVP to ${event.name} - ${event.description || 'Join us for this amazing event'}`} />
-        <meta property="twitter:image" content="/images/art-night-07-02-25.png" />
-        
+        <meta
+          property="twitter:url"
+          content="https://artnightdetroit.com/rsvp"
+        />
+        <meta
+          property="twitter:title"
+          content={`RSVP | ${event.name} | Art Night Detroit`}
+        />
+        <meta
+          property="twitter:description"
+          content={`RSVP to ${event.name} - ${event.description || "Join us for this amazing event"}`}
+        />
+        <meta
+          property="twitter:image"
+          content="/images/art-night-07-02-25.png"
+        />
+
         {/* Additional SEO */}
-        <meta name="keywords" content="art night detroit, rsvp, event, art, detroit, ${event.name?.toLowerCase()}" />
+        <meta
+          name="keywords"
+          content="art night detroit, rsvp, event, art, detroit, ${event.name?.toLowerCase()}"
+        />
         <meta name="author" content="Art Night Detroit" />
         <meta name="robots" content="index, follow" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        
+
         {/* Canonical URL */}
         <link rel="canonical" href="https://artnightdetroit.com/rsvp" />
-        
+
         {/* Favicon */}
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/favicon.ico" />
-        
+
         <link
           href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700&family=Inter:wght@400;500;600&display=swap"
           rel="stylesheet"
@@ -188,21 +225,31 @@ const RSVPPage = () => {
           {formatEventTime(event.start_date)}
           {event.end_date && ` - ${formatEventTime(event.end_date)}`}
         </HeroSubtitle>
-        {event.location && (
-          <HeroLocation>{event.location}</HeroLocation>
-        )}
+        {event.location && <HeroLocation>{event.location}</HeroLocation>}
+                 {rsvpStats && event?.attendance_limit && (
+           <SpotsRemainingBadge>
+             {event.attendance_limit - rsvpStats.confirmed > 0 
+               ? `${event.attendance_limit - rsvpStats.confirmed} Spots Remaining`
+               : 'No Spots Remaining'
+             }
+           </SpotsRemainingBadge>
+         )}
       </HeroSection>
 
       <RSVPContainer>
         <RSVPForm onSubmit={handleSubmit}>
           {formStatus === "success" && (
             <SuccessMessage>
-              Thank you for your RSVP! We&apos;ll see you at the event.
+              {lastRsvpStatus === "waitlisted"
+                ? "Thank you! You've been added to the waitlist. We'll notify you if a spot becomes available."
+                : "Thank you for your RSVP! We'll see you at the event."
+              }
             </SuccessMessage>
           )}
           {formStatus === "error" && (
             <ErrorMessage>
-              {errorMessage || "There was an error submitting your RSVP. Please try again."}
+              {errorMessage ||
+                "There was an error submitting your RSVP. Please try again."}
             </ErrorMessage>
           )}
           <FormGroup>
@@ -252,7 +299,12 @@ const RSVPPage = () => {
               placeholder="Your phone number"
             />
           </FormGroup>
-          <SubmitButton type="submit">Submit RSVP</SubmitButton>
+          <SubmitButton type="submit">
+            {rsvpStats && event?.attendance_limit && event.attendance_limit - rsvpStats.confirmed <= 0
+              ? 'Join Waitlist'
+              : 'Submit RSVP'
+            }
+          </SubmitButton>
         </RSVPForm>
       </RSVPContainer>
 
@@ -308,7 +360,7 @@ const BackLink = styled(Link)`
   text-decoration: none;
   margin-top: 1rem;
   font-weight: 500;
-  
+
   &:hover {
     text-decoration: underline;
   }
@@ -318,8 +370,8 @@ const HeroSection = styled.section`
   background:
     linear-gradient(
       135deg,
-      rgba(19, 61, 90, 0.5) 0%,
-      rgba(30, 16, 37, 0.5) 100%
+      rgba(19, 61, 90, 0.7) 0%,
+      rgba(30, 16, 37, 0.7) 100%
     ),
     url("/images/art-night-07-02-25.png");
   background-size: cover;
@@ -393,6 +445,18 @@ const RSVPContainer = styled.div`
     grid-template-columns: 1fr;
     gap: 2rem;
   }
+`;
+
+const SpotsRemainingBadge = styled.span`
+  display: inline-block;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 25px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  text-shadow: none;
 `;
 
 const RSVPForm = styled.form`

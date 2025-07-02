@@ -19,7 +19,7 @@ export default async function handler(
     // Fetch RSVPs for the specific event
     const { data: rsvps, error: fetchError } = await supabase
       .from('rsvps')
-      .select('handle, name, email, created_at')
+      .select('handle, name, email, status, created_at')
       .eq('event_id', eventId)
       .order('created_at', { ascending: true });
 

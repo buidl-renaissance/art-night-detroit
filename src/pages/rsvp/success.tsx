@@ -9,8 +9,22 @@ import RSVPList from "@/components/RSVPList";
 const RSVPSuccessPage = () => {
   const { events, loading } = useEvents();
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
+  const [eventName, setEventName] = useState<string>('');
+  const [rsvpStatus, setRsvpStatus] = useState<string>('confirmed');
 
   useEffect(() => {
+    // Get URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const eventNameParam = urlParams.get('eventName');
+    const statusParam = urlParams.get('status');
+    
+    if (eventNameParam) {
+      setEventName(eventNameParam);
+    }
+    if (statusParam) {
+      setRsvpStatus(statusParam);
+    }
+
     if (events.length > 0) {
       const now = new Date();
       const upcoming = events
@@ -56,7 +70,19 @@ const RSVPSuccessPage = () => {
 
       <SuccessSection>
         <SuccessIcon>✓</SuccessIcon>
-        <SuccessTitle>RSVP Confirmed!</SuccessTitle>
+        <SuccessTitle>
+          {rsvpStatus === 'waitlisted' ? 'Added to Waitlist!' : 'RSVP Confirmed!'}
+        </SuccessTitle>
+        {eventName && (
+          <SuccessSubtitle>
+            {eventName}
+          </SuccessSubtitle>
+        )}
+        {rsvpStatus === 'waitlisted' && (
+          <WaitlistMessage>
+            You have been added to the waitlist. We will notify you if a spot becomes available.
+          </WaitlistMessage>
+        )}
       </SuccessSection>
 
       <UpcomingEventsSection>
@@ -167,6 +193,23 @@ const SuccessTitle = styled.h1`
   @media (max-width: 768px) {
     font-size: 2rem;
   }
+`;
+
+const SuccessSubtitle = styled.p`
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  opacity: 0.9;
+`;
+
+const WaitlistMessage = styled.div`
+  background: rgba(255, 255, 255, 0.2);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+  font-size: 1rem;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
 `;
 
 const UpcomingEventsSection = styled.section`

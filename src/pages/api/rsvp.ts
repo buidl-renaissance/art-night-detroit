@@ -26,10 +26,10 @@ export default async function handler(
       return res.status(400).json({ error: 'Invalid email format' });
     }
 
-    // Check if event exists
+    // Check if event exists and get attendance limit
     const { data: event, error: eventError } = await supabase
       .from('events')
-      .select('id')
+      .select('id, attendance_limit')
       .eq('id', event_id)
       .single();
 
@@ -53,7 +53,29 @@ export default async function handler(
       return res.status(409).json({ error: 'You have already RSVP\'d for this event' });
     }
 
-    // Insert the RSVP
+    // Check attendance limit and determine status
+    let rsvpStatus = 'confirmed';
+    
+    if (event.attendance_limit) {
+      // Count confirmed RSVPs for this event
+      const { count: confirmedCount, error: countError } = await supabase
+        .from('rsvps')
+        .select('*', { count: 'exact', head: true })
+        .eq('event_id', event_id)
+        .eq('status', 'confirmed');
+
+      if (countError) {
+        console.error('Error counting RSVPs:', countError);
+        return res.status(500).json({ error: 'Failed to check attendance limit' });
+      }
+
+      // If we've reached the limit, put new RSVP on waitlist
+      if (confirmedCount && confirmedCount >= event.attendance_limit) {
+        rsvpStatus = 'waitlisted';
+      }
+    }
+
+    // Insert the RSVP with appropriate status
     const { data: rsvp, error: insertError } = await supabase
       .from('rsvps')
       .insert({
@@ -61,7 +83,8 @@ export default async function handler(
         handle,
         name,
         email,
-        phone: phone || null
+        phone: phone || null,
+        status: rsvpStatus
       })
       .select()
       .single();
@@ -73,8 +96,11 @@ export default async function handler(
 
     return res.status(201).json({ 
       success: true, 
-      message: 'RSVP submitted successfully',
-      rsvp 
+      message: rsvpStatus === 'waitlisted' 
+        ? 'RSVP submitted successfully. You have been added to the waitlist.' 
+        : 'RSVP submitted successfully',
+      rsvp,
+      status: rsvpStatus
     });
 
   } catch (error) {

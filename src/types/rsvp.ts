@@ -5,6 +5,7 @@ export interface RSVP {
   name: string;
   email: string;
   phone?: string;
+  status: 'confirmed' | 'waitlisted' | 'rejected' | 'canceled';
   created_at: string;
   updated_at: string;
 }

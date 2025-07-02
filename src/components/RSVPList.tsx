@@ -6,6 +6,7 @@ interface RSVP {
   handle: string;
   name: string;
   email: string;
+  status: 'confirmed' | 'waitlisted' | 'rejected' | 'canceled';
   created_at: string;
 }
 
@@ -54,6 +55,10 @@ const RSVPList: React.FC<RSVPListProps> = ({
     }
   };
 
+  // Separate confirmed and waitlisted RSVPs
+  const confirmedRSVPs = rsvps.filter(rsvp => rsvp.status === 'confirmed');
+  const waitlistedRSVPs = rsvps.filter(rsvp => rsvp.status === 'waitlisted');
+
   if (loading) {
     return (
       <Container>
@@ -93,36 +98,73 @@ const RSVPList: React.FC<RSVPListProps> = ({
       {showStats && (
         <StatsSection>
           <StatCard>
-            <StatNumber>{rsvps.length}</StatNumber>
-            <StatLabel>Total RSVPs</StatLabel>
+            <StatNumber>{confirmedRSVPs.length}</StatNumber>
+            <StatLabel>Confirmed RSVPs</StatLabel>
+          </StatCard>
+          <StatCard>
+            <StatNumber>{waitlistedRSVPs.length}</StatNumber>
+            <StatLabel>Waitlisted RSVPs</StatLabel>
           </StatCard>
         </StatsSection>
       )}
 
       {showTable && (
         <RSVPSection>
-          {rsvps.length > 0 ? (
-            <RSVPTable>
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Handle</th>
-                  <th>Name</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rsvps.map((rsvp, index) => (
-                  <tr key={index}>
-                    <td>{index + 1}</td>
-                    <td>
-                      <HandleCell>{rsvp.handle}</HandleCell>
-                    </td>
-                    <td>{rsvp.name}</td>
+          {/* Confirmed RSVPs Table */}
+          {confirmedRSVPs.length > 0 && (
+            <TableSection>
+              <TableTitle>Confirmed RSVPs ({confirmedRSVPs.length})</TableTitle>
+              <RSVPTable>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Handle</th>
+                    <th>Name</th>
                   </tr>
-                ))}
-              </tbody>
-            </RSVPTable>
-          ) : (
+                </thead>
+                <tbody>
+                  {confirmedRSVPs.map((rsvp, index) => (
+                    <tr key={index}>
+                      <td>{index + 1}</td>
+                      <td>
+                        <HandleCell>{rsvp.handle}</HandleCell>
+                      </td>
+                      <td>{rsvp.name}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </RSVPTable>
+            </TableSection>
+          )}
+
+          {/* Waitlisted RSVPs Table */}
+          {waitlistedRSVPs.length > 0 && (
+            <TableSection>
+              <TableTitle>Waitlisted RSVPs ({waitlistedRSVPs.length})</TableTitle>
+              <RSVPTable>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Handle</th>
+                    <th>Name</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {waitlistedRSVPs.map((rsvp, index) => (
+                    <tr key={index}>
+                      <td>{index + 1}</td>
+                      <td>
+                        <HandleCell>{rsvp.handle}</HandleCell>
+                      </td>
+                      <td>{rsvp.name}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </RSVPTable>
+            </TableSection>
+          )}
+
+          {rsvps.length === 0 && (
             <NoRSVPsMessage>
               No RSVPs found for this event.
             </NoRSVPsMessage>
@@ -192,6 +234,10 @@ const EventDate = styled.p`
 
 const StatsSection = styled.section`
   margin-bottom: 2rem;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
 `;
 
 const StatCard = styled.div`
@@ -200,8 +246,7 @@ const StatCard = styled.div`
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   text-align: center;
-  max-width: 200px;
-  margin: 0 auto;
+  min-width: 150px;
 `;
 
 const StatNumber = styled.div`
@@ -219,6 +264,18 @@ const StatLabel = styled.div`
 
 const RSVPSection = styled.section`
   /* margin-bottom: 2rem; */
+`;
+
+const TableSection = styled.div`
+  margin-bottom: 2rem;
+`;
+
+const TableTitle = styled.h3`
+  font-size: 1.3rem;
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 2px solid #ecf0f1;
 `;
 
 const RSVPTable = styled.table`
