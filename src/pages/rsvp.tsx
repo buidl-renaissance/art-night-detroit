@@ -218,7 +218,7 @@ const RSVPPage = () => {
         />
       </Head>
 
-      <HeroSection>
+      <HeroSection imageUrl={event.image_url}>
         <HeroTitle>{event.name}</HeroTitle>
         <HeroSubtitle>{formatEventDate(event.start_date)}</HeroSubtitle>
         <HeroSubtitle>
@@ -366,14 +366,14 @@ const BackLink = styled(Link)`
   }
 `;
 
-const HeroSection = styled.section`
+const HeroSection = styled.section<{ imageUrl?: string }>`
   background:
     linear-gradient(
       135deg,
       rgba(19, 61, 90, 0.7) 0%,
       rgba(30, 16, 37, 0.7) 100%
     ),
-    url("/images/art-night-07-02-25.png");
+    url(${({ imageUrl }) => imageUrl || "/images/art-night-07-02-25.png"});
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
