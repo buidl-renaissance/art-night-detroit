@@ -3,21 +3,37 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import styled from 'styled-components';
 import PageContainer from '@/components/PageContainer';
 import { useRouter } from 'next/router';
+import { 
+  formatDateTimeForDatabase, 
+  formatDateTimeForInput, 
+  validateEventDates 
+} from '@/lib/events';
 
 const FormContainer = styled.div`
   max-width: 800px;
   margin: 0 auto;
-  padding: 2rem;
   color: ${({ theme }) => theme.colors.text.primary};
+
+  @media (min-width: 768px) {
+    padding: 2rem;
+  }
 `;
 
 const Header = styled.div`
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
+
+  @media (min-width: 768px) {
+    margin-bottom: 2rem;
+  }
 
   h1 {
-    font-size: 2.5rem;
+    font-size: 2rem;
     color: ${({ theme }) => theme.colors.text.primary};
     margin-bottom: 0.5rem;
+
+    @media (min-width: 768px) {
+      font-size: 2.5rem;
+    }
   }
 
   p {
@@ -27,13 +43,21 @@ const Header = styled.div`
 
 const Form = styled.form`
   background: ${({ theme }) => theme.colors.background.secondary};
-  padding: 2rem;
+  padding: 1.5rem;
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+  @media (min-width: 768px) {
+    padding: 2rem;
+  }
 `;
 
 const FormGroup = styled.div`
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
+
+  @media (min-width: 768px) {
+    margin-bottom: 1.5rem;
+  }
 
   label {
     display: block;
@@ -66,18 +90,25 @@ const FormGroup = styled.div`
 
 const Row = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 1rem;
 
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
+  @media (min-width: 768px) {
+    grid-template-columns: 1fr 1fr;
   }
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
-  gap: 1rem;
-  margin-top: 2rem;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
 `;
 
 const Button = styled.button<{ variant?: 'secondary' | 'danger' }>`
@@ -88,6 +119,11 @@ const Button = styled.button<{ variant?: 'secondary' | 'danger' }>`
   font-weight: bold;
   cursor: pointer;
   transition: all 0.2s;
+  width: 100%;
+
+  @media (min-width: 768px) {
+    width: auto;
+  }
 
   background: ${({ theme, variant }) => {
     if (variant === 'secondary') return theme.colors.background.primary;
@@ -117,7 +153,7 @@ const Button = styled.button<{ variant?: 'secondary' | 'danger' }>`
 `;
 
 const BackButton = styled.button`
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
   border: none;
   border-radius: 6px;
   background: ${({ theme }) => theme.colors.background.secondary};
@@ -127,6 +163,12 @@ const BackButton = styled.button`
   cursor: pointer;
   transition: all 0.2s;
   margin-bottom: 1rem;
+  width: 100%;
+
+  @media (min-width: 768px) {
+    width: auto;
+    padding: 0.5rem 1rem;
+  }
 
   &:hover {
     background: ${({ theme }) => theme.colors.background.primary};
@@ -137,10 +179,14 @@ const BackButton = styled.button`
 const ErrorMessage = styled.div`
   color: ${({ theme }) => theme.colors.error};
   margin-bottom: 1rem;
-  padding: 0.75rem;
+  padding: 1rem;
   background: ${({ theme }) => theme.colors.error}20;
   border-radius: 6px;
   border: 1px solid ${({ theme }) => theme.colors.error};
+
+  @media (min-width: 768px) {
+    padding: 0.75rem;
+  }
 `;
 
 const LoadingContainer = styled.div`
@@ -148,8 +194,14 @@ const LoadingContainer = styled.div`
   justify-content: center;
   align-items: center;
   height: 50vh;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   color: ${({ theme }) => theme.colors.text.light};
+  padding: 1rem;
+  text-align: center;
+
+  @media (min-width: 768px) {
+    font-size: 1.2rem;
+  }
 `;
 
 interface Event {
@@ -222,8 +274,8 @@ export default function EditEvent() {
       setFormData({
         name: data.name,
         description: data.description || '',
-        start_date: data.start_date ? new Date(data.start_date).toISOString().slice(0, 16) : '',
-        end_date: data.end_date ? new Date(data.end_date).toISOString().slice(0, 16) : '',
+        start_date: data.start_date ? formatDateTimeForInput(data.start_date) : '',
+        end_date: data.end_date ? formatDateTimeForInput(data.end_date) : '',
         location: data.location || '',
         status: data.status
       });
@@ -248,9 +300,22 @@ export default function EditEvent() {
     setError(null);
 
     try {
+      // Validate dates
+      const dateErrors = validateEventDates(formData.start_date, formData.end_date);
+      if (dateErrors.length > 0) {
+        throw new Error(dateErrors.join(', '));
+      }
+
+      // Prepare data for database with proper timezone handling
+      const eventData = {
+        ...formData,
+        start_date: formatDateTimeForDatabase(formData.start_date),
+        end_date: formData.end_date ? formatDateTimeForDatabase(formData.end_date) : null
+      };
+
       const { error } = await supabase
         .from('events')
-        .update(formData)
+        .update(eventData)
         .eq('id', id);
 
       if (error) throw error;

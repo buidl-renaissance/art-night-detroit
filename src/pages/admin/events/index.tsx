@@ -18,19 +18,30 @@ interface Event {
 const EventsContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
   color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 const Header = styled.div`
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 1rem;
   margin-bottom: 2rem;
 
+  @media (min-width: 768px) {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0;
+  }
+
   h1 {
-    font-size: 2.5rem;
+    font-size: 2rem;
     color: ${({ theme }) => theme.colors.text.primary};
+    margin: 0;
+
+    @media (min-width: 768px) {
+      font-size: 2.5rem;
+    }
   }
 `;
 
@@ -45,6 +56,11 @@ const AddButton = styled.button`
   cursor: pointer;
   transition: all 0.2s;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  width: 100%;
+
+  @media (min-width: 768px) {
+    width: auto;
+  }
 
   &:hover {
     background: ${({ theme }) => theme.colors.primaryHover};
@@ -55,8 +71,14 @@ const AddButton = styled.button`
 
 const EventsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 2rem;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  width: 100%;
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 2rem;
+  }
 `;
 
 const EventCard = styled.div`
@@ -65,6 +87,7 @@ const EventCard = styled.div`
   overflow: hidden;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s;
+  width: 100%;
 
   &:hover {
     transform: translateY(-4px);
@@ -72,13 +95,21 @@ const EventCard = styled.div`
 `;
 
 const EventHeader = styled.div`
-  padding: 1.5rem;
+  padding: 1rem;
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
 
+  @media (min-width: 768px) {
+    padding: 1.5rem;
+  }
+
   h3 {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     margin-bottom: 0.5rem;
     color: ${({ theme }) => theme.colors.text.primary};
+
+    @media (min-width: 768px) {
+      font-size: 1.5rem;
+    }
   }
 `;
 
@@ -93,7 +124,7 @@ const StatusBadge = styled.span<{ status: string }>`
     switch (status) {
       case 'draft': return theme.colors.text.light;
       case 'scheduled': return theme.colors.primary;
-      case 'active': return theme.colors.success;
+      case 'active': return theme.colors.primary;
       case 'ended': return theme.colors.error;
       default: return theme.colors.text.light;
     }
@@ -102,7 +133,11 @@ const StatusBadge = styled.span<{ status: string }>`
 `;
 
 const EventInfo = styled.div`
-  padding: 1.5rem;
+  padding: 1rem;
+
+  @media (min-width: 768px) {
+    padding: 1.5rem;
+  }
 
   p {
     color: ${({ theme }) => theme.colors.text.light};
@@ -113,9 +148,14 @@ const EventInfo = styled.div`
 
 const EventDetails = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
   margin-bottom: 1rem;
+
+  @media (min-width: 768px) {
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
 `;
 
 const DetailItem = styled.div`
@@ -135,14 +175,21 @@ const DetailItem = styled.div`
 
 const EventActions = styled.div`
   display: flex;
-  gap: 1rem;
-  padding: 1rem 1.5rem;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
   background: ${({ theme }) => theme.colors.background.primary};
   border-top: 1px solid ${({ theme }) => theme.colors.border};
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+  }
 `;
 
 const ActionButton = styled.button<{ variant?: 'danger' }>`
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
   border: none;
   border-radius: 6px;
   background: ${({ theme, variant }) => 
@@ -152,6 +199,12 @@ const ActionButton = styled.button<{ variant?: 'danger' }>`
   font-weight: bold;
   cursor: pointer;
   transition: all 0.2s;
+  width: 100%;
+
+  @media (min-width: 768px) {
+    width: auto;
+    padding: 0.5rem 1rem;
+  }
 
   &:hover {
     background: ${({ theme, variant }) => 
@@ -161,7 +214,7 @@ const ActionButton = styled.button<{ variant?: 'danger' }>`
 `;
 
 const BackButton = styled.button`
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
   border: none;
   border-radius: 6px;
   background: ${({ theme }) => theme.colors.background.secondary};
@@ -171,11 +224,33 @@ const BackButton = styled.button`
   cursor: pointer;
   transition: all 0.2s;
   margin-bottom: 1rem;
+  width: 100%;
+
+  @media (min-width: 768px) {
+    width: auto;
+    padding: 0.5rem 1rem;
+  }
 
   &:hover {
     background: ${({ theme }) => theme.colors.background.primary};
     transform: translateY(-2px);
   }
+`;
+
+const ErrorMessage = styled.p`
+  color: red;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: rgba(255, 0, 0, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 0, 0, 0.2);
+`;
+
+const LoadingMessage = styled.p`
+  text-align: center;
+  padding: 2rem;
+  color: ${({ theme }) => theme.colors.text.light};
+  font-size: 1.1rem;
 `;
 
 export default function Events() {
@@ -256,7 +331,7 @@ export default function Events() {
     return (
       <PageContainer theme="dark">
         <EventsContainer>
-          <p>Loading...</p>
+          <LoadingMessage>Loading...</LoadingMessage>
         </EventsContainer>
       </PageContainer>
     );
@@ -277,7 +352,7 @@ export default function Events() {
         </Header>
 
         {error && (
-          <p style={{ color: 'red', marginBottom: '1rem' }}>{error}</p>
+          <ErrorMessage>{error}</ErrorMessage>
         )}
 
         <EventsGrid>

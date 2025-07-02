@@ -3,11 +3,15 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import styled from 'styled-components';
 import PageContainer from '@/components/PageContainer';
 import { useRouter } from 'next/router';
+import { 
+  formatDateTimeForDatabase, 
+  getCurrentLocalDateTimeString, 
+  validateEventDates 
+} from '@/lib/events';
 
 const FormContainer = styled.div`
   max-width: 800px;
   margin: 0 auto;
-  padding: 2rem;
   color: ${({ theme }) => theme.colors.text.primary};
 `;
 
@@ -147,7 +151,7 @@ export default function NewEvent() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    start_date: '',
+    start_date: getCurrentLocalDateTimeString(),
     end_date: '',
     location: '',
     status: 'draft'
@@ -194,9 +198,22 @@ export default function NewEvent() {
     setError(null);
 
     try {
+      // Validate dates
+      const dateErrors = validateEventDates(formData.start_date, formData.end_date);
+      if (dateErrors.length > 0) {
+        throw new Error(dateErrors.join(', '));
+      }
+
+      // Prepare data for database with proper timezone handling
+      const eventData = {
+        ...formData,
+        start_date: formatDateTimeForDatabase(formData.start_date),
+        end_date: formData.end_date ? formatDateTimeForDatabase(formData.end_date) : null
+      };
+
       const { error } = await supabase
         .from('events')
-        .insert([formData]);
+        .insert([eventData]);
 
       if (error) throw error;
 

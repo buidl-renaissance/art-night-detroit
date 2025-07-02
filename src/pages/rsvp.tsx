@@ -1,9 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Head from "next/head";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import styled from "styled-components";
+import { useEvents } from "@/hooks/useEvents";
+import { Event } from "@/types/events";
 
 const RSVPPage = () => {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     handle: "",
     name: "",
@@ -13,6 +17,34 @@ const RSVPPage = () => {
   const [formStatus, setFormStatus] = useState<null | "success" | "error">(
     null
   );
+  const [errorMessage, setErrorMessage] = useState<string>("");
+
+  // Hardcoded event ID
+  const EVENT_ID = "744f84a0-9e72-478f-9ff1-8a8e0360e3c5";
+  
+  const { fetchEvent } = useEvents();
+  const [event, setEvent] = useState<Event | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadEvent = async () => {
+      try {
+        const eventData = await fetchEvent(EVENT_ID);
+        if (eventData) {
+          setEvent(eventData);
+        } else {
+          setError("Event not found");
+        }
+      } catch {
+        setError("Failed to load event");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadEvent();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -22,28 +54,95 @@ const RSVPPage = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would typically send the RSVP data to your backend
-    // For now, we'll just simulate a successful submission
-    setTimeout(() => {
+    setFormStatus(null);
+    
+    try {
+      const response = await fetch('/api/rsvp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          event_id: EVENT_ID,
+          ...formData
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setErrorMessage(data.error || 'Failed to submit RSVP');
+        throw new Error(data.error || 'Failed to submit RSVP');
+      }
+
       setFormStatus("success");
+      setErrorMessage("");
       setFormData({
         handle: "",
         name: "",
         phone: "",
         email: "",
       });
-    }, 1000);
+      
+      // Redirect to success page with event name
+      setTimeout(() => {
+        router.push(`/rsvp/success?eventName=${encodeURIComponent(event?.name || '')}`);
+      }, 1500);
+    } catch (error) {
+      console.error('RSVP submission error:', error);
+      setFormStatus("error");
+    }
   };
+
+  const formatEventDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const formatEventTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  if (loading) {
+    return (
+      <PageContainer>
+        <LoadingContainer>
+          <LoadingText>Loading event details...</LoadingText>
+        </LoadingContainer>
+      </PageContainer>
+    );
+  }
+
+  if (error || !event) {
+    return (
+      <PageContainer>
+        <ErrorContainer>
+          <ErrorMessage>
+            {error || "Event not found"}
+          </ErrorMessage>
+          <BackLink href="/events">← Back to Events</BackLink>
+        </ErrorContainer>
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer>
       <Head>
-        <title>RSVP | Art Night Detroit</title>
+        <title>RSVP | {event.name} | Art Night Detroit</title>
         <meta
           name="description"
-          content="RSVP to upcoming Art Night Detroit events"
+          content={`RSVP to ${event.name} - ${event.description || 'Join us for this amazing event'}`}
         />
         <link
           href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700&family=Inter:wght@400;500;600&display=swap"
@@ -52,9 +151,15 @@ const RSVPPage = () => {
       </Head>
 
       <HeroSection>
-        <HeroTitle>Art Night Detroit</HeroTitle>
-        <HeroSubtitle>7/26/25</HeroSubtitle>
-        <HeroSubtitle>8p-1a</HeroSubtitle>
+        <HeroTitle>{event.name}</HeroTitle>
+        <HeroSubtitle>{formatEventDate(event.start_date)}</HeroSubtitle>
+        <HeroSubtitle>
+          {formatEventTime(event.start_date)}
+          {event.end_date && ` - ${formatEventTime(event.end_date)}`}
+        </HeroSubtitle>
+        {event.location && (
+          <HeroLocation>{event.location}</HeroLocation>
+        )}
       </HeroSection>
 
       <RSVPContainer>
@@ -66,7 +171,7 @@ const RSVPPage = () => {
           )}
           {formStatus === "error" && (
             <ErrorMessage>
-              There was an error submitting your RSVP. Please try again.
+              {errorMessage || "There was an error submitting your RSVP. Please try again."}
             </ErrorMessage>
           )}
           <FormGroup>
@@ -82,14 +187,14 @@ const RSVPPage = () => {
             />
           </FormGroup>
           <FormGroup>
-            <FormLabel htmlFor="name">Full Name</FormLabel>
+            <FormLabel htmlFor="name">Name</FormLabel>
             <FormInput
               type="text"
               id="name"
               name="name"
               value={formData.name}
               onChange={handleChange}
-              placeholder="Your full name"
+              placeholder="Your name"
               required
             />
           </FormGroup>
@@ -144,6 +249,40 @@ const PageContainer = styled.div`
   overflow-x: hidden;
 `;
 
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+  padding: 2rem;
+`;
+
+const LoadingText = styled.p`
+  font-size: 1.2rem;
+  color: #666;
+`;
+
+const ErrorContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  padding: 2rem;
+  text-align: center;
+`;
+
+const BackLink = styled(Link)`
+  color: #3498db;
+  text-decoration: none;
+  margin-top: 1rem;
+  font-weight: 500;
+  
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+
 const HeroSection = styled.section`
   background:
     linear-gradient(
@@ -195,6 +334,22 @@ const HeroSubtitle = styled.p`
   }
 `;
 
+const HeroLocation = styled.p`
+  font-size: 1.2rem;
+  max-width: 600px;
+  margin: 1rem auto 0;
+  position: relative;
+  z-index: 1;
+  text-shadow:
+    2px 2px 0px rgba(0, 0, 0, 0.8),
+    0 0 15px rgba(0, 0, 0, 0.6);
+  opacity: 0.9;
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
+`;
+
 const RSVPContainer = styled.div`
   display: grid;
   grid-template-columns: 1fr 2fr;
@@ -235,6 +390,7 @@ const FormInput = styled.input`
   font-size: 1rem;
   transition: border-color 0.2s ease;
   background-color: #f8f8f8;
+  color: #000000;
 
   &:focus {
     outline: none;
