@@ -144,6 +144,37 @@ const RSVPPage = () => {
           name="description"
           content={`RSVP to ${event.name} - ${event.description || 'Join us for this amazing event'}`}
         />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://artnightdetroit.com/rsvp" />
+        <meta property="og:title" content={`RSVP | ${event.name} | Art Night Detroit`} />
+        <meta property="og:description" content={`RSVP to ${event.name} - ${event.description || 'Join us for this amazing event'}`} />
+        <meta property="og:image" content="/images/art-night-07-02-25.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:site_name" content="Art Night Detroit" />
+        
+        {/* Twitter */}
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content="https://artnightdetroit.com/rsvp" />
+        <meta property="twitter:title" content={`RSVP | ${event.name} | Art Night Detroit`} />
+        <meta property="twitter:description" content={`RSVP to ${event.name} - ${event.description || 'Join us for this amazing event'}`} />
+        <meta property="twitter:image" content="/images/art-night-07-02-25.png" />
+        
+        {/* Additional SEO */}
+        <meta name="keywords" content="art night detroit, rsvp, event, art, detroit, ${event.name?.toLowerCase()}" />
+        <meta name="author" content="Art Night Detroit" />
+        <meta name="robots" content="index, follow" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        
+        {/* Canonical URL */}
+        <link rel="canonical" href="https://artnightdetroit.com/rsvp" />
+        
+        {/* Favicon */}
+        <link rel="icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" href="/favicon.ico" />
+        
         <link
           href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700&family=Inter:wght@400;500;600&display=swap"
           rel="stylesheet"
