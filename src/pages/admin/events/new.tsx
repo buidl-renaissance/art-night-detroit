@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import styled from 'styled-components';
 import PageContainer from '@/components/PageContainer';
@@ -147,6 +147,58 @@ const ErrorMessage = styled.div`
   border: 1px solid ${({ theme }) => theme.colors.error};
 `;
 
+const ImageUploadContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+`;
+
+const ImagePreview = styled.div<{ imageUrl?: string }>`
+  width: 200px;
+  height: 200px;
+  border-radius: 8px;
+  background: ${({ imageUrl, theme }) => 
+    imageUrl ? `url(${imageUrl})` : theme.colors.background.secondary};
+  background-size: cover;
+  background-position: center;
+  border: 2px dashed ${({ theme }) => theme.colors.border};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: ${({ theme }) => theme.colors.primary};
+  }
+`;
+
+const UploadText = styled.p`
+  color: ${({ theme }) => theme.colors.text.light};
+  text-align: center;
+  padding: 1rem;
+`;
+
+const FileInput = styled.input`
+  display: none;
+`;
+
+const UploadProgress = styled.div`
+  width: 100%;
+  height: 4px;
+  background: ${({ theme }) => theme.colors.background.secondary};
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+`;
+
+const ProgressBar = styled.div<{ progress: number }>`
+  width: ${({ progress }) => progress}%;
+  height: 100%;
+  background: ${({ theme }) => theme.colors.primary};
+  transition: width 0.3s ease;
+`;
+
 export default function NewEvent() {
   const [formData, setFormData] = useState({
     name: '',
@@ -155,10 +207,14 @@ export default function NewEvent() {
     end_date: '',
     location: '',
     status: 'draft',
-    attendance_limit: ''
+    attendance_limit: '',
+    image_url: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const supabase = createClientComponentClient();
 
@@ -191,6 +247,62 @@ export default function NewEvent() {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload an image file');
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be less than 5MB');
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      setError(null);
+
+      // Create a unique file name
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `event-images/${fileName}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('events')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('events')
+        .getPublicUrl(filePath);
+
+      setFormData(prev => ({
+        ...prev,
+        image_url: publicUrl
+      }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload image');
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -334,8 +446,37 @@ export default function NewEvent() {
             </select>
           </FormGroup>
 
+          <FormGroup>
+            <label>Event Image</label>
+            <ImageUploadContainer>
+              <ImagePreview 
+                imageUrl={formData.image_url}
+                onClick={handleImageClick}
+              >
+                {!formData.image_url && (
+                  <UploadText>
+                    Click to upload image<br />
+                    (Max 5MB)
+                  </UploadText>
+                )}
+              </ImagePreview>
+              <FileInput
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                disabled={isUploading}
+              />
+              {isUploading && (
+                <UploadProgress>
+                  <ProgressBar progress={uploadProgress} />
+                </UploadProgress>
+              )}
+            </ImageUploadContainer>
+          </FormGroup>
+
           <ButtonGroup>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || isUploading}>
               {loading ? 'Creating...' : 'Create Event'}
             </Button>
             <Button 

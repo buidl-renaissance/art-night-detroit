@@ -13,6 +13,7 @@ interface Event {
   location: string;
   status: 'draft' | 'scheduled' | 'active' | 'ended';
   created_at: string;
+  image_url?: string;
 }
 
 const EventsContainer = styled.div`
@@ -94,6 +95,16 @@ const EventCard = styled.div`
   }
 `;
 
+const EventImage = styled.div<{ imageUrl?: string }>`
+  width: 100%;
+  height: 200px;
+  background: ${({ imageUrl, theme }) => 
+    imageUrl ? `url(${imageUrl})` : theme.colors.background.primary};
+  background-size: cover;
+  background-position: center;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
 const EventHeader = styled.div`
   padding: 1rem;
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
@@ -173,43 +184,26 @@ const DetailItem = styled.div`
   }
 `;
 
-const EventActions = styled.div`
-  display: flex;
-  flex-direction: column;
+const EditLink = styled.a`
+  display: inline-flex;
+  align-items: center;
   gap: 0.5rem;
-  padding: 1rem;
-  background: ${({ theme }) => theme.colors.background.primary};
-  border-top: 1px solid ${({ theme }) => theme.colors.border};
-
-  @media (min-width: 768px) {
-    flex-direction: row;
-    gap: 1rem;
-    padding: 1rem 1.5rem;
-  }
-`;
-
-const ActionButton = styled.button<{ variant?: 'danger' }>`
-  padding: 0.75rem 1rem;
-  border: none;
-  border-radius: 6px;
-  background: ${({ theme, variant }) => 
-    variant === 'danger' ? theme.colors.error : theme.colors.primary};
-  color: white;
+  color: ${({ theme }) => theme.colors.primary};
+  text-decoration: none;
   font-size: 0.9rem;
-  font-weight: bold;
-  cursor: pointer;
+  font-weight: 500;
+  padding: 0.5rem 0;
   transition: all 0.2s;
-  width: 100%;
-
-  @media (min-width: 768px) {
-    width: auto;
-    padding: 0.5rem 1rem;
-  }
+  cursor: pointer;
 
   &:hover {
-    background: ${({ theme, variant }) => 
-      variant === 'danger' ? theme.colors.errorHover : theme.colors.primaryHover};
-    transform: translateY(-2px);
+    color: ${({ theme }) => theme.colors.primaryHover};
+    text-decoration: underline;
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
   }
 `;
 
@@ -290,7 +284,7 @@ export default function Events() {
       const { data, error } = await supabase
         .from('events')
         .select('*')
-        .order('start_date', { ascending: false });
+        .order('start_date', { ascending: true });
 
       if (error) throw error;
       setEvents(data || []);
@@ -301,21 +295,7 @@ export default function Events() {
     }
   };
 
-  const handleDelete = async (eventId: string) => {
-    if (!confirm('Are you sure you want to delete this event?')) return;
 
-    try {
-      const { error } = await supabase
-        .from('events')
-        .delete()
-        .eq('id', eventId);
-
-      if (error) throw error;
-      await fetchEvents();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    }
-  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -358,6 +338,9 @@ export default function Events() {
         <EventsGrid>
           {events.map((event) => (
             <EventCard key={event.id}>
+              {event.image_url && (
+                <EventImage imageUrl={event.image_url} />
+              )}
               <EventHeader>
                 <h3>{event.name}</h3>
                 <StatusBadge status={event.status}>{event.status}</StatusBadge>
@@ -382,21 +365,13 @@ export default function Events() {
                     </DetailItem>
                   )}
                 </EventDetails>
+                <EditLink onClick={() => router.push(`/admin/events/${event.id}/edit`)}>
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                  </svg>
+                  Edit Event
+                </EditLink>
               </EventInfo>
-              <EventActions>
-                <ActionButton onClick={() => router.push(`/admin/events/${event.id}/edit`)}>
-                  Edit
-                </ActionButton>
-                <ActionButton onClick={() => router.push(`/admin/events/${event.id}/raffles`)}>
-                  Manage Raffles
-                </ActionButton>
-                <ActionButton 
-                  variant="danger"
-                  onClick={() => handleDelete(event.id)}
-                >
-                  Delete
-                </ActionButton>
-              </EventActions>
             </EventCard>
           ))}
         </EventsGrid>
