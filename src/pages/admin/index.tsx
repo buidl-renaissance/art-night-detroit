@@ -7,7 +7,6 @@ import { useRouter } from 'next/router';
 const AdminContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
   color: ${({ theme }) => theme.colors.text.primary};
 `;
 

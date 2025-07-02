@@ -15,7 +15,6 @@ interface Artist {
 const ArtistsContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
   color: ${({ theme }) => theme.colors.text.primary};
 `;
 
@@ -70,16 +69,19 @@ const AddButton = styled.button`
 
 const ArtistsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
 `;
 
 const ArtistCard = styled.div`
   background: ${({ theme }) => theme.colors.background.secondary};
   border-radius: 12px;
-  overflow: hidden;
+  padding: 1rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
 
   &:hover {
     transform: translateY(-4px);
@@ -87,52 +89,58 @@ const ArtistCard = styled.div`
 `;
 
 const ArtistImage = styled.div<{ imageUrl: string }>`
-  height: 200px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
   background-image: url(${props => props.imageUrl});
   background-size: cover;
   background-position: center;
+  flex-shrink: 0;
 `;
 
 const ArtistInfo = styled.div`
-  padding: 1.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 80px;
 
   h3 {
-    font-size: 1.5rem;
-    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
     color: ${({ theme }) => theme.colors.text.primary};
   }
 
   p {
     color: ${({ theme }) => theme.colors.text.light};
-    margin-bottom: 1rem;
-    line-height: 1.5;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+    font-size: 0.85rem;
+    flex: 1;
   }
 `;
 
-const ArtistActions = styled.div`
-  display: flex;
-  gap: 1rem;
-  padding: 1rem 1.5rem;
-  background: ${({ theme }) => theme.colors.background.primary};
-  border-top: 1px solid ${({ theme }) => theme.colors.border};
-`;
-
-const ActionButton = styled.button<{ variant?: 'danger' }>`
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 6px;
-  background: ${({ theme, variant }) => 
-    variant === 'danger' ? theme.colors.error : theme.colors.primary};
-  color: white;
-  font-size: 0.9rem;
-  font-weight: bold;
-  cursor: pointer;
+const EditLink = styled.a`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: ${({ theme }) => theme.colors.primary};
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.25rem 0;
   transition: all 0.2s;
+  cursor: pointer;
+  align-self: flex-start;
 
   &:hover {
-    background: ${({ theme, variant }) => 
-      variant === 'danger' ? theme.colors.errorHover : theme.colors.primaryHover};
-    transform: translateY(-2px);
+    color: ${({ theme }) => theme.colors.primaryHover};
+    text-decoration: underline;
+  }
+
+  svg {
+    width: 12px;
+    height: 12px;
   }
 `;
 
@@ -184,21 +192,7 @@ export default function Artists() {
     }
   };
 
-  const handleDelete = async (artistId: string) => {
-    if (!confirm('Are you sure you want to delete this artist?')) return;
 
-    try {
-      const { error } = await supabase
-        .from('artists')
-        .delete()
-        .eq('id', artistId);
-
-      if (error) throw error;
-      await fetchArtists();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    }
-  };
 
   if (loading) {
     return (
@@ -235,21 +229,13 @@ export default function Artists() {
               <ArtistInfo>
                 <h3>{artist.name}</h3>
                 <p>{artist.bio}</p>
+                <EditLink onClick={() => router.push(`/admin/artists/${artist.id}/edit`)}>
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                  </svg>
+                  Edit Artist
+                </EditLink>
               </ArtistInfo>
-              <ArtistActions>
-                <ActionButton onClick={() => router.push(`/admin/artists/${artist.id}/edit`)}>
-                  Edit
-                </ActionButton>
-                <ActionButton onClick={() => router.push(`/admin/artists/${artist.id}/raffles`)}>
-                  Manage Raffles
-                </ActionButton>
-                <ActionButton 
-                  variant="danger"
-                  onClick={() => handleDelete(artist.id)}
-                >
-                  Delete
-                </ActionButton>
-              </ArtistActions>
             </ArtistCard>
           ))}
         </ArtistsGrid>

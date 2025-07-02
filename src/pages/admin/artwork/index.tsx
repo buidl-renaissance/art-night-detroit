@@ -8,7 +8,6 @@ import { ArtworkWithArtist } from '@/data/artwork';
 const ArtworkContainer = styled.div`
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
   color: ${({ theme }) => theme.colors.text.primary};
 `;
 
