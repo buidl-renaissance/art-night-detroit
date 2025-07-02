@@ -108,6 +108,10 @@ export default function OrdersAdmin() {
 
   return (
     <PageContainer theme="dark" width="medium">
+      <BackButton onClick={() => router.push('/admin')}>
+        ← Back to Admin Dashboard
+      </BackButton>
+
       <Header>
         <Title>Manage Orders</Title>
       </Header>
@@ -182,6 +186,24 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
+`;
+
+const BackButton = styled.button`
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background: #2a2a2a;
+  color: #e0e0e0;
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 1rem;
+
+  &:hover {
+    background: #3a3a3a;
+    transform: translateY(-2px);
+  }
 `;
 
 const Title = styled.h1`

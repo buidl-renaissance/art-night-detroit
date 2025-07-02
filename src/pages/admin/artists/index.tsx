@@ -19,6 +19,24 @@ const ArtistsContainer = styled.div`
   color: ${({ theme }) => theme.colors.text.primary};
 `;
 
+const BackButton = styled.button`
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background: ${({ theme }) => theme.colors.background.secondary};
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 1rem;
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.background.primary};
+    transform: translateY(-2px);
+  }
+`;
+
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
@@ -195,6 +213,10 @@ export default function Artists() {
   return (
     <PageContainer theme="dark">
       <ArtistsContainer>
+        <BackButton onClick={() => router.push('/admin')}>
+          ← Back to Admin Dashboard
+        </BackButton>
+
         <Header>
           <h1>Artists</h1>
           <AddButton onClick={() => router.push('/admin/artists/new')}>

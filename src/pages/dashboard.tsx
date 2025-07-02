@@ -45,6 +45,26 @@ interface AvailableRaffle {
 const DashboardHeader = styled.div`
   margin-bottom: 40px;
   text-align: center;
+  position: relative;
+`;
+
+const LogoutButton = styled.button`
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
 `;
 
 const Title = styled.h1`
@@ -394,6 +414,9 @@ export default function Dashboard() {
       )}
 
       <DashboardHeader>
+        <LogoutButton onClick={() => router.push('/logout')}>
+          Logout
+        </LogoutButton>
         <Title>Your Raffle Tickets</Title>
         <TicketCount>{unusedTickets.length} Tickets Available</TicketCount>
         <BuyTicketsButton onClick={() => router.push('/tickets/checkout')}>
