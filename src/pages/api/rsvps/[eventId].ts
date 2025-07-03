@@ -10,13 +10,33 @@ export default async function handler(
   }
 
   try {
-    const { eventId } = req.query;
+    const { eventId, email } = req.query;
 
     if (!eventId || typeof eventId !== 'string') {
       return res.status(400).json({ error: 'Event ID is required' });
     }
 
-    // Fetch RSVPs for the specific event
+    // If email is provided, check if that specific user has RSVP'd
+    if (email && typeof email === 'string') {
+      const { data: rsvp, error: fetchError } = await supabase
+        .from('rsvps')
+        .select('id, handle, name, email, status, created_at, attended_at')
+        .eq('event_id', eventId)
+        .eq('email', email)
+        .single();
+
+      if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "not found"
+        console.error('Error fetching RSVP:', fetchError);
+        return res.status(500).json({ error: 'Failed to fetch RSVP' });
+      }
+
+      return res.status(200).json({ 
+        success: true, 
+        rsvp: rsvp || null
+      });
+    }
+
+    // Fetch all RSVPs for the specific event
     const { data: rsvps, error: fetchError } = await supabase
       .from('rsvps')
       .select('id, handle, name, email, status, created_at, attended_at')
