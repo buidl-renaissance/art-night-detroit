@@ -2,13 +2,21 @@ import React from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import styled from 'styled-components';
-import { events } from './events';
+import { GetServerSideProps } from 'next';
+import { getServerSideEvents } from '@/lib/getServerSideEvents';
+import { Event } from '@/types/events';
+import EventCard from '@/components/EventCard';
 
 
-const HomePage = () => {
+interface HomePageProps {
+  events: Event[];
+}
+
+const HomePage: React.FC<HomePageProps> = ({ events }) => {
   const today = new Date();
-  const futureEvents = events.filter(event => new Date(event.date) >= today);
-  const pastEvents = events.filter(event => new Date(event.date) < today);
+  const futureEvents = events.filter(event => new Date(event.start_date) >= today);
+  const pastEvents = events.filter(event => new Date(event.start_date) < today)
+    .sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
 
   return (
     <PageContainer>
@@ -27,7 +35,7 @@ const HomePage = () => {
         {/* <HeroCTA href="/events">Start Creating</HeroCTA> */}
       </HeroSection>
 
-      <RaffleSection>
+      {/* <RaffleSection>
         <RaffleContent>
           <RaffleTitle>Win Amazing Art Prizes!</RaffleTitle>
           <RaffleDescription>
@@ -36,40 +44,20 @@ const HomePage = () => {
           </RaffleDescription>
           <RaffleCTA href="/raffles/3c102268-f3b3-4fe5-8762-c57fbb9ed701">Enter Raffle</RaffleCTA>
         </RaffleContent>
-      </RaffleSection>
+      </RaffleSection> */}
 
       <EventsSection>
         <SectionTitle>Upcoming Events</SectionTitle>
         <EventsGrid>
           {futureEvents.map(event => (
-            <EventCard key={event.id}>
-              <EventImageWrapper>
-                <EventImage src={event.image} alt={event.title} />
-              </EventImageWrapper>
-              <EventContent>
-                <EventTitle>{event.title}</EventTitle>
-                <EventDate>{event.date}</EventDate>
-                <EventDescription>{event.description}</EventDescription>
-                <EventLink href={event.url ? event.url : `/events/${event.id}`}>Learn More</EventLink>
-              </EventContent>
-            </EventCard>
+            <EventCard key={event.id} event={event} />
           ))}
         </EventsGrid>
 
         <SectionTitle style={{ marginTop: '5rem' }}>Past Events</SectionTitle>
         <EventsGrid>
           {pastEvents.map(event => (
-            <EventCard key={event.id}>
-              <EventImageWrapper>
-                <EventImage src={event.image} alt={event.title} />
-              </EventImageWrapper>
-              <EventContent>
-                <EventTitle>{event.title}</EventTitle>
-                <EventDate>{event.date}</EventDate>
-                <EventDescription>{event.description}</EventDescription>
-                <EventLink href={event.url ? event.url : `/events/${event.id}`}>View Details</EventLink>
-              </EventContent>
-            </EventCard>
+            <EventCard key={event.id} event={event} />
           ))}
         </EventsGrid>
       </EventsSection>
@@ -99,6 +87,25 @@ const HomePage = () => {
 };
 
 export default HomePage;
+
+export const getServerSideProps: GetServerSideProps<HomePageProps> = async () => {
+  try {
+    const events = await getServerSideEvents();
+    
+    return {
+      props: {
+        events,
+      },
+    };
+  } catch (error) {
+    console.error('Error in getServerSideProps:', error);
+    return {
+      props: {
+        events: [],
+      },
+    };
+  }
+};
 
 // Styled Components
 const PageContainer = styled.div`
@@ -193,101 +200,6 @@ const EventsGrid = styled.div`
   
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
-  }
-`;
-
-const EventCard = styled.div`
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  background-color: #C19A6B;
-  position: relative;
-  
-  &:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
-  }
-`;
-
-const EventImageWrapper = styled.div`
-  height: 420px;
-  overflow: hidden;
-  position: relative;
-  
-  &:after {
-    content: "";
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 60px;
-    background: linear-gradient(to top, rgba(0,0,0,0.4), transparent);
-  }
-`;
-
-const EventImage = styled.img`
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.5s ease;
-  
-  ${EventCard}:hover & {
-    transform: scale(1.05);
-  }
-`;
-
-const EventContent = styled.div`
-  padding: 1.8rem;
-  background-color: white;
-`;
-
-const EventTitle = styled.h3`
-  font-family: 'Baloo 2', cursive;
-  font-size: 1.6rem;
-  margin-bottom: 0.5rem;
-  color: #111;
-`;
-
-const EventDate = styled.p`
-  font-size: 1rem;
-  color: #444;
-  margin-bottom: 1rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  
-  &:before {
-    content: "";
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    background-color: #3498DB;
-    border-radius: 50%;
-    margin-right: 8px;
-  }
-`;
-
-const EventDescription = styled.p`
-  font-size: 1rem;
-  line-height: 1.6;
-  margin-bottom: 1.5rem;
-  color: #333;
-`;
-
-const EventLink = styled(Link)`
-  display: inline-block;
-  padding: 0.6rem 1.2rem;
-  background-color: #27AE60;
-  color: white;
-  text-decoration: none;
-  border-radius: 50px;
-  font-weight: 500;
-  transition: background-color 0.2s ease, transform 0.2s ease;
-  
-  &:hover {
-    background-color: #219653;
-    transform: translateY(-3px);
   }
 `;
 

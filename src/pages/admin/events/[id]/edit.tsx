@@ -256,6 +256,24 @@ const ProgressBar = styled.div<{ progress: number }>`
   transition: width 0.3s ease;
 `;
 
+const CheckboxContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+
+  input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+  }
+
+  label {
+    margin: 0;
+    font-weight: normal;
+    cursor: pointer;
+  }
+`;
+
 interface Event {
   id: string;
   name: string;
@@ -266,6 +284,9 @@ interface Event {
   status: 'draft' | 'scheduled' | 'active' | 'ended';
   attendance_limit?: number;
   image_url?: string;
+  external_url?: string;
+  slug?: string;
+  featured?: boolean;
 }
 
 export default function EditEvent() {
@@ -278,7 +299,10 @@ export default function EditEvent() {
     location: '',
     status: 'draft',
     attendance_limit: '',
-    image_url: ''
+    image_url: '',
+    external_url: '',
+    slug: '',
+    featured: false
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -338,7 +362,10 @@ export default function EditEvent() {
         location: data.location || '',
         status: data.status,
         attendance_limit: data.attendance_limit ? data.attendance_limit.toString() : '',
-        image_url: data.image_url || ''
+        image_url: data.image_url || '',
+        external_url: data.external_url || '',
+        slug: data.slug || '',
+        featured: data.featured || false
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -348,10 +375,10 @@ export default function EditEvent() {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     }));
   };
 
@@ -574,6 +601,52 @@ export default function EditEvent() {
               <option value="active">Active</option>
               <option value="ended">Ended</option>
             </select>
+          </FormGroup>
+
+          <FormGroup>
+            <label htmlFor="external_url">External URL (Optional)</label>
+            <input
+              type="url"
+              id="external_url"
+              name="external_url"
+              value={formData.external_url}
+              onChange={handleInputChange}
+              placeholder="https://example.com/event-page"
+            />
+            <small style={{ color: '#666', fontSize: '0.9rem', marginTop: '0.25rem', display: 'block' }}>
+              If provided, this URL will be used instead of the internal event page.
+            </small>
+          </FormGroup>
+
+          <FormGroup>
+            <label htmlFor="slug">URL Slug (Optional)</label>
+            <input
+              type="text"
+              id="slug"
+              name="slug"
+              value={formData.slug}
+              onChange={handleInputChange}
+              placeholder="my-event-name"
+            />
+            <small style={{ color: '#666', fontSize: '0.9rem', marginTop: '0.25rem', display: 'block' }}>
+              Custom URL slug for the event page. Leave empty to auto-generate from event name.
+            </small>
+          </FormGroup>
+
+          <FormGroup>
+            <label>Featured Event</label>
+            <CheckboxContainer>
+              <input
+                type="checkbox"
+                id="featured"
+                name="featured"
+                checked={formData.featured}
+                onChange={handleInputChange}
+              />
+              <label htmlFor="featured">
+                Mark this event as featured (will appear prominently on the homepage)
+              </label>
+            </CheckboxContainer>
           </FormGroup>
 
           <FormGroup>

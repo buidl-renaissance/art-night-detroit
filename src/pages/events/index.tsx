@@ -2,59 +2,21 @@ import React from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import styled from 'styled-components';
+import { GetServerSideProps } from 'next';
+import { getServerSideEvents } from '@/lib/getServerSideEvents';
+import { Event } from '@/types/events';
+import EventCard from '@/components/EventCard';
 
-interface Event {
-  id: string;
-  title: string;
-  date: string;
-  description: string;
-  image: string;
-  location: string;
-  time: string;
-  url?: string;
+interface EventsPageProps {
+  events: Event[];
 }
 
-export const events: Event[] = [
-  {
-    id: 'dabls-collector-quest-raffle',
-    title: '15th Annual MBAD African Bead Festival',
-    date: 'June 14, 2025',
-    description: 'Join us for a celebration of African art and culture featuring live art, DJs & performers, food trucks, vendors and community activities.',
-    image: '/images/mbad-festival.jpg',
-    location: 'Dabls MBAD African Bead Museum, 6559 Grand River Ave, Detroit, MI',
-    time: '10:00AM-9:00PM'
-  },
-  {
-    id: 'spot-lite-vol-08',
-    title: 'Art Night Detroit x Spotlite Vol. 08',
-    date: 'April 30, 2025',
-    description: 'Join us for a night of creative projects, visual art showcase, live music, and more!',
-    image: '/images/art-night-spot-lite-vol-08.jpg',
-    location: 'Spot Lite Detroit',
-    time: '7:30PM-2AM'
-  },
-  {
-    id: 'a-window-into',
-    title: 'A Window Into...',
-    date: 'April 18, 2025',
-    description: 'Gallery showcase at La Ventana Café exploring the boundaries between reality and imagination.',
-    image: '/images/a-window-into.jpg',
-    location: 'La Ventana Café',
-    time: '6:00PM-10:00PM'
-  },
-  {
-    id: 'arts-for-the-earth',
-    title: 'Arts for the Earth',
-    date: 'April 26, 2025',
-    description: 'Life is a precious gift, and our source of endless beauty, abundance, and diversity is all created from our Mother Earth.',
-    image: '/images/arts-for-earth-blank.jpeg',
-    location: '2804 WIGHT ST, DETROIT, MI',
-    time: '12PM-2AM',
-    url: 'https://earth.gods.work/'
-  }
-];
+const EventsPage: React.FC<EventsPageProps> = ({ events }) => {
+  const today = new Date();
+  const futureEvents = events.filter(event => new Date(event.start_date) >= today);
+  const pastEvents = events.filter(event => new Date(event.start_date) < today)
+    .sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
 
-const EventsPage = () => {
   return (
     <PageContainer>
       <Head>
@@ -71,21 +33,30 @@ const EventsPage = () => {
       </HeroSection>
 
       <EventsContainer>
-        {events.map(event => (
-          <EventCard key={event.id}>
-            <EventImageWrapper>
-              <EventImage src={event.image} alt={event.title} />
-            </EventImageWrapper>
-            <EventContent>
-              <EventTitle>{event.title}</EventTitle>
-              <EventDate>{event.date} • {event.time}</EventDate>
-              <EventLocation>{event.location}</EventLocation>
-              <EventDescription>{event.description}</EventDescription>
-              <EventLink href={event.url ? event.url : `/events/${event.id}`}>View Details</EventLink>
-            </EventContent>
-          </EventCard>
-        ))}
+        {futureEvents.length > 0 ? (
+          futureEvents.map(event => (
+            <EventCard key={event.id} event={event} />
+          ))
+        ) : (
+          <NoEventsMessage>
+            <NoEventsTitle>No upcoming events</NoEventsTitle>
+            <NoEventsDescription>
+              Check back soon for new events, or browse our past events below.
+            </NoEventsDescription>
+          </NoEventsMessage>
+        )}
       </EventsContainer>
+
+      {pastEvents.length > 0 && (
+        <>
+          <SectionTitle>Past Events</SectionTitle>
+          <EventsContainer>
+            {pastEvents.map(event => (
+              <EventCard key={event.id} event={event} />
+            ))}
+          </EventsContainer>
+        </>
+      )}
 
       <CTASection>
         <CTATitle>Want to host an event?</CTATitle>
@@ -99,6 +70,25 @@ const EventsPage = () => {
 };
 
 export default EventsPage;
+
+export const getServerSideProps: GetServerSideProps<EventsPageProps> = async () => {
+  try {
+    const events = await getServerSideEvents();
+    
+    return {
+      props: {
+        events,
+      },
+    };
+  } catch (error) {
+    console.error('Error in getServerSideProps:', error);
+    return {
+      props: {
+        events: [],
+      },
+    };
+  }
+};
 
 // Styled Components
 const PageContainer = styled.div`
@@ -130,7 +120,7 @@ const PaintSplash = styled.div<{
 const HeroSection = styled.section`
   background: linear-gradient(135deg, #3498DB 0%, #8E44AD 100%);
   color: white;
-  padding: 6rem 2rem;
+  padding: 3rem 2rem;
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -154,14 +144,14 @@ const HeroTitle = styled.h1`
 `;
 
 const HeroSubtitle = styled.p`
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   max-width: 600px;
   margin: 0 auto;
   position: relative;
   z-index: 1;
   
   @media (max-width: 768px) {
-    font-size: 1.2rem;
+    font-size: 1rem;
   }
 `;
 
@@ -175,108 +165,38 @@ const EventsContainer = styled.div`
   margin-bottom: 4rem;
 `;
 
-const EventCard = styled.div`
-  display: flex;
-  background-color: white;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
-  }
-  
-  @media (max-width: 768px) {
-    flex-direction: column;
-  }
-`;
-
-const EventImageWrapper = styled.div`
-  flex: 0 0 350px;
-  overflow: hidden;
-  position: relative;
-  
-  @media (max-width: 768px) {
-    flex: 0 0 250px;
-    width: 100%;
-  }
-`;
-
-const EventImage = styled.img`
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.5s ease;
-  
-  ${EventCard}:hover & {
-    transform: scale(1.05);
-  }
-`;
-
-const EventContent = styled.div`
-  flex: 1;
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-`;
-
-const EventTitle = styled.h2`
+const SectionTitle = styled.h2`
   font-family: 'Baloo 2', cursive;
-  font-size: 1.8rem;
-  margin-bottom: 0.5rem;
-  color: #111;
-`;
-
-const EventDate = styled.p`
-  font-size: 1rem;
-  color: #444;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  
-  &:before {
-    content: "";
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    background-color: #3498DB;
-    border-radius: 50%;
-    margin-right: 8px;
-  }
-`;
-
-const EventLocation = styled.p`
-  font-size: 1rem;
-  color: #555;
-  margin-bottom: 1rem;
-  font-style: italic;
-`;
-
-const EventDescription = styled.p`
-  font-size: 1rem;
-  line-height: 1.6;
+  font-size: 2.5rem;
   margin-bottom: 1.5rem;
-  color: #333;
-  flex-grow: 1;
+  color: #fff;
+  text-align: center;
+    
+  @media (max-width: 768px) {
+    font-size: 2rem;
+  }
 `;
 
-const EventLink = styled(Link)`
-  align-self: flex-start;
-  padding: 0.6rem 1.2rem;
-  background-color: #27AE60;
-  color: white;
-  text-decoration: none;
-  border-radius: 50px;
-  font-weight: 500;
-  transition: background-color 0.2s ease, transform 0.2s ease;
-  
-  &:hover {
-    background-color: #219653;
-    transform: translateY(-3px);
-  }
+const NoEventsMessage = styled.div`
+  text-align: center;
+  padding: 4rem 2rem;
+  background-color: #f0f0f0;
+  border-radius: 16px;
+  margin-bottom: 4rem;
+`;
+
+const NoEventsTitle = styled.h3`
+  font-family: 'Baloo 2', cursive;
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 1rem;
+`;
+
+const NoEventsDescription = styled.p`
+  font-size: 1.2rem;
+  color: #555;
+  max-width: 600px;
+  margin: 0 auto;
 `;
 
 const CTASection = styled.section`
