@@ -3,11 +3,13 @@ import styled from "styled-components";
 import { Event } from "@/types/events";
 
 interface RSVP {
+  id: string;
   handle: string;
   name: string;
   email: string;
   status: 'confirmed' | 'waitlisted' | 'rejected' | 'canceled';
   created_at: string;
+  attended_at?: string;
 }
 
 interface RSVPListProps {
@@ -30,6 +32,7 @@ const RSVPList: React.FC<RSVPListProps> = ({
   const [rsvps, setRsvps] = useState<RSVP[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [updatingAttendance, setUpdatingAttendance] = useState<string | null>(null);
 
   useEffect(() => {
     if (eventId) {
@@ -52,6 +55,39 @@ const RSVPList: React.FC<RSVPListProps> = ({
       setError(err instanceof Error ? err.message : 'Failed to load RSVPs');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const markAttendance = async (rsvpId: string, attended: boolean) => {
+    try {
+      setUpdatingAttendance(rsvpId);
+      const response = await fetch(`/api/rsvps/${eventId}/mark-attendance`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ rsvpId, attended }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update attendance');
+      }
+
+      // Update the local state with the new attendance data
+      setRsvps(prevRsvps => 
+        prevRsvps.map(rsvp => 
+          rsvp.id === rsvpId 
+            ? { ...rsvp, attended_at: data.rsvp.attended_at }
+            : rsvp
+        )
+      );
+    } catch (err) {
+      console.error('Failed to mark attendance:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update attendance');
+    } finally {
+      setUpdatingAttendance(null);
     }
   };
 
@@ -120,6 +156,7 @@ const RSVPList: React.FC<RSVPListProps> = ({
                     <th>#</th>
                     <th>Handle</th>
                     <th>Name</th>
+                    <th>Attended</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -130,6 +167,17 @@ const RSVPList: React.FC<RSVPListProps> = ({
                         <HandleCell>{rsvp.handle}</HandleCell>
                       </td>
                       <td>{rsvp.name}</td>
+                      <td>
+                        <AttendanceCheckbox
+                          type="checkbox"
+                          checked={!!rsvp.attended_at}
+                          onChange={(e) => markAttendance(rsvp.id, e.target.checked)}
+                          disabled={updatingAttendance === rsvp.id}
+                        />
+                        {updatingAttendance === rsvp.id && (
+                          <LoadingSpinner>...</LoadingSpinner>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -147,6 +195,7 @@ const RSVPList: React.FC<RSVPListProps> = ({
                     <th>#</th>
                     <th>Handle</th>
                     <th>Name</th>
+                    <th>Attended</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -157,6 +206,17 @@ const RSVPList: React.FC<RSVPListProps> = ({
                         <HandleCell>{rsvp.handle}</HandleCell>
                       </td>
                       <td>{rsvp.name}</td>
+                      <td>
+                        <AttendanceCheckbox
+                          type="checkbox"
+                          checked={!!rsvp.attended_at}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => markAttendance(rsvp.id, e.target.checked)}
+                          disabled={updatingAttendance === rsvp.id}
+                        />
+                        {updatingAttendance === rsvp.id && (
+                          <LoadingSpinner>...</LoadingSpinner>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -324,4 +384,22 @@ const NoRSVPsMessage = styled.div`
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+`;
+
+const AttendanceCheckbox = styled.input`
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #c0392b;
+  
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+`;
+
+const LoadingSpinner = styled.span`
+  margin-left: 0.5rem;
+  color: #666;
+  font-size: 0.9rem;
 `;

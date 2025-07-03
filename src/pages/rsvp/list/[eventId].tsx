@@ -103,5 +103,5 @@ const Title = styled.h1`
 const Content = styled.div`
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1rem;
 `; 

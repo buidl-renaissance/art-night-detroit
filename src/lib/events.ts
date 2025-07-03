@@ -140,14 +140,14 @@ export function validateEventDates(startDate: string, endDate?: string): string[
   }
 
   const start = parseLocalDateTimeString(startDate);
-  const now = new Date();
+  // const now = new Date();
   
-  // Allow events to be created up to 1 hour in the past (for editing purposes)
-  const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+  // // Allow events to be created up to 1 hour in the past (for editing purposes)
+  // const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
   
-  if (start < oneHourAgo) {
-    errors.push('Start date cannot be more than 1 hour in the past');
-  }
+  // if (start < oneHourAgo) {
+  //   errors.push('Start date cannot be more than 1 hour in the past');
+  // }
 
   if (endDate) {
     const end = parseLocalDateTimeString(endDate);

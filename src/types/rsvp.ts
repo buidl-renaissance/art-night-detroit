@@ -8,6 +8,7 @@ export interface RSVP {
   status: 'confirmed' | 'waitlisted' | 'rejected' | 'canceled';
   created_at: string;
   updated_at: string;
+  attended_at?: string;
 }
 
 export interface CreateRSVPData {
