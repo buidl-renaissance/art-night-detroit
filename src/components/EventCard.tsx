@@ -67,7 +67,7 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
     <>
       <StyledEventCard>
         <EventImageWrapper>
-          <EventImage src={event.image_url || '/images/art-night-07-02-25.png'} alt={event.name} />
+          <EventImage src={event.image_url || '/images/art-night-detroit-logo.png'} alt={event.name} />
         </EventImageWrapper>
         <EventContent>
           <EventTitle>{event.name}</EventTitle>
@@ -137,6 +137,7 @@ const EventImage = styled.img`
   height: auto;
   object-fit: contain;
   transition: transform 0.5s ease;
+  background-color:rgb(71, 71, 71);
   
   ${StyledEventCard}:hover & {
     transform: scale(1.05);

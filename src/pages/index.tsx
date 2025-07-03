@@ -27,9 +27,9 @@ const HomePage: React.FC<HomePageProps> = ({ events }) => {
       </Head>
 
       <HeroSection>
-        <PaintSplash top="10%" left="5%" color="#87CEEB" size="150px" rotation="-15deg" />
-        <PaintSplash top="70%" left="85%" color="#F7DC6F" size="120px" rotation="25deg" />
-        <PaintSplash top="85%" left="15%" color="#8E44AD" size="100px" rotation="10deg" />
+        <PaintSplash top="7%" left="5%" color="#87CEEB" size="150px" rotation="-15deg" />
+        <PaintSplash top="50%" left="85%" color="#F7DC6F" size="120px" rotation="25deg" />
+        <PaintSplash top="78%" left="15%" color="#8E44AD" size="100px" rotation="10deg" />
         <img src="/images/art-night-detroit-logo.png" alt="Art Night Detroit" width={300} height={300} />
         <HeroSubtitle>Discover creative events in the heart of Detroit</HeroSubtitle>
         {/* <HeroCTA href="/events">Start Creating</HeroCTA> */}
@@ -126,14 +126,19 @@ const PaintSplash = styled.div<{
 `;
 
 const HeroSection = styled.section`
-  /* background: linear-gradient(135deg, #3498DB 0%, #8E44AD 100%); */
+  background: linear-gradient(135deg,rgb(32, 89, 127) 0%,rgb(71, 35, 86) 100%);
   color: white;
-  padding: 10rem 2rem;
+  padding: 6rem 2rem;
   text-align: center;
   position: relative;
   overflow: hidden;
   border-bottom-left-radius: 30px;
   border-bottom-right-radius: 30px;
+  min-height: 75vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 `;
 
 const HeroSubtitle = styled.p`
@@ -180,7 +185,7 @@ const EventsSection = styled.section`
   position: relative;
   
   @media (max-width: 768px) {
-    padding: 4rem 1rem;
+    padding: 3rem 1rem;
   }
 `;
 
