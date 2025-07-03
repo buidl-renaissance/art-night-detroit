@@ -30,7 +30,7 @@ export default async function handler(
     // Get RSVP counts by status
     const { data: rsvpStats, error: statsError } = await supabase
       .from('rsvps')
-      .select('status')
+      .select('status, attended_at')
       .eq('event_id', eventId);
 
     if (statsError) {
@@ -44,6 +44,10 @@ export default async function handler(
     const rejectedCount = rsvpStats?.filter(r => r.status === 'rejected').length || 0;
     const canceledCount = rsvpStats?.filter(r => r.status === 'canceled').length || 0;
     const totalCount = rsvpStats?.length || 0;
+
+    // Calculate attendance counts
+    const attendedCount = rsvpStats?.filter(r => r.attended_at).length || 0;
+    const confirmedAttendedCount = rsvpStats?.filter(r => r.status === 'confirmed' && r.attended_at).length || 0;
 
     // Calculate remaining spots
     const remainingSpots = event.attendance_limit 
@@ -64,7 +68,9 @@ export default async function handler(
           waitlisted: waitlistedCount,
           rejected: rejectedCount,
           canceled: canceledCount,
-          total: totalCount
+          total: totalCount,
+          attended: attendedCount,
+          confirmed_attended: confirmedAttendedCount
         }
       }
     });

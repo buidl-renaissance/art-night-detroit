@@ -2,31 +2,50 @@ import { useEffect, useState } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { User } from '@supabase/supabase-js';
 
+interface Profile {
+  id: string;
+  email: string;
+  full_name?: string;
+  is_admin: boolean;
+}
+
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const supabase = createClientComponentClient();
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    const checkAdmin = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setLoading(false);
+        return;
+      }
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+      setUser(session.user);
 
-    return () => subscription.unsubscribe();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', session.user.id)
+        .single();
+
+      console.log('profile', profile);
+      if (profile) {
+        setProfile(profile as Profile);
+      }
+
+      setLoading(false);
+    };
+
+    checkAdmin();
   }, [supabase.auth]);
 
   return {
     user,
+    profile,
     loading,
+    isAdmin: profile?.is_admin || false,
   };
 }; 

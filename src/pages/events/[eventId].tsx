@@ -7,6 +7,7 @@ import { Event } from '@/types/events';
 import { getEvent } from '@/data/events';
 import { Button } from '@/components/Button';
 import Footer from '@/components/Footer';
+import RSVPList from '@/components/RSVPList';
 
 interface EventPageProps {
     event: Event;
@@ -110,6 +111,16 @@ const EventPage: React.FC<EventPageProps> = ({ event }) => {
                     <Description>{event.description}</Description>
                 )}
 
+                <RSVPSection>
+                    <RSVPList
+                        eventId={event.id}
+                        event={event}
+                        showEventInfo={false}
+                        showStats={false}
+                        showTable={true}
+                    />
+                </RSVPSection>
+
             </PageContainer>
             <Footer />
         </>
@@ -194,4 +205,10 @@ const Description = styled.div`
   line-height: 1.6;
   color: #f0f0f0;
   white-space: pre-wrap;
+`;
+
+const RSVPSection = styled.div`
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid #333;
 `;

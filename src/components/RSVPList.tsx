@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { Event } from "@/types/events";
+import { useAuth } from "@/hooks/useAuth";
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 interface RSVP {
   id: string;
@@ -33,6 +35,8 @@ const RSVPList: React.FC<RSVPListProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updatingAttendance, setUpdatingAttendance] = useState<string | null>(null);
+  const { isAdmin, loading: authLoading } = useAuth();
+  const supabase = createClientComponentClient();
 
   useEffect(() => {
     if (eventId) {
@@ -61,10 +65,27 @@ const RSVPList: React.FC<RSVPListProps> = ({
   const markAttendance = async (rsvpId: string, attended: boolean) => {
     try {
       setUpdatingAttendance(rsvpId);
+      
+      // Wait for auth to load if needed
+      if (authLoading) {
+        throw new Error('Authentication still loading');
+      }
+      
+      // Get the current session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      console.log('sessionError', sessionError);
+      console.log('session', session);
+      
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+
+
       const response = await fetch(`/api/rsvps/${eventId}/mark-attendance`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ rsvpId, attended }),
       });
@@ -91,9 +112,13 @@ const RSVPList: React.FC<RSVPListProps> = ({
     }
   };
 
-  // Separate confirmed and waitlisted RSVPs
+
+
+  // Separate RSVPs by status
   const confirmedRSVPs = rsvps.filter(rsvp => rsvp.status === 'confirmed');
   const waitlistedRSVPs = rsvps.filter(rsvp => rsvp.status === 'waitlisted');
+  const rejectedRSVPs = rsvps.filter(rsvp => rsvp.status === 'rejected');
+  const canceledRSVPs = rsvps.filter(rsvp => rsvp.status === 'canceled');
 
   if (loading) {
     return (
@@ -114,6 +139,46 @@ const RSVPList: React.FC<RSVPListProps> = ({
       </Container>
     );
   }
+
+  const renderRSVPTable = (rsvps: RSVP[], title: string, statusColor: string) => (
+    <TableSection>
+      <TableTitle style={{ color: statusColor }}>{title} ({rsvps.length})</TableTitle>
+      <RSVPTable>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Handle</th>
+            <th>Name</th>
+            {isAdmin && <th>✓</th>}
+          </tr>
+        </thead>
+        <tbody>
+          {rsvps.map((rsvp, index) => (
+            <tr key={rsvp.id}>
+              <td>{index + 1}</td>
+              <td>
+                <HandleCell>{rsvp.handle}</HandleCell>
+              </td>
+              <td>{rsvp.name}</td>
+              {isAdmin && (
+                <td>
+                  <AttendanceCheckbox
+                    type="checkbox"
+                    checked={!!rsvp.attended_at}
+                    onChange={(e) => markAttendance(rsvp.id, e.target.checked)}
+                    disabled={updatingAttendance === rsvp.id || authLoading}
+                  />
+                  {updatingAttendance === rsvp.id && (
+                    <LoadingSpinner>...</LoadingSpinner>
+                  )}
+                </td>
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </RSVPTable>
+    </TableSection>
+  );
 
   return (
     <Container>
@@ -141,88 +206,30 @@ const RSVPList: React.FC<RSVPListProps> = ({
             <StatNumber>{waitlistedRSVPs.length}</StatNumber>
             <StatLabel>Waitlisted RSVPs</StatLabel>
           </StatCard>
+          <StatCard>
+            <StatNumber>{rejectedRSVPs.length}</StatNumber>
+            <StatLabel>Rejected RSVPs</StatLabel>
+          </StatCard>
+          <StatCard>
+            <StatNumber>{canceledRSVPs.length}</StatNumber>
+            <StatLabel>Canceled RSVPs</StatLabel>
+          </StatCard>
         </StatsSection>
       )}
 
       {showTable && (
         <RSVPSection>
           {/* Confirmed RSVPs Table */}
-          {confirmedRSVPs.length > 0 && (
-            <TableSection>
-              <TableTitle>Confirmed RSVPs ({confirmedRSVPs.length})</TableTitle>
-              <RSVPTable>
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Handle</th>
-                    <th>Name</th>
-                    <th>Attended</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {confirmedRSVPs.map((rsvp, index) => (
-                    <tr key={index}>
-                      <td>{index + 1}</td>
-                      <td>
-                        <HandleCell>{rsvp.handle}</HandleCell>
-                      </td>
-                      <td>{rsvp.name}</td>
-                      <td>
-                        <AttendanceCheckbox
-                          type="checkbox"
-                          checked={!!rsvp.attended_at}
-                          onChange={(e) => markAttendance(rsvp.id, e.target.checked)}
-                          disabled={updatingAttendance === rsvp.id}
-                        />
-                        {updatingAttendance === rsvp.id && (
-                          <LoadingSpinner>...</LoadingSpinner>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </RSVPTable>
-            </TableSection>
-          )}
+          {confirmedRSVPs.length > 0 && renderRSVPTable(confirmedRSVPs, 'Confirmed RSVPs', '#27ae60')}
 
           {/* Waitlisted RSVPs Table */}
-          {waitlistedRSVPs.length > 0 && (
-            <TableSection>
-              <TableTitle>Waitlisted RSVPs ({waitlistedRSVPs.length})</TableTitle>
-              <RSVPTable>
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Handle</th>
-                    <th>Name</th>
-                    <th>Attended</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {waitlistedRSVPs.map((rsvp, index) => (
-                    <tr key={index}>
-                      <td>{index + 1}</td>
-                      <td>
-                        <HandleCell>{rsvp.handle}</HandleCell>
-                      </td>
-                      <td>{rsvp.name}</td>
-                      <td>
-                        <AttendanceCheckbox
-                          type="checkbox"
-                          checked={!!rsvp.attended_at}
-                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => markAttendance(rsvp.id, e.target.checked)}
-                          disabled={updatingAttendance === rsvp.id}
-                        />
-                        {updatingAttendance === rsvp.id && (
-                          <LoadingSpinner>...</LoadingSpinner>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </RSVPTable>
-            </TableSection>
-          )}
+          {waitlistedRSVPs.length > 0 && renderRSVPTable(waitlistedRSVPs, 'Waitlisted RSVPs', '#f39c12')}
+
+          {/* Rejected RSVPs Table */}
+          {rejectedRSVPs.length > 0 && renderRSVPTable(rejectedRSVPs, 'Rejected RSVPs', '#e74c3c')}
+
+          {/* Canceled RSVPs Table */}
+          {canceledRSVPs.length > 0 && renderRSVPTable(canceledRSVPs, 'Canceled RSVPs', '#95a5a6')}
 
           {rsvps.length === 0 && (
             <NoRSVPsMessage>
@@ -241,7 +248,7 @@ export default RSVPList;
 // Styled Components
 const Container = styled.div`
   font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
-  color: #222;
+  color: white;
 `;
 
 const LoadingContainer = styled.div`
@@ -254,7 +261,7 @@ const LoadingContainer = styled.div`
 
 const LoadingText = styled.p`
   font-size: 1.2rem;
-  color: #666;
+  color: #bdc3c7;
 `;
 
 const ErrorContainer = styled.div`
@@ -268,7 +275,7 @@ const ErrorContainer = styled.div`
 `;
 
 const ErrorMessage = styled.div`
-  color: #c0392b;
+  color: #e74c3c;
   font-size: 1.1rem;
 `;
 
@@ -301,24 +308,26 @@ const StatsSection = styled.section`
 `;
 
 const StatCard = styled.div`
-  background: white;
+  background: rgba(255, 255, 255, 0.1);
   padding: 1.5rem;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   text-align: center;
   min-width: 150px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 `;
 
 const StatNumber = styled.div`
   font-size: 2.5rem;
   font-weight: 700;
-  color: #c0392b;
+  color: #e74c3c;
   margin-bottom: 0.5rem;
 `;
 
 const StatLabel = styled.div`
   font-size: 1rem;
-  color: #666;
+  color: #bdc3c7;
   font-weight: 500;
 `;
 
@@ -332,34 +341,37 @@ const TableSection = styled.div`
 
 const TableTitle = styled.h3`
   font-size: 1.3rem;
-  color: #2c3e50;
+  color: #ecf0f1;
   margin-bottom: 1rem;
   padding: 0.5rem 0;
-  border-bottom: 2px solid #ecf0f1;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
 `;
 
 const RSVPTable = styled.table`
   width: 100%;
-  background: white;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   border-collapse: collapse;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 
   th, td {
     padding: 0.75rem;
     text-align: left;
-    border-bottom: 1px solid #ecf0f1;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
   }
 
   th {
-    background: #f8f9fa;
+    background: rgba(255, 255, 255, 0.1);
     font-weight: 600;
-    color: #2c3e50;
+    color: #ecf0f1;
   }
 
   tr:hover {
-    background: #f8f9fa;
+    background: rgba(255, 255, 255, 0.05);
   }
 
   @media (max-width: 768px) {
@@ -373,24 +385,28 @@ const RSVPTable = styled.table`
 
 const HandleCell = styled.span`
   font-weight: 600;
-  color: #c0392b;
+  color: #e74c3c;
 `;
 
 const NoRSVPsMessage = styled.div`
   text-align: center;
   padding: 2rem;
-  color: #666;
+  color: #bdc3c7;
   font-size: 1.1rem;
-  background: white;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 `;
+
+
 
 const AttendanceCheckbox = styled.input`
   width: 18px;
   height: 18px;
   cursor: pointer;
-  accent-color: #c0392b;
+  accent-color: #e74c3c;
   
   &:disabled {
     cursor: not-allowed;
@@ -400,6 +416,6 @@ const AttendanceCheckbox = styled.input`
 
 const LoadingSpinner = styled.span`
   margin-left: 0.5rem;
-  color: #666;
+  color: #bdc3c7;
   font-size: 0.9rem;
 `;

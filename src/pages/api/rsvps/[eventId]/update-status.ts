@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { updateRSVPAttendance } from '@/data/rsvp';
+import { updateRSVPStatus } from '@/data/rsvp';
 import { getAuthorizedClient } from '@/lib/getAuthorizedClient';
 
 export default async function handler(
@@ -12,7 +12,7 @@ export default async function handler(
 
   try {
     const { eventId } = req.query;
-    const { rsvpId, attended } = req.body;
+    const { rsvpId, status } = req.body;
 
     if (!eventId || typeof eventId !== 'string') {
       return res.status(400).json({ error: 'Event ID is required' });
@@ -22,8 +22,8 @@ export default async function handler(
       return res.status(400).json({ error: 'RSVP ID is required' });
     }
 
-    if (typeof attended !== 'boolean') {
-      return res.status(400).json({ error: 'Attended status is required' });
+    if (!status || !['confirmed', 'waitlisted', 'rejected', 'canceled'].includes(status)) {
+      return res.status(400).json({ error: 'Valid status is required: confirmed, waitlisted, rejected, or canceled' });
     }
 
     // Get authorized client with admin privileges
@@ -40,8 +40,8 @@ export default async function handler(
       return res.status(403).json({ error: 'Admin access required' });
     }
 
-    // Update the RSVP attendance using the server-side client
-    const data = await updateRSVPAttendance(rsvpId, attended, supabase);
+    // Update the RSVP status using the server-side client
+    const data = await updateRSVPStatus(rsvpId, status, supabase);
 
     if (!data) {
       return res.status(404).json({ error: 'RSVP not found' });
@@ -50,11 +50,11 @@ export default async function handler(
     return res.status(200).json({ 
       success: true, 
       rsvp: data,
-      message: attended ? 'Attendance marked' : 'Attendance unmarked'
+      message: `RSVP status updated to ${status}`
     });
 
   } catch (error) {
-    console.error('Mark attendance API error:', error);
+    console.error('Update RSVP status API error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 } 
