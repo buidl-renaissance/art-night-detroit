@@ -1,6 +1,7 @@
 import React from 'react';
 import Head from 'next/head';
 import styled from 'styled-components';
+import Footer from '@/components/Footer';
 
 const WindowIntoPage = () => {
   return (
@@ -56,14 +57,7 @@ const WindowIntoPage = () => {
         </GuidelinesList>
       </GuidelinesSection>
 
-      <Footer>
-        <FooterContent>
-          <FooterTitle>Connect With Us</FooterTitle>
-          <ContactInfo>
-            <ContactItem>IG: <a href="https://www.instagram.com/artnightdetroit/">@artnightdetroit</a></ContactItem>
-          </ContactInfo>
-        </FooterContent>
-      </Footer>
+      <Footer />
     </PageContainer>
   );
 };
@@ -233,54 +227,4 @@ const GuidelineItem = styled.li`
   }
 `;
 
-const Footer = styled.footer`
-  background-color: #000;
-  color: white;
-  padding: 3rem 2rem;
-  position: relative;
-  overflow: hidden;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image: radial-gradient(white 1px, transparent 1px);
-    background-size: 50px 50px;
-    opacity: 0.1;
-    animation: twinkle 8s infinite alternate;
-  }
-`;
 
-const FooterContent = styled.div`
-  max-width: 800px;
-  margin: 0 auto;
-  text-align: center;
-  position: relative;
-  z-index: 1;
-`;
-
-const FooterTitle = styled.h3`
-  font-size: 1.8rem;
-  margin-bottom: 1.5rem;
-  font-family: 'Playfair Display', serif;
-  letter-spacing: 0.05em;
-`;
-
-const ContactInfo = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.8rem;
-`;
-
-const ContactItem = styled.p`
-  font-size: 1.2rem;
-  transition: transform 0.2s ease;
-  
-  &:hover {
-    transform: translateY(-2px);
-  }
-`;

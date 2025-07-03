@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import Head from "next/head";
-import Link from "next/link";
 import styled from "styled-components";
 import { useEvents } from "@/hooks/useEvents";
 import { Event } from "@/types/events";
 import RSVPList from "@/components/RSVPList";
+import Footer from "@/components/Footer";
 
 const RSVPSuccessPage = () => {
   const { events, loading } = useEvents();
@@ -135,16 +135,7 @@ const RSVPSuccessPage = () => {
         )}
       </UpcomingEventsSection>
 
-      <Footer>
-        <FooterContent>
-          <FooterTitle>Art Night Detroit</FooterTitle>
-          <FooterLinks>
-            <FooterLink href="/">Home</FooterLink>
-            <FooterLink href="/events">Events</FooterLink>
-            <FooterLink href="/contact">Contact</FooterLink>
-          </FooterLinks>
-        </FooterContent>
-      </Footer>
+      <Footer />
     </PageContainer>
   );
 };
@@ -331,64 +322,4 @@ const NoEventsMessage = styled.div`
   font-size: 1.1rem;
 `;
 
-const Footer = styled.footer`
-  background-color: #222;
-  color: white;
-  padding: 3rem 2rem;
-`;
 
-const FooterContent = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    text-align: center;
-    gap: 1.5rem;
-  }
-`;
-
-const FooterTitle = styled.h2`
-  font-family: "Baloo 2", cursive;
-  font-size: 1.8rem;
-  margin: 0;
-`;
-
-const FooterLinks = styled.div`
-  display: flex;
-  gap: 2rem;
-
-  @media (max-width: 768px) {
-    gap: 1.5rem;
-  }
-`;
-
-const FooterLink = styled(Link)`
-  color: #ffffff;
-  text-decoration: none;
-  font-size: 1rem;
-  transition: color 0.2s ease;
-  position: relative;
-
-  &:after {
-    content: "";
-    position: absolute;
-    bottom: -3px;
-    left: 0;
-    width: 0;
-    height: 2px;
-    background: #8e44ad;
-    transition: width 0.3s ease;
-  }
-
-  &:hover {
-    color: #f7dc6f;
-
-    &:after {
-      width: 100%;
-    }
-  }
-`;

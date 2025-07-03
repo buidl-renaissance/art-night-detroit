@@ -1,11 +1,11 @@
 import React from 'react';
 import Head from 'next/head';
-import Link from 'next/link';
 import styled from 'styled-components';
 import { GetServerSideProps } from 'next';
 import { getServerSideEvents } from '@/lib/getServerSideEvents';
 import { Event } from '@/types/events';
 import EventCard from '@/components/EventCard';
+import Footer from '@/components/Footer';
 
 
 interface HomePageProps {
@@ -72,16 +72,7 @@ const HomePage: React.FC<HomePageProps> = ({ events }) => {
         </CTAButton>
       </CTASection>
 
-      <Footer>
-        <FooterContent>
-          <FooterTitle>Art Night Detroit</FooterTitle>
-          <FooterLinks>
-            <FooterLink href="/about">About</FooterLink>
-            <FooterLink href="/events">All Events</FooterLink>
-            <FooterLink href="/contact">Contact</FooterLink>
-          </FooterLinks>
-        </FooterContent>
-      </Footer>
+      <Footer />
     </PageContainer>
   );
 };
@@ -259,58 +250,4 @@ const CTAButton = styled.a`
   }
 `;
 
-const Footer = styled.footer`
-  background-color: #0a0a23;
-  color: white;
-  padding: 4rem 2rem;
-  border-top-left-radius: 30px;
-  border-top-right-radius: 30px;
-`;
 
-const FooterContent = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-`;
-
-const FooterTitle = styled.h3`
-  font-family: 'Baloo 2', cursive;
-  font-size: 1.8rem;
-  margin-bottom: 1.5rem;
-`;
-
-const FooterLinks = styled.div`
-  display: flex;
-  gap: 2rem;
-  position: relative;
-  z-index: 1;
-`;
-
-const FooterLink = styled(Link)`
-  color: #ffffff;
-  text-decoration: none;
-  font-size: 1rem;
-  transition: color 0.2s ease;
-  position: relative;
-
-  &:after {
-    content: "";
-    position: absolute;
-    bottom: -3px;
-    left: 0;
-    width: 0;
-    height: 2px;
-    background: #8E44AD;
-    transition: width 0.3s ease;
-  }
-
-  &:hover {
-    color: #F7DC6F;
-
-    &:after {
-      width: 100%;
-    }
-  }
-`;

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Head from 'next/head';
-import Link from 'next/link';
 import styled from 'styled-components';
+import Footer from '@/components/Footer';
 
 const ContactPage = () => {
   const [formData, setFormData] = useState({
@@ -134,16 +134,7 @@ const ContactPage = () => {
         </ContactForm>
       </ContactContainer>
 
-      <Footer>
-        <FooterContent>
-          <FooterTitle>Art Night Detroit</FooterTitle>
-          <FooterLinks>
-            <FooterLink href="/">Home</FooterLink>
-            <FooterLink href="/about">About</FooterLink>
-            <FooterLink href="/events">Events</FooterLink>
-          </FooterLinks>
-        </FooterContent>
-      </Footer>
+      <Footer />
     </PageContainer>
   );
 };
@@ -375,64 +366,4 @@ const ErrorMessage = styled.div`
   border-radius: 4px;
 `;
 
-const Footer = styled.footer`
-  background-color: #222;
-  color: white;
-  padding: 3rem 2rem;
-`;
 
-const FooterContent = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  
-  @media (max-width: 768px) {
-    flex-direction: column;
-    text-align: center;
-    gap: 1.5rem;
-  }
-`;
-
-const FooterTitle = styled.h2`
-  font-family: 'Baloo 2', cursive;
-  font-size: 1.8rem;
-  margin: 0;
-`;
-
-const FooterLinks = styled.div`
-  display: flex;
-  gap: 2rem;
-  
-  @media (max-width: 768px) {
-    gap: 1.5rem;
-  }
-`;
-
-const FooterLink = styled(Link)`
-  color: #ffffff;
-  text-decoration: none;
-  font-size: 1rem;
-  transition: color 0.2s ease;
-  position: relative;
-
-  &:after {
-    content: "";
-    position: absolute;
-    bottom: -3px;
-    left: 0;
-    width: 0;
-    height: 2px;
-    background: #8E44AD;
-    transition: width 0.3s ease;
-  }
-
-  &:hover {
-    color: #F7DC6F;
-
-    &:after {
-      width: 100%;
-    }
-  }
-`;
