@@ -67,7 +67,7 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
     <>
       <StyledEventCard>
         <EventImageWrapper>
-          <EventImage src={event.image_url || '/images/art-night-detroit-logo.png'} alt={event.name} />
+          <EventImage src={event.image_url || '/images/art-night-detroit-logo-banner.png'} alt={event.name} />
         </EventImageWrapper>
         <EventContent>
           <EventTitle>{event.name}</EventTitle>

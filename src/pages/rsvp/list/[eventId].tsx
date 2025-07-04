@@ -44,12 +44,6 @@ const RSVPListPage = () => {
         />
       </Head>
 
-      <Header>
-        <HeaderContent>
-          <Title>RSVP List</Title>
-        </HeaderContent>
-      </Header>
-
       <Content>
         {eventId && typeof eventId === 'string' && (
           <RSVPList 
@@ -75,29 +69,6 @@ const PageContainer = styled.div`
   color: #222;
   max-width: 100%;
   overflow-x: hidden;
-`;
-
-const Header = styled.header`
-  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-  color: white;
-  padding: 2rem;
-  text-align: center;
-`;
-
-const HeaderContent = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-`;
-
-const Title = styled.h1`
-  font-family: "Baloo 2", cursive;
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
-
-  @media (max-width: 768px) {
-    font-size: 2rem;
-  }
 `;
 
 const Content = styled.div`

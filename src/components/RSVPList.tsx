@@ -168,9 +168,6 @@ const RSVPList: React.FC<RSVPListProps> = ({
                     onChange={(e) => markAttendance(rsvp.id, e.target.checked)}
                     disabled={updatingAttendance === rsvp.id || authLoading}
                   />
-                  {updatingAttendance === rsvp.id && (
-                    <LoadingSpinner>...</LoadingSpinner>
-                  )}
                 </td>
               )}
             </tr>
@@ -200,19 +197,19 @@ const RSVPList: React.FC<RSVPListProps> = ({
         <StatsSection>
           <StatCard>
             <StatNumber>{confirmedRSVPs.length}</StatNumber>
-            <StatLabel>Confirmed RSVPs</StatLabel>
+            <StatLabel>Confirmed</StatLabel>
           </StatCard>
           <StatCard>
             <StatNumber>{waitlistedRSVPs.length}</StatNumber>
-            <StatLabel>Waitlisted RSVPs</StatLabel>
+            <StatLabel>Waitlisted</StatLabel>
           </StatCard>
           <StatCard>
             <StatNumber>{rejectedRSVPs.length}</StatNumber>
-            <StatLabel>Rejected RSVPs</StatLabel>
+            <StatLabel>Rejected</StatLabel>
           </StatCard>
           <StatCard>
             <StatNumber>{canceledRSVPs.length}</StatNumber>
-            <StatLabel>Canceled RSVPs</StatLabel>
+            <StatLabel>Canceled</StatLabel>
           </StatCard>
         </StatsSection>
       )}
@@ -302,31 +299,27 @@ const EventDate = styled.p`
 const StatsSection = styled.section`
   margin-bottom: 2rem;
   display: flex;
-  gap: 1rem;
+  gap: 0;
   justify-content: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
 `;
 
 const StatCard = styled.div`
-  background: rgba(255, 255, 255, 0.1);
-  padding: 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   text-align: center;
-  min-width: 150px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  min-width: 82px;
+  flex: 1;
 `;
 
 const StatNumber = styled.div`
-  font-size: 2.5rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #e74c3c;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
 `;
 
 const StatLabel = styled.div`
-  font-size: 1rem;
+  font-size: 0.7rem;
   color: #bdc3c7;
   font-weight: 500;
 `;
@@ -414,8 +407,3 @@ const AttendanceCheckbox = styled.input`
   }
 `;
 
-const LoadingSpinner = styled.span`
-  margin-left: 0.5rem;
-  color: #bdc3c7;
-  font-size: 0.9rem;
-`;
