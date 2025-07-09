@@ -115,9 +115,9 @@ const RSVPSuccessPage = () => {
                   {event.description && (
                     <EventDescription>{event.description}</EventDescription>
                   )}
-                  {event.id === "744f84a0-9e72-478f-9ff1-8a8e0360e3c5" && (
+                  {event.id === "ff32abb2-2bb4-439b-b6d8-e2de44ea98e9" && (
                     <RSVPList
-                      eventId="744f84a0-9e72-478f-9ff1-8a8e0360e3c5"
+                      eventId="ff32abb2-2bb4-439b-b6d8-e2de44ea98e9"
                       showEventInfo={false}
                       showStats={false}
                       showTable={true}
