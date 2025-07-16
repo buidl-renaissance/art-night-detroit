@@ -27,7 +27,7 @@ const RSVPPage = () => {
   const [lastRsvpStatus, setLastRsvpStatus] = useState<string>("confirmed");
 
   // Hardcoded event ID
-  const EVENT_ID = "ff32abb2-2bb4-439b-b6d8-e2de44ea98e9";
+  const EVENT_ID = "5858b19e-0679-4942-8973-9c903495e916";
 
   const { fetchEvent } = useEvents();
   const [event, setEvent] = useState<Event | null>(null);

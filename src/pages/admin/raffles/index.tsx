@@ -19,6 +19,7 @@ export default function RafflesAdmin() {
   const [raffles, setRaffles] = useState<Raffle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activatingRaffle, setActivatingRaffle] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClientComponentClient();
 
@@ -71,6 +72,42 @@ export default function RafflesAdmin() {
         return '#f44336';
       default:
         return '#e0e0e0';
+    }
+  };
+
+  const activateRaffle = async (raffleId: string) => {
+    setActivatingRaffle(raffleId);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+
+      const response = await fetch(`/api/raffles/${raffleId}/activate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to activate raffle');
+      }
+
+      // Refresh the raffles list
+      const { data, error: fetchError } = await supabase
+        .from('raffles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (fetchError) throw fetchError;
+      setRaffles(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setActivatingRaffle(null);
     }
   };
 
@@ -149,6 +186,15 @@ export default function RafflesAdmin() {
                 <Button variant="secondary" onClick={() => router.push(`/admin/raffles/${raffle.id}/tickets`)}>
                   View Tickets
                 </Button>
+                {raffle.status === 'draft' && (
+                  <Button 
+                    variant="success" 
+                    onClick={() => activateRaffle(raffle.id)}
+                    disabled={activatingRaffle === raffle.id}
+                  >
+                    {activatingRaffle === raffle.id ? 'Activating...' : 'Activate'}
+                  </Button>
+                )}
               </ButtonGroup>
             </RaffleCard>
           ))}
@@ -315,7 +361,7 @@ const ButtonGroup = styled.div`
   margin-top: auto;
 `;
 
-const Button = styled.button<{ variant?: 'secondary' }>`
+const Button = styled.button<{ variant?: 'secondary' | 'success' }>`
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
   border: none;
@@ -323,11 +369,24 @@ const Button = styled.button<{ variant?: 'secondary' }>`
   cursor: pointer;
   transition: opacity 0.2s;
   flex: 1;
-  background: ${({ variant }) => variant === 'secondary' ? 'transparent' : '#ffd700'};
-  color: ${({ variant }) => variant === 'secondary' ? '#e0e0e0' : '#121212'};
+  background: ${({ variant }) => {
+    if (variant === 'secondary') return 'transparent';
+    if (variant === 'success') return '#4CAF50';
+    return '#ffd700';
+  }};
+  color: ${({ variant }) => {
+    if (variant === 'secondary') return '#e0e0e0';
+    if (variant === 'success') return '#ffffff';
+    return '#121212';
+  }};
   border: ${({ variant }) => variant === 'secondary' ? '1px solid rgba(255, 215, 0, 0.3)' : 'none'};
 
   &:hover {
     opacity: 0.9;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 `; 
