@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Event } from '@/types/events';
 import RSVPModal from './RSVPModal';
+import ProcessedEventDescription from './EventDescription';
 
 interface EventCardProps {
   event: Event;
@@ -82,7 +83,7 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
             {event.time_end && ` - ${event.time_end}`}
           </EventDate>
           {event.location && <EventLocation>{event.location}</EventLocation>}
-          <EventDescription>{event.description}</EventDescription>
+          {event.description && <ProcessedEventDescription className="event-description">{event.description}</ProcessedEventDescription>}
           <ButtonContainer>
             {isFutureEvent && (
               <RSVPButton onClick={handleRSVP} $hasRSVPd={hasRSVPd}>
@@ -147,6 +148,14 @@ const EventImage = styled.img`
 const EventContent = styled.div`
   padding: 1.5rem;
   background-color: #34495E;
+
+  .event-description {
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: #ECF0F1;
+    flex-grow: 1;
+    margin-bottom: 1rem;
+  }
 `;
 
 const EventTitle = styled.h3`
@@ -174,13 +183,7 @@ const EventLocation = styled.p`
   font-style: italic;
 `;
 
-const EventDescription = styled.p`
-  font-size: 0.8rem;
-  line-height: 1.6;
-  color: #ECF0F1;
-  flex-grow: 1;
-  margin-bottom: 1rem;
-`;
+
 
 const ButtonContainer = styled.div`
   display: flex;

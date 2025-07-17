@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import styled from 'styled-components';
 import PageContainer from '@/components/PageContainer';
+import ProcessedEventDescription from '@/components/EventDescription';
 import { useRouter } from 'next/router';
 
 interface Event {
@@ -151,6 +152,12 @@ const EventInfo = styled.div`
   }
 
   p {
+    color: ${({ theme }) => theme.colors.text.light};
+    margin-bottom: 1rem;
+    line-height: 1.5;
+  }
+
+  .event-description {
     color: ${({ theme }) => theme.colors.text.light};
     margin-bottom: 1rem;
     line-height: 1.5;
@@ -346,7 +353,7 @@ export default function Events() {
                 <StatusBadge status={event.status}>{event.status}</StatusBadge>
               </EventHeader>
               <EventInfo>
-                <p>{event.description}</p>
+                {event.description && <ProcessedEventDescription className="event-description">{event.description}</ProcessedEventDescription>}
                 <EventDetails>
                   <DetailItem>
                     <h4>Start Date</h4>

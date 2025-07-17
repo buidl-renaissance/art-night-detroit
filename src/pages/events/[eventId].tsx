@@ -8,6 +8,7 @@ import { getEvent } from '@/data/events';
 import { Button } from '@/components/Button';
 import Footer from '@/components/Footer';
 import RSVPList from '@/components/RSVPList';
+import ProcessedEventDescription from '@/components/EventDescription';
 
 interface EventPageProps {
     event: Event;
@@ -108,7 +109,9 @@ const EventPage: React.FC<EventPageProps> = ({ event }) => {
                 </EventDetails>
 
                 {event.description && (
-                    <Description>{event.description}</Description>
+                    <Description>
+                        <ProcessedEventDescription className="event-description">{event.description}</ProcessedEventDescription>
+                    </Description>
                 )}
 
                 <RSVPSection>
@@ -155,7 +158,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 export default EventPage;
 
 const PageContainer = styled.div`
-  max-width: 1200px;
+  max-width: 800px;
   margin: 0 auto;
   padding: 2rem;
   color: white;
@@ -205,6 +208,11 @@ const Description = styled.div`
   line-height: 1.6;
   color: #f0f0f0;
   white-space: pre-wrap;
+
+  .event-description {
+    line-height: 1.6;
+    color: #f0f0f0;
+  }
 `;
 
 const RSVPSection = styled.div`

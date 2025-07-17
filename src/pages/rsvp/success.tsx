@@ -5,6 +5,7 @@ import { useEvents } from "@/hooks/useEvents";
 import { Event } from "@/types/events";
 import RSVPList from "@/components/RSVPList";
 import Footer from "@/components/Footer";
+import ProcessedEventDescription from "@/components/EventDescription";
 
 const RSVPSuccessPage = () => {
   const { events, loading } = useEvents();
@@ -113,7 +114,7 @@ const RSVPSuccessPage = () => {
                     <EventLocation>{event.location}</EventLocation>
                   )}
                   {event.description && (
-                    <EventDescription>{event.description}</EventDescription>
+                    <ProcessedEventDescription className="event-description">{event.description}</ProcessedEventDescription>
                   )}
                   {event.id === "5858b19e-0679-4942-8973-9c903495e916" && (
                     <RSVPList
@@ -264,6 +265,17 @@ const EventCard = styled.div`
     transform: translateY(-5px);
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
   }
+
+  .event-description {
+    font-size: 0.9rem;
+    color: #555;
+    line-height: 1.5;
+    margin-bottom: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
 `;
 
 const EventImage = styled.img`
@@ -304,16 +316,7 @@ const EventLocation = styled.p`
   font-style: italic;
 `;
 
-const EventDescription = styled.p`
-  font-size: 0.9rem;
-  color: #555;
-  line-height: 1.5;
-  margin-bottom: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-`;
+
 
 const NoEventsMessage = styled.div`
   text-align: center;
