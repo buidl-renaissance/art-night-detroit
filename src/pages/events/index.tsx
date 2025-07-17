@@ -156,7 +156,7 @@ const HeroSubtitle = styled.p`
 `;
 
 const EventsContainer = styled.div`
-  max-width: 1200px;
+  max-width: 800px;
   margin: 0 auto;
   padding: 0 2rem;
   display: flex;
