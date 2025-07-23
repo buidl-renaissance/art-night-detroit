@@ -99,11 +99,25 @@ const PriceBadge = styled.div`
 `;
 
 const ArtistsGrid = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 1rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.7rem;
   margin: 0 auto;
+  justify-items: center;
+  width: 100%;
+
+  @media (max-width: 1000px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  @media (max-width: 700px) {
+    grid-template-columns: 1fr;
+  }
+  @media print {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.5rem !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
 `;
 
 const ArtistCard = styled.div`
@@ -113,13 +127,21 @@ const ArtistCard = styled.div`
   display: flex;
   flex-direction: column;
   box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-  width: 300px;
+  width: 220px;
+  @media print {
+    width: 220px !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
 `;
 
 const ArtistImage = styled.img`
   width: 100%;
-  height: 320px;
+  height: 220px;
   object-fit: cover;
+  @media print {
+    height: 220px !important;
+  }
 `;
 
 const ArtistInfo = styled.div`
