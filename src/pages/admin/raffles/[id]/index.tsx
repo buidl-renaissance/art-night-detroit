@@ -199,11 +199,54 @@ const RaffleInfo = styled.div`
   }
 `;
 
+const EditForm = styled.form`
+  background: ${({ theme }) => theme.colors.background.secondary};
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  max-width: 600px;
+`;
+
+const EditInput = styled.input`
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  font-size: 1.1rem;
+  background: ${({ theme }) => theme.colors.background.primary};
+  color: ${({ theme }) => theme.colors.text.primary};
+`;
+
+const EditTextarea = styled.textarea`
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  font-size: 1.1rem;
+  background: ${({ theme }) => theme.colors.background.primary};
+  color: ${({ theme }) => theme.colors.text.primary};
+  min-height: 80px;
+`;
+
+const EditActions = styled.div`
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+`;
+
 export default function RaffleAdmin() {
   const [raffle, setRaffle] = useState<Raffle | null>(null);
   const [artists, setArtists] = useState<Artist[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editStatus, setEditStatus] = useState('');
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
   const router = useRouter();
   const { id } = router.query;
   const supabase = createClientComponentClient();
@@ -237,6 +280,14 @@ export default function RaffleAdmin() {
       checkAdmin();
     }
   }, [router.isReady, id]);
+
+  useEffect(() => {
+    if (raffle) {
+      setEditName(raffle.name);
+      setEditDescription(raffle.description);
+      setEditStatus(raffle.status);
+    }
+  }, [raffle]);
 
   const fetchRaffle = async () => {
     try {
@@ -306,6 +357,25 @@ export default function RaffleAdmin() {
     }
   };
 
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditLoading(true);
+    setEditError(null);
+    try {
+      const { error } = await supabase
+        .from('raffles')
+        .update({ name: editName, description: editDescription, status: editStatus })
+        .eq('id', id);
+      if (error) throw error;
+      await fetchRaffle();
+      setEditing(false);
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : 'Failed to update raffle');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <PageContainer theme="dark">
@@ -321,10 +391,56 @@ export default function RaffleAdmin() {
       <RaffleContainer>
         <Header>
           <h1>Raffle Management</h1>
-          <ActionButton onClick={() => router.push(`/admin/raffles/${id}/tickets`)}>
-            View Tickets
-          </ActionButton>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <ActionButton onClick={() => setEditing(true)}>
+              Edit
+            </ActionButton>
+            <ActionButton onClick={() => router.push(`/raffles/${id}/marketing`)}>
+              View Marketing Page
+            </ActionButton>
+            <ActionButton onClick={() => router.push(`/admin/raffles/${id}/tickets`)}>
+              View Tickets
+            </ActionButton>
+          </div>
         </Header>
+
+        {editing && (
+          <EditForm onSubmit={handleEditSubmit}>
+            <label>
+              Name
+              <EditInput
+                value={editName}
+                onChange={e => setEditName(e.target.value)}
+                required
+              />
+            </label>
+            <label>
+              Description
+              <EditTextarea
+                value={editDescription}
+                onChange={e => setEditDescription(e.target.value)}
+                required
+              />
+            </label>
+            <label>
+              Status
+              <EditInput
+                value={editStatus}
+                onChange={e => setEditStatus(e.target.value)}
+                required
+              />
+            </label>
+            {editError && <p style={{ color: 'red' }}>{editError}</p>}
+            <EditActions>
+              <ActionButton type="submit" disabled={editLoading}>
+                {editLoading ? 'Saving...' : 'Save'}
+              </ActionButton>
+              <ActionButton type="button" onClick={() => setEditing(false)}>
+                Cancel
+              </ActionButton>
+            </EditActions>
+          </EditForm>
+        )}
 
         {error && (
           <p style={{ color: 'red', marginBottom: '1rem' }}>{error}</p>
