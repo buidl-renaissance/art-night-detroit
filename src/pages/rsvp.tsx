@@ -25,6 +25,7 @@ const RSVPPage = () => {
     waitlisted: number;
   } | null>(null);
   const [lastRsvpStatus, setLastRsvpStatus] = useState<string>("confirmed");
+  const [showQRCode, setShowQRCode] = useState(false);
 
   // Hardcoded event ID
   const EVENT_ID = "37e58914-c573-4563-adad-cb74d71d8a94";
@@ -113,6 +114,16 @@ const RSVPPage = () => {
       console.error("RSVP submission error:", error);
       setFormStatus("error");
     }
+  };
+
+  const handleShareClick = () => {
+    setShowQRCode(!showQRCode);
+  };
+
+  const generateQRCode = () => {
+    const url = "https://artnightdetroit.com/rsvp";
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+    return qrCodeUrl;
   };
 
   const formatEventDate = (dateString: string) => {
@@ -306,6 +317,18 @@ const RSVPPage = () => {
               : "Submit RSVP"}
           </SubmitButton>
         </RSVPForm>
+        
+        <ShareButton type="button" onClick={handleShareClick}>
+          📱 Share Event
+        </ShareButton>
+        
+        {showQRCode && (
+          <QRCodeContainer>
+            <QRCodeTitle>Scan to share this event</QRCodeTitle>
+            <QRCodeImage src={generateQRCode()} alt="QR Code for RSVP page" />
+            <QRCodeText>https://artnightdetroit.com/rsvp</QRCodeText>
+          </QRCodeContainer>
+        )}
       </RSVPContainer>
 
       <Footer />
@@ -507,6 +530,25 @@ const SubmitButton = styled.button`
   }
 `;
 
+const ShareButton = styled.button`
+  display: block;
+  width: auto;
+  padding: 0.5rem 1rem;
+  background-color: transparent;
+  color: #666;
+  border: none;
+  font-weight: 400;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  margin-top: 1rem;
+  text-decoration: underline;
+
+  &:hover {
+    color: #333;
+  }
+`;
+
 const SuccessMessage = styled.div`
   padding: 1rem;
   background-color: #d5f5e3;
@@ -523,6 +565,36 @@ const ErrorMessage = styled.div`
   color: #922b21;
   margin-bottom: 1.5rem;
   border-radius: 4px;
+`;
+
+const QRCodeContainer = styled.div`
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: #f0f0f0;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+`;
+
+const QRCodeTitle = styled.h3`
+  font-size: 1.2rem;
+  color: #333;
+  margin-bottom: 0.8rem;
+`;
+
+const QRCodeImage = styled.img`
+  width: 150px;
+  height: 150px;
+  margin: 0 auto 1rem;
+  display: block;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+`;
+
+const QRCodeText = styled.p`
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 0.5rem;
 `;
 
 
