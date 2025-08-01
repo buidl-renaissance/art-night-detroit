@@ -114,15 +114,7 @@ const ErrorMessage = styled.div`
   text-align: center;
 `;
 
-const SuccessMessage = styled.div`
-  color: #4CAF50;
-  margin-top: 1rem;
-  text-align: center;
-  text-align: center;
-  padding: 1rem;
-  background: rgba(76, 175, 80, 0.1);
-  border-radius: 8px;
-`;
+
 
 const SessionInfo = styled.div`
   background: ${({ theme }) => theme.colors.background.primary};
@@ -146,7 +138,7 @@ export default function ClaimTickets() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+
   const [formData, setFormData] = useState<ParticipantFormData>({
     name: '',
     phone: '',
@@ -251,11 +243,8 @@ export default function ClaimTickets() {
         throw new Error(result.error || 'Failed to claim tickets');
       }
 
-      setSuccess(`Successfully claimed ${session!.ticket_count} ticket(s)!`);
-      // Redirect to success page after a short delay
-      setTimeout(() => {
-        router.push(`/raffles/${id}/claim/${sessionCode}/success`);
-      }, 1500);
+      // Redirect to success page immediately
+      router.push(`/raffles/${id}/claim/${sessionCode}/success`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred while claiming tickets');
     } finally {
@@ -283,19 +272,7 @@ export default function ClaimTickets() {
     );
   }
 
-  if (success) {
-    return (
-      <PageContainer theme="dark">
-        <Container>
-          <Header>
-            <Title>🎉 Tickets Claimed!</Title>
-            <Subtitle>Thank you for participating!</Subtitle>
-          </Header>
-          <SuccessMessage>{success}</SuccessMessage>
-        </Container>
-      </PageContainer>
-    );
-  }
+
 
   return (
     <PageContainer theme="dark">
