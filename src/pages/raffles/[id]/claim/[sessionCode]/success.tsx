@@ -482,6 +482,8 @@ export default function ClaimSuccess() {
     }
   };
 
+
+
   if (loading) {
     return (
       <PageContainer theme="dark">
