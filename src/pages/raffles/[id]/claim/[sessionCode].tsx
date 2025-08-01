@@ -23,6 +23,14 @@ const Container = styled.div`
   max-width: 600px;
   margin: 0 auto;
   padding: 2rem;
+  width: 100%;
+  box-sizing: border-box;
+  
+  @media (max-width: 768px) {
+    max-width: 100%;
+    padding: 1rem;
+    margin: 0;
+  }
 `;
 
 const Header = styled.div`
@@ -46,6 +54,10 @@ const Form = styled.form`
   background: ${({ theme }) => theme.colors.background.secondary};
   padding: 2rem;
   border-radius: 12px;
+  
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+  }
 `;
 
 const FormGroup = styled.div`

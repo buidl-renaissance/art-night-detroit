@@ -17,6 +17,13 @@ const Container = styled.div`
   max-width: 800px;
   margin: 0 auto;
   padding: 2rem;
+  width: 100%;
+  box-sizing: border-box;
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+    margin: 0;
+  }
 `;
 
 const Header = styled.div`
@@ -270,7 +277,7 @@ export default function QRGenerator() {
           {success && <SuccessMessage>{success}</SuccessMessage>}
         </Form>
 
-        {qrUrl && sessionCode && (
+        {sessionCode && qrUrl && success && (
           <QRContainer>
             <h3>Scan this QR code to claim tickets</h3>
             <QRCodeWrapper>
