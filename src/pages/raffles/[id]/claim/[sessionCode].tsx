@@ -198,10 +198,40 @@ export default function ClaimTickets() {
     }));
   };
 
+  const formatPhoneNumber = (value: string) => {
+    // Remove all non-digits
+    const phoneNumber = value.replace(/\D/g, '');
+    
+    // Format as (XXX) XXX-XXXX
+    if (phoneNumber.length <= 3) {
+      return phoneNumber;
+    } else if (phoneNumber.length <= 6) {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
+    } else {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
+    }
+  };
+
+  const handlePhoneChange = (value: string) => {
+    const formatted = formatPhoneNumber(value);
+    setFormData(prev => ({
+      ...prev,
+      phone: formatted
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
+
+    // Validate phone number format
+    const phoneDigits = formData.phone.replace(/\D/g, '');
+    if (phoneDigits.length !== 10) {
+      setError('Please enter a valid 10-digit phone number');
+      setSubmitting(false);
+      return;
+    }
 
     try {
       const response = await fetch(`/api/raffles/${id}/claim-tickets`, {
@@ -297,7 +327,9 @@ export default function ClaimTickets() {
               id="phone"
               type="tel"
               value={formData.phone}
-              onChange={(e) => handleInputChange('phone', e.target.value)}
+              onChange={(e) => handlePhoneChange(e.target.value)}
+              placeholder="(555) 123-4567"
+              maxLength={14}
               required
             />
           </FormGroup>
