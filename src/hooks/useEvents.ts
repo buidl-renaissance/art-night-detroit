@@ -17,6 +17,7 @@ interface UseEventsReturn {
   deleteEvent: (id: string) => Promise<boolean>;
   fetchEvents: () => Promise<void>;
   fetchEvent: (id: string) => Promise<Event | null>;
+  fetchNextEvent: () => Promise<Event | null>;
 }
 
 export function useEvents(): UseEventsReturn {
@@ -58,6 +59,27 @@ export function useEvents(): UseEventsReturn {
       return data;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch event');
+      return null;
+    }
+  }, [supabase]);
+
+  const fetchNextEvent = useCallback(async (): Promise<Event | null> => {
+    try {
+      const now = new Date().toISOString();
+      
+      const { data, error: fetchError } = await supabase
+        .from('events')
+        .select('*')
+        .gte('end_date', now)
+        .order('end_date', { ascending: true })
+        .limit(1)
+        .single();
+
+      if (fetchError) throw fetchError;
+      
+      return data;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch next event');
       return null;
     }
   }, [supabase]);
@@ -178,6 +200,7 @@ export function useEvents(): UseEventsReturn {
     updateEvent,
     deleteEvent,
     fetchEvents,
-    fetchEvent
+    fetchEvent,
+    fetchNextEvent
   };
 } 

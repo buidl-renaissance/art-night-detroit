@@ -27,10 +27,7 @@ const RSVPPage = () => {
   const [lastRsvpStatus, setLastRsvpStatus] = useState<string>("confirmed");
   const [showQRCode, setShowQRCode] = useState(false);
 
-  // Hardcoded event ID
-  const EVENT_ID = "37e58914-c573-4563-adad-cb74d71d8a94";
-
-  const { fetchEvent } = useEvents();
+  const { fetchNextEvent } = useEvents();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,18 +35,18 @@ const RSVPPage = () => {
   useEffect(() => {
     const loadEventAndStats = async () => {
       try {
-        const eventData = await fetchEvent(EVENT_ID);
+        const eventData = await fetchNextEvent();
         if (eventData) {
           setEvent(eventData);
 
           // Load RSVP stats
-          const statsResponse = await fetch(`/api/rsvps/${EVENT_ID}/stats`);
+          const statsResponse = await fetch(`/api/rsvps/${eventData.id}/stats`);
           if (statsResponse.ok) {
             const statsData = await statsResponse.json();
             setRsvpStats(statsData.stats.counts);
           }
         } else {
-          setError("Event not found");
+          setError("No upcoming events found");
         }
       } catch {
         setError("Failed to load event");
@@ -59,7 +56,7 @@ const RSVPPage = () => {
     };
 
     loadEventAndStats();
-  }, []);
+  }, [fetchNextEvent]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -73,6 +70,12 @@ const RSVPPage = () => {
     e.preventDefault();
     setFormStatus(null);
 
+    if (!event) {
+      setErrorMessage("No event available for RSVP");
+      setFormStatus("error");
+      return;
+    }
+
     try {
       const response = await fetch("/api/rsvp", {
         method: "POST",
@@ -80,7 +83,7 @@ const RSVPPage = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          event_id: EVENT_ID,
+          event_id: event.id,
           ...formData,
         }),
       });
@@ -157,7 +160,9 @@ const RSVPPage = () => {
     return (
       <PageContainer>
         <ErrorContainer>
-          <ErrorMessage>{error || "Event not found"}</ErrorMessage>
+          <ErrorMessage>
+            {error || "No upcoming events found"}
+          </ErrorMessage>
           <BackLink href="/events">← Back to Events</BackLink>
         </ErrorContainer>
       </PageContainer>
@@ -167,10 +172,10 @@ const RSVPPage = () => {
   return (
     <PageContainer>
       <Head>
-        <title>RSVP | {event.name} | Art Night Detroit</title>
+        <title>RSVP | {event?.name || "Next Art Night"} | Art Night Detroit</title>
         <meta
           name="description"
-          content={`RSVP to ${event.name} - ${event.description || "Join us for this amazing event"}`}
+          content={`RSVP to ${event?.name || "our next art night"} - ${event?.description || "Join us for this amazing event"}`}
         />
 
         {/* Open Graph / Facebook */}
@@ -178,11 +183,11 @@ const RSVPPage = () => {
         <meta property="og:url" content="https://artnightdetroit.com/rsvp" />
         <meta
           property="og:title"
-          content={`RSVP | ${event.name} | Art Night Detroit`}
+          content={`RSVP | ${event?.name || "Next Art Night"} | Art Night Detroit`}
         />
         <meta
           property="og:description"
-          content={`RSVP to ${event.name} - ${event.description || "Join us for this amazing event"}`}
+          content={`RSVP to ${event?.name || "our next art night"} - ${event?.description || "Join us for this amazing event"}`}
         />
         <meta property="og:image" content="/images/art-night-07-02-25.png" />
         <meta property="og:image:width" content="1200" />
@@ -197,11 +202,11 @@ const RSVPPage = () => {
         />
         <meta
           property="twitter:title"
-          content={`RSVP | ${event.name} | Art Night Detroit`}
+          content={`RSVP | ${event?.name || "Next Art Night"} | Art Night Detroit`}
         />
         <meta
           property="twitter:description"
-          content={`RSVP to ${event.name} - ${event.description || "Join us for this amazing event"}`}
+          content={`RSVP to ${event?.name || "our next art night"} - ${event?.description || "Join us for this amazing event"}`}
         />
         <meta
           property="twitter:image"
@@ -211,7 +216,7 @@ const RSVPPage = () => {
         {/* Additional SEO */}
         <meta
           name="keywords"
-          content="art night detroit, rsvp, event, art, detroit, ${event.name?.toLowerCase()}"
+          content="art night detroit, rsvp, event, art, detroit"
         />
         <meta name="author" content="Art Night Detroit" />
         <meta name="robots" content="index, follow" />
@@ -230,14 +235,14 @@ const RSVPPage = () => {
         />
       </Head>
 
-      <HeroSection imageUrl={event.image_url}>
-        <HeroTitle>{event.name}</HeroTitle>
-        <HeroSubtitle>{formatEventDate(event.start_date)}</HeroSubtitle>
+      <HeroSection imageUrl={event?.image_url}>
+        <HeroTitle>{event?.name || "Next Art Night"}</HeroTitle>
+        <HeroSubtitle>{event?.start_date ? formatEventDate(event.start_date) : "Date TBD"}</HeroSubtitle>
         <HeroSubtitle>
-          {formatEventTime(event.start_date)}
-          {event.end_date && ` - ${formatEventTime(event.end_date)}`}
+          {event?.start_date ? formatEventTime(event.start_date) : ""}
+          {event?.end_date && ` - ${formatEventTime(event.end_date)}`}
         </HeroSubtitle>
-        {event.location && <HeroLocation>{event.location}</HeroLocation>}
+        {event?.location && <HeroLocation>{event.location}</HeroLocation>}
         {rsvpStats &&
           event?.attendance_limit &&
           event.attendance_limit - rsvpStats.confirmed > 0 && (
