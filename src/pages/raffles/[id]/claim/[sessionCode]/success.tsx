@@ -227,43 +227,73 @@ export default function ClaimSuccess() {
       }
 
       // Get tickets for this participant and raffle
+      console.log('Session data:', session);
+      
+      // Try to get tickets directly for this raffle and session
       const { data: ticketsData } = await supabase
         .from('tickets')
         .select('*')
         .eq('raffle_id', id)
-        .eq('participant_id', session.participant_id)
         .order('ticket_number');
 
-      if (ticketsData) {
-        setTickets(ticketsData);
+      console.log('All tickets for raffle:', ticketsData);
+
+      // Filter tickets that were created recently (within last 5 minutes) for this session
+      const recentTickets = ticketsData?.filter(ticket => {
+        const ticketTime = new Date(ticket.created_at);
+        const now = new Date();
+        const diffMinutes = (now.getTime() - ticketTime.getTime()) / (1000 * 60);
+        return diffMinutes < 5; // Tickets created in last 5 minutes
+      });
+
+      console.log('Recent tickets:', recentTickets);
+
+      if (recentTickets) {
+        setTickets(recentTickets);
       }
 
 
 
       // Get artists for this raffle
-      const { data: artistsData } = await supabase
+      console.log('Fetching artists for raffle:', id);
+      
+      // First, check if there are any raffle_artists entries
+      const { data: raffleArtists, error: raffleArtistsError } = await supabase
         .from('raffle_artists')
-        .select(`
-          id,
-          artists (
-            id,
-            name,
-            bio,
-            image_url
-          )
-        `)
+        .select('*')
         .eq('raffle_id', id);
 
-                    if (artistsData) {
-         const formattedArtists = artistsData.map((ra: { id: string; artists: { id: string; name: string; bio: string; image_url: string }[] }) => ({
-           id: ra.artists[0].id,
-           name: ra.artists[0].name,
-           bio: ra.artists[0].bio,
-           image_url: ra.artists[0].image_url,
-           raffle_artist_id: ra.id
-         }));
-         setArtists(formattedArtists);
-       }
+      console.log('Raffle artists error:', raffleArtistsError);
+      console.log('Raffle artists data:', raffleArtists);
+
+      if (raffleArtists && raffleArtists.length > 0) {
+        // Get the artist details for each raffle_artist
+        const artistIds = raffleArtists.map(ra => ra.artist_id);
+        console.log('Artist IDs:', artistIds);
+
+        const { data: artistsData, error: artistsError } = await supabase
+          .from('artists')
+          .select('*')
+          .in('id', artistIds);
+
+        console.log('Artists query error:', artistsError);
+        console.log('Artists data:', artistsData);
+
+        if (artistsData) {
+                     const formattedArtists = artistsData.map((artist: { id: string; name: string; bio: string; image_url: string }) => ({
+            id: artist.id,
+            name: artist.name,
+            bio: artist.bio,
+            image_url: artist.image_url,
+            raffle_artist_id: raffleArtists.find(ra => ra.artist_id === artist.id)?.id || ''
+          }));
+          
+          console.log('Formatted artists:', formattedArtists);
+          setArtists(formattedArtists);
+        }
+      } else {
+        console.log('No raffle_artists found for this raffle');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -309,7 +339,8 @@ export default function ClaimSuccess() {
             if (ticketIndex < ticketsToAssign.length) {
               submissions.push({
                 raffle_artist_id: artistId,
-                ticket_id: ticketsToAssign[ticketIndex].id
+                ticket_id: ticketsToAssign[ticketIndex].id,
+                submitted_at: new Date().toISOString()
               });
               ticketIndex++;
             }
@@ -318,12 +349,15 @@ export default function ClaimSuccess() {
       }
 
       // Insert ticket submissions
+      console.log('Submitting tickets:', submissions);
+      
       const { error: submitError } = await supabase
         .from('ticket_submissions')
         .insert(submissions);
 
       if (submitError) {
-        throw new Error('Failed to submit tickets');
+        console.error('Submit error:', submitError);
+        throw new Error(`Failed to submit tickets: ${submitError.message}`);
       }
 
       setSuccess('Tickets successfully submitted to artists!');
