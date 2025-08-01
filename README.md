@@ -38,3 +38,37 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+
+## QR Code Ticket System
+
+This application includes a QR code-based ticket claiming system for raffles. Here's how it works:
+
+### For Admins:
+
+1. **Generate QR Codes**: Navigate to `/admin/raffles/[raffle-id]/qr-generator`
+2. **Set Ticket Count**: Specify how many tickets should be available for the QR code session
+3. **Display QR Code**: The system generates a unique QR code that links to the claiming page
+4. **Monitor Participants**: View all participants and their claimed tickets at `/admin/raffles/[raffle-id]/participants`
+
+### For Users:
+
+1. **Scan QR Code**: Users scan the QR code with their phone camera
+2. **Enter Information**: Fill out the contact form with name, phone, email, and optional Instagram handle
+3. **Claim Tickets**: Submit the form to claim their tickets
+4. **Confirmation**: Receive confirmation of successful ticket claiming
+
+### Database Schema:
+
+- **participants**: Stores user contact information
+- **ticket_claims**: Links participants to specific tickets
+- **qr_code_sessions**: Manages active QR code sessions for ticket distribution
+
+### Features:
+
+- ✅ Admin-only QR code generation
+- ✅ Unique session codes for each QR code
+- ✅ Contact information collection
+- ✅ Automatic ticket assignment
+- ✅ Session deactivation after use
+- ✅ Participant tracking and analytics
+- ✅ Mobile-friendly claiming interface

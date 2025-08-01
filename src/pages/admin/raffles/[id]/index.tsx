@@ -401,6 +401,12 @@ export default function RaffleAdmin() {
             <ActionButton onClick={() => router.push(`/admin/raffles/${id}/tickets`)}>
               View Tickets
             </ActionButton>
+            <ActionButton onClick={() => router.push(`/admin/raffles/${id}/qr-generator`)}>
+              QR Generator
+            </ActionButton>
+            <ActionButton onClick={() => router.push(`/admin/raffles/${id}/participants`)}>
+              Participants
+            </ActionButton>
           </div>
         </Header>
 
