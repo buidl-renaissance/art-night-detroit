@@ -16,7 +16,8 @@ const HomePage: React.FC<HomePageProps> = ({ events }) => {
   const today = new Date();
   const futureEvents = events.filter(event => new Date(event.start_date) >= today);
   const pastEvents = events.filter(event => new Date(event.start_date) < today)
-    .sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
+    .sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime())
+    .slice(0, 3);
 
   return (
     <PageContainer>
@@ -190,12 +191,36 @@ const EventsSection = styled.section`
 `;
 
 const EventsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  display: flex;
   gap: 2.5rem;
+  overflow-x: auto;
+  padding: 1rem 0;
+  scroll-behavior: smooth;
+  
+  /* Hide scrollbar for webkit browsers */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Hide scrollbar for Firefox */
+  scrollbar-width: none;
+  
+  /* Ensure cards don't shrink */
+  & > * {
+    flex-shrink: 0;
+    width: 350px;
+  }
   
   @media (max-width: 768px) {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+    overflow-x: visible;
+    gap: 2rem;
+    
+    & > * {
+      width: 100%;
+      max-width: 400px;
+      margin: 0 auto;
+    }
   }
 `;
 

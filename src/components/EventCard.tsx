@@ -117,7 +117,7 @@ const StyledEventCard = styled.div`
   overflow: hidden;
   box-shadow: 0 8px 20px rgba(255, 215, 0, 0.15);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  background-color: #C19A6B;
+  background-color: #34495E;
   position: relative;
   
   &:hover {
@@ -139,6 +139,7 @@ const EventImage = styled.img`
   object-fit: contain;
   transition: transform 0.5s ease;
   background-color:rgb(71, 71, 71);
+  border-bottom: 3px solid #C19A6B;
   
   ${StyledEventCard}:hover & {
     transform: scale(1.05);
@@ -155,6 +156,11 @@ const EventContent = styled.div`
     color: #ECF0F1;
     flex-grow: 1;
     margin-bottom: 1rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 `;
 
