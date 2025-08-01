@@ -184,19 +184,6 @@ export default function ClaimTickets() {
 
       if (raffleError) throw raffleError;
       setRaffle(raffleData);
-
-      // Check if there are enough available tickets
-      const { data: availableTickets, error: ticketsError } = await supabase
-        .from('tickets')
-        .select('id')
-        .eq('raffle_id', sessionData.raffle_id)
-        .is('user_id', null);
-
-      if (ticketsError) throw ticketsError;
-
-      if (availableTickets.length < sessionData.ticket_count) {
-        throw new Error('Not enough tickets available for this session');
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid or expired session');
     } finally {
