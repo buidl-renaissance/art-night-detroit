@@ -31,20 +31,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Invalid or expired session' });
     }
 
-    // Create participant
-    const { data: participant, error: participantError } = await supabase
+    // Check if participant already exists with this phone number
+    const { data: existingParticipant } = await supabase
       .from('participants')
-      .insert({
-        name: participantData.name,
-        phone: participantData.phone,
-        email: participantData.email,
-        instagram: participantData.instagram || null
-      })
-      .select()
+      .select('*')
+      .eq('phone', participantData.phone)
       .single();
 
-    if (participantError) {
-      return res.status(500).json({ error: 'Failed to create participant' });
+    let participant;
+    if (existingParticipant) {
+      // Use existing participant
+      participant = existingParticipant;
+    } else {
+      // Create new participant
+      const { data: newParticipant, error: participantError } = await supabase
+        .from('participants')
+        .insert({
+          name: participantData.name,
+          phone: participantData.phone,
+          email: participantData.email,
+          instagram: participantData.instagram || null
+        })
+        .select()
+        .single();
+
+      if (participantError) {
+        return res.status(500).json({ error: 'Failed to create participant' });
+      }
+      participant = newParticipant;
     }
 
     // Get the highest ticket number for this raffle
@@ -67,6 +81,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     for (let i = 0; i < session.ticket_count; i++) {
       ticketsToCreate.push({
         raffle_id: id,
+        participant_id: participant.id,
         ticket_number: startNumber + i,
         purchased_at: new Date().toISOString()
       });
@@ -79,22 +94,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .select('id');
 
     if (ticketsError) {
+      console.error('Ticket creation error:', ticketsError);
       return res.status(500).json({ error: 'Failed to create tickets' });
     }
 
-    // Create ticket claims
-    const claims = createdTickets.map((ticket: { id: string }) => ({
-      participant_id: participant.id,
-      ticket_id: ticket.id
-    }));
-
-    const { error: claimsError } = await supabase
-      .from('ticket_claims')
-      .insert(claims);
-
-    if (claimsError) {
-      return res.status(500).json({ error: 'Failed to claim tickets' });
-    }
+    // No need to create ticket_claims since tickets are now directly linked to participants
 
     // Deactivate the session
     await supabase
