@@ -107,30 +107,7 @@ const TicketsHeader = styled.h2`
   }
 `;
 
-const TicketList = styled.div`
-  display: grid;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  
-  @media (max-width: 768px) {
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-  }
-`;
 
-const TicketItem = styled.div`
-  background: ${({ theme }) => theme.colors.background.primary};
-  padding: 1rem;
-  border-radius: 8px;
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  
-  @media (max-width: 768px) {
-    padding: 0.75rem;
-  }
-`;
 
 
 
@@ -269,7 +246,7 @@ export default function ClaimSuccess() {
   const [success, setSuccess] = useState<string | null>(null);
   const [artistQuantities, setArtistQuantities] = useState<{ [artistId: string]: number }>({});
   const [existingSubmissions, setExistingSubmissions] = useState<{ ticket_id: string; raffle_artists: { artist_id: string } }[]>([]);
-  const [debugInfo, setDebugInfo] = useState<{ sessionCode?: string; participantId?: string; raffleId?: string; sessionActive?: boolean }>({});
+
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -327,13 +304,7 @@ export default function ClaimSuccess() {
         console.log('Session participant_id:', session?.participant_id);
       }
 
-      // Set debug info
-      setDebugInfo({
-        sessionCode: sessionCode as string,
-        participantId: session?.participant_id,
-        raffleId: id as string,
-        sessionActive: session?.is_active || false
-      });
+
 
       if (userTickets.length > 0) {
         setTickets(userTickets);
@@ -539,54 +510,102 @@ export default function ClaimSuccess() {
           <Subtitle>Now assign your tickets to your favorite artists</Subtitle>
         </Header>
 
-        {/* Debug Info */}
-        <div style={{ 
-          background: '#f0f0f0', 
-          padding: '1rem', 
-          marginBottom: '1rem', 
-          borderRadius: '8px',
-          fontSize: '0.9rem',
-          fontFamily: 'monospace'
-        }}>
-          <strong>Debug Info:</strong><br/>
-          Session Code: {debugInfo.sessionCode}<br/>
-          Participant ID: {debugInfo.participantId || 'Not found'}<br/>
-          Raffle ID: {debugInfo.raffleId}<br/>
-          Tickets Found: {tickets.length}<br/>
-          Session Active: {debugInfo.sessionActive ? 'Yes' : 'No'}<br/>
-          <br/>
-          <strong>Check Console:</strong> Look for Session data, Participant data, and Participant not found messages
-        </div>
-
         <SuccessMessage>
           You have successfully claimed {tickets.length} ticket(s)!
         </SuccessMessage>
 
         <TicketsSection>
-          <TicketsHeader>Your Tickets</TicketsHeader>
-          <TicketList>
-            {tickets.map((ticket) => {
-              const submission = existingSubmissions.find(sub => sub.ticket_id === ticket.id);
-              const assignedArtist = submission ? 
-                artists.find(artist => artist.id === submission.raffle_artists?.artist_id) : null;
-              
+          <TicketsHeader>Your Tickets by Artist</TicketsHeader>
+          
+          {/* Group tickets by artist */}
+          {artists.map((artist) => {
+            const artistSubmissions = existingSubmissions.filter(sub => 
+              sub.raffle_artists?.artist_id === artist.id
+            );
+            const artistTickets = tickets.filter(ticket => 
+              artistSubmissions.some(sub => sub.ticket_id === ticket.id)
+            );
+            
+            if (artistTickets.length === 0) return null;
+            
+            return (
+              <div key={artist.id} style={{ marginBottom: '2rem' }}>
+                <h3 style={{ 
+                  color: '#4CAF50', 
+                  marginBottom: '0.5rem',
+                  fontSize: '1.2rem'
+                }}>
+                  {artist.name}
+                </h3>
+                <div style={{ 
+                  display: 'flex', 
+                  flexWrap: 'wrap', 
+                  gap: '0.5rem',
+                  marginBottom: '0.5rem'
+                }}>
+                  {artistTickets.map((ticket) => (
+                    <span key={ticket.id} style={{
+                      background: '#4CAF50',
+                      color: 'white',
+                      padding: '0.25rem 0.5rem',
+                      borderRadius: '4px',
+                      fontSize: '0.8rem'
+                    }}>
+                      #{ticket.ticket_number}
+                    </span>
+                  ))}
+                </div>
+                <div style={{ 
+                  fontSize: '0.9rem', 
+                  color: '#666',
+                  marginBottom: '1rem'
+                }}>
+                  Contact: {artist.name} - {artistTickets.length} ticket(s)
+                </div>
+              </div>
+            );
+          })}
+          
+          {/* Unassigned tickets */}
+          {(() => {
+            const assignedTicketIds = existingSubmissions.map(sub => sub.ticket_id);
+            const unassignedTickets = tickets.filter(ticket => 
+              !assignedTicketIds.includes(ticket.id)
+            );
+            
+            if (unassignedTickets.length > 0) {
               return (
-                <TicketItem key={ticket.id}>
-                  <div>
-                    <span>Ticket #{ticket.ticket_number}</span>
-                    {assignedArtist && (
-                      <div style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.25rem' }}>
-                        Assigned to: <strong>{assignedArtist.name}</strong>
-                      </div>
-                    )}
+                <div style={{ marginTop: '2rem' }}>
+                  <h3 style={{ 
+                    color: '#666', 
+                    marginBottom: '0.5rem',
+                    fontSize: '1.2rem'
+                  }}>
+                    Unassigned Tickets
+                  </h3>
+                  <div style={{ 
+                    display: 'flex', 
+                    flexWrap: 'wrap', 
+                    gap: '0.5rem'
+                  }}>
+                    {unassignedTickets.map((ticket) => (
+                      <span key={ticket.id} style={{
+                        background: '#f0f0f0',
+                        color: '#666',
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: '4px',
+                        fontSize: '0.8rem',
+                        border: '1px solid #ddd'
+                      }}>
+                        #{ticket.ticket_number}
+                      </span>
+                    ))}
                   </div>
-                  {submission && (
-                    <span style={{ color: '#4CAF50', fontSize: '0.9rem' }}>✓ Submitted</span>
-                  )}
-                </TicketItem>
+                </div>
               );
-            })}
-          </TicketList>
+            }
+            return null;
+          })()}
         </TicketsSection>
 
         <ArtistsSection>
