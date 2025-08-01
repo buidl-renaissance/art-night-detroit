@@ -31,7 +31,7 @@ const Container = styled.div`
   
   @media (max-width: 768px) {
     max-width: 100%;
-    padding: 1rem;
+    padding: 0.5rem;
     margin: 0;
   }
 `;
@@ -39,18 +39,32 @@ const Container = styled.div`
 const Header = styled.div`
   margin-bottom: 2rem;
   text-align: center;
+  
+  @media (max-width: 768px) {
+    margin-bottom: 1rem;
+  }
 `;
 
 const Title = styled.h1`
   font-size: 2rem;
   color: ${({ theme }) => theme.colors.primary};
   margin-bottom: 1rem;
+  
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
 `;
 
 const Subtitle = styled.p`
   color: ${({ theme }) => theme.colors.text.light};
   font-size: 1.1rem;
   margin-bottom: 1rem;
+  
+  @media (max-width: 768px) {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
 `;
 
 const SuccessMessage = styled.div`
@@ -61,6 +75,12 @@ const SuccessMessage = styled.div`
   background: rgba(76, 175, 80, 0.1);
   border-radius: 8px;
   margin-bottom: 2rem;
+  
+  @media (max-width: 768px) {
+    margin-top: 0.5rem;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+  }
 `;
 
 const TicketsSection = styled.div`
@@ -68,6 +88,11 @@ const TicketsSection = styled.div`
   padding: 2rem;
   border-radius: 12px;
   margin-bottom: 2rem;
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
 `;
 
 const TicketsHeader = styled.h2`
@@ -75,12 +100,22 @@ const TicketsHeader = styled.h2`
   color: ${({ theme }) => theme.colors.text.primary};
   margin-bottom: 1rem;
   text-align: center;
+  
+  @media (max-width: 768px) {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
 `;
 
 const TicketList = styled.div`
   display: grid;
   gap: 1rem;
   margin-bottom: 2rem;
+  
+  @media (max-width: 768px) {
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
 `;
 
 const TicketItem = styled.div`
@@ -91,6 +126,10 @@ const TicketItem = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  
+  @media (max-width: 768px) {
+    padding: 0.75rem;
+  }
 `;
 
 
@@ -99,6 +138,10 @@ const ArtistsSection = styled.div`
   background: ${({ theme }) => theme.colors.background.secondary};
   padding: 2rem;
   border-radius: 12px;
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
 `;
 
 const ArtistsHeader = styled.h2`
@@ -106,12 +149,22 @@ const ArtistsHeader = styled.h2`
   color: ${({ theme }) => theme.colors.text.primary};
   margin-bottom: 1rem;
   text-align: center;
+  
+  @media (max-width: 768px) {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
 `;
 
 const ArtistsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 1.5rem;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
 `;
 
 const ArtistCard = styled.div`
@@ -139,6 +192,11 @@ const ArtistInfo = styled.div`
   flex-direction: column;
   gap: 1rem;
   flex: 1;
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+    gap: 0.75rem;
+  }
 `;
 
 const ArtistName = styled.h3`
@@ -179,6 +237,12 @@ const SubmitButton = styled.button`
   &:disabled {
     background: ${({ theme }) => theme.colors.text.light};
     cursor: not-allowed;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    margin-top: 1rem;
   }
 `;
 
@@ -230,22 +294,46 @@ export default function ClaimSuccess() {
       // Get tickets for this participant and raffle
       console.log('Session data:', session);
       
-      // Get all tickets for this raffle
-      const { data: ticketsData } = await supabase
-        .from('tickets')
-        .select('*')
-        .eq('raffle_id', id)
-        .order('ticket_number');
+      // Get tickets for this specific participant and raffle
+      let userTickets = [];
+      
+      if (session) {
+        // If we have a session, get tickets for this specific participant
+        const { data: ticketsData } = await supabase
+          .from('tickets')
+          .select('*')
+          .eq('raffle_id', id)
+          .eq('participant_id', session.participant_id)
+          .order('ticket_number');
 
-      console.log('All tickets for raffle:', ticketsData);
-
-      // For now, let's show all tickets for this raffle
-      // In a real app, you'd want to filter by participant or session
-      if (ticketsData && ticketsData.length > 0) {
-        setTickets(ticketsData);
-        console.log('Setting tickets:', ticketsData);
+        console.log('Tickets for participant:', ticketsData);
+        userTickets = ticketsData || [];
       } else {
-        console.log('No tickets found for raffle');
+        // If no session, try to find recent tickets for this session code
+        // This handles cases where the session expired but we still want to show tickets
+        const { data: ticketsData } = await supabase
+          .from('tickets')
+          .select('*')
+          .eq('raffle_id', id)
+          .order('ticket_number');
+
+        // Filter by recent creation time (within last 30 minutes)
+        const recentTickets = ticketsData?.filter(ticket => {
+          const ticketTime = new Date(ticket.created_at);
+          const now = new Date();
+          const diffMinutes = (now.getTime() - ticketTime.getTime()) / (1000 * 60);
+          return diffMinutes < 30;
+        });
+
+        console.log('Recent tickets for session:', recentTickets);
+        userTickets = recentTickets || [];
+      }
+
+      if (userTickets.length > 0) {
+        setTickets(userTickets);
+        console.log('Setting user tickets:', userTickets);
+      } else {
+        console.log('No tickets found for this user/session');
       }
 
 
@@ -288,8 +376,8 @@ export default function ClaimSuccess() {
           setArtists(formattedArtists);
 
           // Get existing ticket submissions for this user
-          if (ticketsData && ticketsData.length > 0) {
-            const ticketIds = ticketsData.map((ticket: { id: string }) => ticket.id);
+          if (userTickets && userTickets.length > 0) {
+            const ticketIds = userTickets.map((ticket: { id: string }) => ticket.id);
             const { data: submissions } = await supabase
               .from('ticket_submissions')
               .select(`
