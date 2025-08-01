@@ -106,10 +106,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // No need to create ticket_claims since tickets are now directly linked to participants
 
-    // Deactivate the session
+    // Update the session with participant_id and deactivate it
     await supabase
       .from('qr_code_sessions')
-      .update({ is_active: false })
+      .update({ 
+        is_active: false,
+        participant_id: participant.id
+      })
       .eq('session_code', sessionCode);
 
     return res.status(200).json({

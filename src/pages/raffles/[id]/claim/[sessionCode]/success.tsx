@@ -269,6 +269,7 @@ export default function ClaimSuccess() {
   const [success, setSuccess] = useState<string | null>(null);
   const [artistQuantities, setArtistQuantities] = useState<{ [artistId: string]: number }>({});
   const [existingSubmissions, setExistingSubmissions] = useState<{ ticket_id: string; raffle_artists: { artist_id: string } }[]>([]);
+  const [debugInfo, setDebugInfo] = useState<{ sessionCode?: string; participantId?: string; raffleId?: string; sessionActive?: boolean }>({});
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -286,28 +287,60 @@ export default function ClaimSuccess() {
         .eq('session_code', sessionCode)
         .single();
 
+      console.log('Session data:', session);
+
       // If no active session, try to get tickets by recent creation time
       if (!session) {
-        console.log('No active session found, checking for recent tickets');
+        console.log('No active session found');
+      } else {
+        // Check if the participant exists
+        const { data: participant } = await supabase
+          .from('participants')
+          .select('*')
+          .eq('id', session.participant_id)
+          .single();
+
+        console.log('Participant data:', participant);
+        
+        if (!participant) {
+          console.log('Participant not found in participants table');
+        }
+      }
+      
+      // Get tickets for this specific participant
+      let userTickets = [];
+      
+      if (session && session.participant_id) {
+        // If we have a session with participant_id, get tickets for this specific participant
+        const { data: ticketsData } = await supabase
+          .from('tickets')
+          .select('*')
+          .eq('raffle_id', id)
+          .eq('participant_id', session.participant_id)
+          .order('ticket_number');
+
+        console.log('Tickets for participant:', ticketsData);
+        userTickets = ticketsData || [];
+      } else {
+        // If no session or no participant_id, show message
+        console.log('No session or participant_id found');
+        console.log('Session participant_id:', session?.participant_id);
       }
 
-      // Get tickets for this participant and raffle
-      console.log('Session data:', session);
-      
-      // Get all tickets for this raffle for debugging
-      const { data: ticketsData } = await supabase
-        .from('tickets')
-        .select('*')
-        .eq('raffle_id', id)
-        .order('ticket_number');
+      // Set debug info
+      setDebugInfo({
+        sessionCode: sessionCode as string,
+        participantId: session?.participant_id,
+        raffleId: id as string,
+        sessionActive: session?.is_active || false
+      });
 
-      console.log('All tickets for raffle:', ticketsData);
-
-      if (ticketsData && ticketsData.length > 0) {
-        setTickets(ticketsData);
-        console.log('Setting tickets:', ticketsData);
+      if (userTickets.length > 0) {
+        setTickets(userTickets);
+        console.log('Setting user tickets:', userTickets);
       } else {
-        console.log('No tickets found for raffle');
+        console.log('No tickets found for this participant');
+        setTickets([]);
       }
 
 
@@ -350,8 +383,8 @@ export default function ClaimSuccess() {
           setArtists(formattedArtists);
 
           // Get existing ticket submissions for this user
-          if (ticketsData && ticketsData.length > 0) {
-            const ticketIds = ticketsData.map((ticket: { id: string }) => ticket.id);
+          if (userTickets && userTickets.length > 0) {
+            const ticketIds = userTickets.map((ticket: { id: string }) => ticket.id);
             const { data: submissions } = await supabase
               .from('ticket_submissions')
               .select(`
@@ -487,6 +520,25 @@ export default function ClaimSuccess() {
           <Title>🎉 Tickets Claimed Successfully!</Title>
           <Subtitle>Now assign your tickets to your favorite artists</Subtitle>
         </Header>
+
+        {/* Debug Info */}
+        <div style={{ 
+          background: '#f0f0f0', 
+          padding: '1rem', 
+          marginBottom: '1rem', 
+          borderRadius: '8px',
+          fontSize: '0.9rem',
+          fontFamily: 'monospace'
+        }}>
+          <strong>Debug Info:</strong><br/>
+          Session Code: {debugInfo.sessionCode}<br/>
+          Participant ID: {debugInfo.participantId || 'Not found'}<br/>
+          Raffle ID: {debugInfo.raffleId}<br/>
+          Tickets Found: {tickets.length}<br/>
+          Session Active: {debugInfo.sessionActive ? 'Yes' : 'No'}<br/>
+          <br/>
+          <strong>Check Console:</strong> Look for Session data, Participant data, and Participant not found messages
+        </div>
 
         <SuccessMessage>
           You have successfully claimed {tickets.length} ticket(s)!
