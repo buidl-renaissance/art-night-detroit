@@ -255,11 +255,11 @@ export default function ClaimSuccess() {
         .eq('raffle_id', id);
 
                     if (artistsData) {
-         const formattedArtists = artistsData.map((ra: any) => ({
-           id: ra.artists.id,
-           name: ra.artists.name,
-           bio: ra.artists.bio,
-           image_url: ra.artists.image_url,
+         const formattedArtists = artistsData.map((ra: { id: string; artists: { id: string; name: string; bio: string; image_url: string }[] }) => ({
+           id: ra.artists[0].id,
+           name: ra.artists[0].name,
+           bio: ra.artists[0].bio,
+           image_url: ra.artists[0].image_url,
            raffle_artist_id: ra.id
          }));
          setArtists(formattedArtists);
