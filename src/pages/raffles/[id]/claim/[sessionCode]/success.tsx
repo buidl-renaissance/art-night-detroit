@@ -294,46 +294,20 @@ export default function ClaimSuccess() {
       // Get tickets for this participant and raffle
       console.log('Session data:', session);
       
-      // Get tickets for this specific participant and raffle
-      let userTickets = [];
-      
-      if (session) {
-        // If we have a session, get tickets for this specific participant
-        const { data: ticketsData } = await supabase
-          .from('tickets')
-          .select('*')
-          .eq('raffle_id', id)
-          .eq('participant_id', session.participant_id)
-          .order('ticket_number');
+      // Get all tickets for this raffle for debugging
+      const { data: ticketsData } = await supabase
+        .from('tickets')
+        .select('*')
+        .eq('raffle_id', id)
+        .order('ticket_number');
 
-        console.log('Tickets for participant:', ticketsData);
-        userTickets = ticketsData || [];
+      console.log('All tickets for raffle:', ticketsData);
+
+      if (ticketsData && ticketsData.length > 0) {
+        setTickets(ticketsData);
+        console.log('Setting tickets:', ticketsData);
       } else {
-        // If no session, try to find recent tickets for this session code
-        // This handles cases where the session expired but we still want to show tickets
-        const { data: ticketsData } = await supabase
-          .from('tickets')
-          .select('*')
-          .eq('raffle_id', id)
-          .order('ticket_number');
-
-        // Filter by recent creation time (within last 30 minutes)
-        const recentTickets = ticketsData?.filter(ticket => {
-          const ticketTime = new Date(ticket.created_at);
-          const now = new Date();
-          const diffMinutes = (now.getTime() - ticketTime.getTime()) / (1000 * 60);
-          return diffMinutes < 30;
-        });
-
-        console.log('Recent tickets for session:', recentTickets);
-        userTickets = recentTickets || [];
-      }
-
-      if (userTickets.length > 0) {
-        setTickets(userTickets);
-        console.log('Setting user tickets:', userTickets);
-      } else {
-        console.log('No tickets found for this user/session');
+        console.log('No tickets found for raffle');
       }
 
 
@@ -376,8 +350,8 @@ export default function ClaimSuccess() {
           setArtists(formattedArtists);
 
           // Get existing ticket submissions for this user
-          if (userTickets && userTickets.length > 0) {
-            const ticketIds = userTickets.map((ticket: { id: string }) => ticket.id);
+          if (ticketsData && ticketsData.length > 0) {
+            const ticketIds = ticketsData.map((ticket: { id: string }) => ticket.id);
             const { data: submissions } = await supabase
               .from('ticket_submissions')
               .select(`
