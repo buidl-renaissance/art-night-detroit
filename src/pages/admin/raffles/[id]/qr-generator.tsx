@@ -42,12 +42,7 @@ const Subtitle = styled.p`
   font-size: 1.1rem;
 `;
 
-const Form = styled.form`
-  background: ${({ theme }) => theme.colors.background.secondary};
-  padding: 2rem;
-  border-radius: 12px;
-  margin-bottom: 2rem;
-`;
+
 
 const FormGroup = styled.div`
   margin-bottom: 1.5rem;
@@ -146,6 +141,7 @@ export default function QRGenerator() {
   const [success, setSuccess] = useState<string | null>(null);
   const [sessionCode, setSessionCode] = useState<string | null>(null);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
+  const [hasGenerated, setHasGenerated] = useState(false);
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -192,8 +188,7 @@ export default function QRGenerator() {
     }
   };
 
-  const generateQRCode = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const generateQRCode = async () => {
     setLoading(true);
     setError(null);
     setSuccess(null);
@@ -220,6 +215,7 @@ export default function QRGenerator() {
       setSessionCode(code);
       setQrUrl(`${window.location.origin}/raffles/${id}/claim/${code}`);
       setSuccess(`QR code generated successfully! Session code: ${code}`);
+      setHasGenerated(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -233,6 +229,18 @@ export default function QRGenerator() {
     setQrUrl(null);
     setSuccess(null);
     setError(null);
+    setHasGenerated(false);
+  };
+
+  const handleQuantityChange = (newQuantity: number) => {
+    setTicketCount(newQuantity);
+    // Clear QR code when quantity changes
+    if (sessionCode || qrUrl || success) {
+      setSessionCode(null);
+      setQrUrl(null);
+      setSuccess(null);
+      setHasGenerated(false);
+    }
   };
 
   if (!raffle) {
@@ -253,31 +261,28 @@ export default function QRGenerator() {
           <Subtitle>Generate QR codes for ticket distribution</Subtitle>
         </Header>
 
-        <Form onSubmit={generateQRCode}>
+        <FormGroup>
+          <div style={{ textAlign: 'center' }}>
+            <Label htmlFor="ticketCount">Number of Tickets</Label>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <QuantityControls
+              quantity={ticketCount}
+              min={1}
+              max={100}
+              onChange={handleQuantityChange}
+            />
+          </div>
+        </FormGroup>
 
-          <FormGroup>
-            <div style={{ textAlign: 'center' }}>
-              <Label htmlFor="ticketCount">Number of Tickets</Label>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <QuantityControls
-                quantity={ticketCount}
-                min={1}
-                max={100}
-                onChange={setTicketCount}
-              />
-            </div>
-          </FormGroup>
+        <Button onClick={generateQRCode} disabled={loading}>
+          {loading ? 'Generating...' : 'Generate QR Code'}
+        </Button>
 
-          <Button type="submit" disabled={loading}>
-            {loading ? 'Generating...' : 'Generate QR Code'}
-          </Button>
+        {error && <ErrorMessage>{error}</ErrorMessage>}
+        {success && <SuccessMessage>{success}</SuccessMessage>}
 
-          {error && <ErrorMessage>{error}</ErrorMessage>}
-          {success && <SuccessMessage>{success}</SuccessMessage>}
-        </Form>
-
-        {sessionCode && qrUrl && success && (
+        {hasGenerated && sessionCode && qrUrl && success && (
           <QRContainer>
             <h3>Scan this QR code to claim tickets</h3>
             <QRCodeWrapper>
