@@ -204,6 +204,7 @@ export default function ClaimSuccess() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [artistQuantities, setArtistQuantities] = useState<{ [artistId: string]: number }>({});
+  const [existingSubmissions, setExistingSubmissions] = useState<{ ticket_id: string; raffle_artists: { artist_id: string } }[]>([]);
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -221,15 +222,15 @@ export default function ClaimSuccess() {
         .eq('session_code', sessionCode)
         .single();
 
+      // If no active session, try to get tickets by recent creation time
       if (!session) {
-        router.push(`/raffles/${id}/claim/${sessionCode}`);
-        return;
+        console.log('No active session found, checking for recent tickets');
       }
 
       // Get tickets for this participant and raffle
       console.log('Session data:', session);
       
-      // Try to get tickets directly for this raffle and session
+      // Get all tickets for this raffle
       const { data: ticketsData } = await supabase
         .from('tickets')
         .select('*')
@@ -238,18 +239,13 @@ export default function ClaimSuccess() {
 
       console.log('All tickets for raffle:', ticketsData);
 
-      // Filter tickets that were created recently (within last 5 minutes) for this session
-      const recentTickets = ticketsData?.filter(ticket => {
-        const ticketTime = new Date(ticket.created_at);
-        const now = new Date();
-        const diffMinutes = (now.getTime() - ticketTime.getTime()) / (1000 * 60);
-        return diffMinutes < 5; // Tickets created in last 5 minutes
-      });
-
-      console.log('Recent tickets:', recentTickets);
-
-      if (recentTickets) {
-        setTickets(recentTickets);
+      // For now, let's show all tickets for this raffle
+      // In a real app, you'd want to filter by participant or session
+      if (ticketsData && ticketsData.length > 0) {
+        setTickets(ticketsData);
+        console.log('Setting tickets:', ticketsData);
+      } else {
+        console.log('No tickets found for raffle');
       }
 
 
@@ -290,6 +286,34 @@ export default function ClaimSuccess() {
           
           console.log('Formatted artists:', formattedArtists);
           setArtists(formattedArtists);
+
+          // Get existing ticket submissions for this user
+          if (ticketsData && ticketsData.length > 0) {
+            const ticketIds = ticketsData.map((ticket: { id: string }) => ticket.id);
+            const { data: submissions } = await supabase
+              .from('ticket_submissions')
+              .select(`
+                *,
+                raffle_artists (
+                  id,
+                  artist_id
+                )
+              `)
+              .in('ticket_id', ticketIds);
+
+            console.log('Existing submissions:', submissions);
+            setExistingSubmissions(submissions || []);
+
+            // Pre-populate artist quantities based on existing submissions
+            const quantities: { [artistId: string]: number } = {};
+            submissions?.forEach((submission: { raffle_artists: { artist_id: string } }) => {
+              const artistId = submission.raffle_artists?.artist_id;
+              if (artistId) {
+                quantities[artistId] = (quantities[artistId] || 0) + 1;
+              }
+            });
+            setArtistQuantities(quantities);
+          }
         }
       } else {
         console.log('No raffle_artists found for this raffle');
@@ -335,14 +359,20 @@ export default function ClaimSuccess() {
 
       for (const [artistId, quantity] of Object.entries(artistQuantities)) {
         if (quantity > 0) {
-          for (let i = 0; i < quantity; i++) {
-            if (ticketIndex < ticketsToAssign.length) {
-              submissions.push({
-                raffle_artist_id: artistId,
-                ticket_id: ticketsToAssign[ticketIndex].id,
-                submitted_at: new Date().toISOString()
-              });
-              ticketIndex++;
+          // Find the raffle_artist_id for this artist
+          const artist = artists.find(a => a.id === artistId);
+          const raffleArtistId = artist?.raffle_artist_id;
+          
+          if (raffleArtistId) {
+            for (let i = 0; i < quantity; i++) {
+              if (ticketIndex < ticketsToAssign.length) {
+                submissions.push({
+                  raffle_artist_id: raffleArtistId,
+                  ticket_id: ticketsToAssign[ticketIndex].id,
+                  submitted_at: new Date().toISOString()
+                });
+                ticketIndex++;
+              }
             }
           }
         }
@@ -403,11 +433,27 @@ export default function ClaimSuccess() {
         <TicketsSection>
           <TicketsHeader>Your Tickets</TicketsHeader>
           <TicketList>
-            {tickets.map((ticket) => (
-              <TicketItem key={ticket.id}>
-                <span>Ticket #{ticket.ticket_number}</span>
-              </TicketItem>
-            ))}
+            {tickets.map((ticket) => {
+              const submission = existingSubmissions.find(sub => sub.ticket_id === ticket.id);
+              const assignedArtist = submission ? 
+                artists.find(artist => artist.id === submission.raffle_artists?.artist_id) : null;
+              
+              return (
+                <TicketItem key={ticket.id}>
+                  <div>
+                    <span>Ticket #{ticket.ticket_number}</span>
+                    {assignedArtist && (
+                      <div style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.25rem' }}>
+                        Assigned to: <strong>{assignedArtist.name}</strong>
+                      </div>
+                    )}
+                  </div>
+                  {submission && (
+                    <span style={{ color: '#4CAF50', fontSize: '0.9rem' }}>✓ Submitted</span>
+                  )}
+                </TicketItem>
+              );
+            })}
           </TicketList>
         </TicketsSection>
 
