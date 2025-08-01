@@ -473,19 +473,37 @@ export default function ClaimSuccess() {
         }
       }
 
-      // Insert ticket submissions
-      console.log('Submitting tickets:', submissions);
+      // Check for existing submissions to avoid duplicates
+      const ticketIds = ticketsToAssign.map(ticket => ticket.id);
+      const { data: existingSubmissions } = await supabase
+        .from('ticket_submissions')
+        .select('ticket_id')
+        .in('ticket_id', ticketIds);
+
+      const existingTicketIds = existingSubmissions?.map(sub => sub.ticket_id) || [];
+      const newSubmissions = submissions.filter(sub => !existingTicketIds.includes(sub.ticket_id));
+
+      if (newSubmissions.length === 0) {
+        setError('All tickets have already been submitted');
+        return;
+      }
+
+      // Insert only new ticket submissions
+      console.log('Submitting new tickets:', newSubmissions);
       
       const { error: submitError } = await supabase
         .from('ticket_submissions')
-        .insert(submissions);
+        .insert(newSubmissions);
 
       if (submitError) {
         console.error('Submit error:', submitError);
         throw new Error(`Failed to submit tickets: ${submitError.message}`);
       }
 
-      setSuccess('Tickets successfully submitted to artists!');
+      setSuccess(`Successfully submitted ${newSubmissions.length} ticket(s) to artists!`);
+      
+      // Refresh the page data to show updated submissions
+      fetchData();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred while submitting tickets');
     } finally {
