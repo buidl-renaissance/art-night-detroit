@@ -251,7 +251,11 @@ export default function ClaimTickets() {
         throw new Error(result.error || 'Failed to claim tickets');
       }
 
-      setSuccess(`Successfully claimed ${session!.ticket_count} ticket(s)! You will receive a confirmation email shortly.`);
+      setSuccess(`Successfully claimed ${session!.ticket_count} ticket(s)!`);
+      // Redirect to success page after a short delay
+      setTimeout(() => {
+        router.push(`/raffles/${id}/claim/${sessionCode}/success`);
+      }, 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred while claiming tickets');
     } finally {
