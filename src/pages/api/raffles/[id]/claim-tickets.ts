@@ -47,24 +47,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Failed to create participant' });
     }
 
-    // Get available tickets
-    const { data: tickets, error: ticketsError } = await supabase
+    // Get the highest ticket number for this raffle
+    const { data: lastTicket, error: lastTicketError } = await supabase
       .from('tickets')
-      .select('id')
+      .select('ticket_number')
       .eq('raffle_id', id)
-      .is('user_id', null)
-      .limit(session.ticket_count);
+      .order('ticket_number', { ascending: false })
+      .limit(1)
+      .single();
 
-    if (ticketsError) {
-      return res.status(500).json({ error: 'Failed to fetch tickets' });
+    if (lastTicketError && lastTicketError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+      return res.status(500).json({ error: 'Failed to get last ticket number' });
     }
 
-    if (tickets.length < session.ticket_count) {
-      return res.status(400).json({ error: 'Not enough tickets available' });
+    const startNumber = lastTicket ? lastTicket.ticket_number + 1 : 1;
+
+    // Generate new tickets for this claim
+    const ticketsToCreate = [];
+    for (let i = 0; i < session.ticket_count; i++) {
+      ticketsToCreate.push({
+        raffle_id: id,
+        ticket_number: startNumber + i,
+        purchased_at: new Date().toISOString()
+      });
+    }
+
+    // Create the tickets
+    const { data: createdTickets, error: ticketsError } = await supabase
+      .from('tickets')
+      .insert(ticketsToCreate)
+      .select('id');
+
+    if (ticketsError) {
+      return res.status(500).json({ error: 'Failed to create tickets' });
     }
 
     // Create ticket claims
-    const claims = tickets.map((ticket: { id: string }) => ({
+    const claims = createdTickets.map((ticket: { id: string }) => ({
       participant_id: participant.id,
       ticket_id: ticket.id
     }));
@@ -87,7 +106,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       success: true,
       message: `Successfully claimed ${session.ticket_count} ticket(s)`,
       participant: participant,
-      ticketsClaimed: tickets.length
+      ticketsClaimed: createdTickets.length
     });
   } catch (error) {
     console.error('Error claiming tickets:', error);
