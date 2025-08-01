@@ -15,7 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
   try {
@@ -87,6 +87,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
+    console.log('Creating tickets:', ticketsToCreate);
+
     // Create the tickets
     const { data: createdTickets, error: ticketsError } = await supabase
       .from('tickets')
@@ -95,7 +97,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (ticketsError) {
       console.error('Ticket creation error:', ticketsError);
-      return res.status(500).json({ error: 'Failed to create tickets' });
+      console.error('Tickets to create:', ticketsToCreate);
+      return res.status(500).json({ 
+        error: 'Failed to create tickets',
+        details: ticketsError.message 
+      });
     }
 
     // No need to create ticket_claims since tickets are now directly linked to participants
