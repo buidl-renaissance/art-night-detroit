@@ -128,37 +128,6 @@ const Container = styled.div`
   }
 `;
 
-const Header = styled.div`
-  margin-bottom: 2rem;
-  text-align: center;
-  
-  @media (max-width: 768px) {
-    margin-bottom: 2rem;
-  }
-`;
-
-const Title = styled.h1`
-  font-size: 2rem;
-  color: ${({ theme }) => theme.colors.primary};
-  margin-bottom: 1rem;
-  
-  @media (max-width: 768px) {
-    font-size: 1.5rem;
-    margin-bottom: 0.25rem;
-  }
-`;
-
-const Subtitle = styled.p`
-  color: ${({ theme }) => theme.colors.text.light};
-  font-size: 1.1rem;
-  margin-bottom: 1rem;
-  
-  @media (max-width: 768px) {
-    font-size: 0.8rem;
-    margin-bottom: 0.5rem;
-  }
-`;
-
 const SuccessMessage = styled.div`
   color: #4CAF50;
   margin-top: 1rem;
@@ -294,14 +263,6 @@ const ArtistName = styled.h3`
   color: ${({ theme }) => theme.colors.text.primary};
   margin: 0;
   line-height: 1.2;
-`;
-
-const ArtistBio = styled.p`
-  color: ${({ theme }) => theme.colors.text.light};
-  font-size: 0.9rem;
-  line-height: 1.3;
-  margin: 0;
-  width: 100%;
 `;
 
 const QuantitySection = styled.div`
