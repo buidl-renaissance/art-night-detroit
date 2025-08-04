@@ -445,7 +445,7 @@ export default function Dashboard() {
               
               <RaffleDescription>{raffle.description}</RaffleDescription>
               
-              <RaffleCountdown endDate={raffle.end_date} label="Raffle Ends" />
+              <RaffleCountdown endDate={raffle.end_date} />
               
               <EnterRaffleButton onClick={(e) => {
                 e.stopPropagation();
