@@ -209,12 +209,26 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
+  flex-direction: column;
+  gap: 1rem;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    gap: 0;
+  }
 `;
 
 const Title = styled.h1`
-  font-size: 2.5rem;
+  font-size: 2rem;
   color: #ffd700;
   font-family: var(--font-decorative);
+  text-align: center;
+  margin: 0;
+
+  @media (min-width: 768px) {
+    font-size: 2.5rem;
+    text-align: left;
+  }
 `;
 
 const BackButton = styled.button`
@@ -228,6 +242,11 @@ const BackButton = styled.button`
   cursor: pointer;
   transition: all 0.2s;
   margin-bottom: 1rem;
+  width: 100%;
+
+  @media (min-width: 768px) {
+    width: auto;
+  }
 
   &:hover {
     background: #3a3a3a;
@@ -244,6 +263,11 @@ const CreateButton = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.2s;
+  width: 100%;
+
+  @media (min-width: 768px) {
+    width: auto;
+  }
 
   &:hover {
     opacity: 0.9;
@@ -269,50 +293,81 @@ const ErrorMessage = styled.div`
 
 const EmptyState = styled.div`
   text-align: center;
-  padding: 60px 20px;
+  padding: 40px 20px;
   background: rgba(255, 215, 0, 0.1);
   border-radius: 24px;
+
+  @media (min-width: 768px) {
+    padding: 60px 20px;
+  }
 `;
 
 const EmptyStateText = styled.h2`
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   color: #ffd700;
   margin-bottom: 8px;
   font-family: var(--font-decorative);
+
+  @media (min-width: 768px) {
+    font-size: 1.5rem;
+  }
 `;
 
 const EmptyStateSubtext = styled.p`
   color: #e0e0e0;
-  font-size: 1.1rem;
+  font-size: 1rem;
+
+  @media (min-width: 768px) {
+    font-size: 1.1rem;
+  }
 `;
 
 const RaffleGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 24px;
+  grid-template-columns: 1fr;
+  gap: 16px;
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 24px;
+  }
 `;
 
 const RaffleCard = styled.div`
   background: rgba(255, 215, 0, 0.1);
   border-radius: 16px;
-  padding: 24px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 16px;
+
+  @media (min-width: 768px) {
+    padding: 24px;
+  }
 `;
 
 const RaffleHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 16px;
+  gap: 12px;
+  flex-direction: column;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    gap: 16px;
+  }
 `;
 
 const RaffleName = styled.h3`
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   color: #ffffff;
   margin: 0;
   flex: 1;
+
+  @media (min-width: 768px) {
+    font-size: 1.5rem;
+  }
 `;
 
 const StatusBadge = styled.span`
@@ -322,20 +377,30 @@ const StatusBadge = styled.span`
   font-weight: 600;
   text-transform: capitalize;
   color: #121212;
+  align-self: flex-start;
 `;
 
 const RaffleDescription = styled.p`
   color: #e0e0e0;
-  font-size: 1rem;
+  font-size: 0.95rem;
   line-height: 1.5;
   margin: 0;
+
+  @media (min-width: 768px) {
+    font-size: 1rem;
+  }
 `;
 
 const RaffleDetails = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  grid-template-columns: 1fr;
+  gap: 12px;
   margin-top: 8px;
+
+  @media (min-width: 768px) {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
 `;
 
 const Detail = styled.div`
@@ -351,14 +416,24 @@ const Label = styled.span`
 
 const Value = styled.span`
   color: #ffffff;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 500;
+
+  @media (min-width: 768px) {
+    font-size: 1rem;
+  }
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  gap: 8px;
   margin-top: auto;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    gap: 12px;
+  }
 `;
 
 const Button = styled.button<{ variant?: 'secondary' | 'success' }>`
@@ -368,7 +443,6 @@ const Button = styled.button<{ variant?: 'secondary' | 'success' }>`
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.2s;
-  flex: 1;
   background: ${({ variant }) => {
     if (variant === 'secondary') return 'transparent';
     if (variant === 'success') return '#4CAF50';
@@ -380,6 +454,10 @@ const Button = styled.button<{ variant?: 'secondary' | 'success' }>`
     return '#121212';
   }};
   border: ${({ variant }) => variant === 'secondary' ? '1px solid rgba(255, 215, 0, 0.3)' : 'none'};
+
+  @media (min-width: 768px) {
+    flex: 1;
+  }
 
   &:hover {
     opacity: 0.9;

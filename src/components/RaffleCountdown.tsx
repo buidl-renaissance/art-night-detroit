@@ -1,95 +1,115 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 
 interface RaffleCountdownProps {
   endDate: string;
-  label?: string;
+  raffleName?: string;
 }
 
-const RaffleDetails = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-top: 1rem;
-  margin-bottom: 0.5rem;
-  background: rgba(0, 0, 0, 0.2);
-  padding: 16px;
-  border-radius: 8px;
-`;
-
-const Detail = styled.div`
-  border-radius: 8px;
-  text-align: center;
-`;
-
 const CountdownContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-`;
-
-const Label = styled.div`
-  color: ${({ theme }) => theme.colors.text.light};
-  font-size: 0.8rem;
-  margin-bottom: 0.5rem;
-  text-transform: uppercase;
-`;
-
-const DateTimeDisplay = styled.div`
+  background: ${({ theme }) => theme.colors.background.secondary};
+  padding: 1rem;
+  border-radius: 8px;
   text-align: center;
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-size: 1.2rem;
-  line-height: 1.6;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
+  
+  @media (max-width: 768px) {
+    padding: 0.75rem;
+  }
 `;
 
-const CountdownGrid = styled.div`
+const RaffleName = styled.h2`
+  color: ${({ theme }) => theme.colors.primary};
+  margin: 0 0 0.5rem 0;
+  font-size: 1.3rem;
+  font-weight: bold;
+  
+  @media (max-width: 768px) {
+    font-size: 1.1rem;
+  }
+`;
+
+const CountdownTitle = styled.h3`
+  color: ${({ theme }) => theme.colors.text.primary};
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
+`;
+
+const CountdownTime = styled.div`
   display: flex;
   justify-content: center;
   gap: 1rem;
+  flex-wrap: wrap;
+  
+  @media (max-width: 768px) {
+    gap: 0.5rem;
+  }
 `;
 
-const CountdownItem = styled.div`
+const TimeUnit = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
+  min-width: 50px;
 `;
 
-const CountdownValue = styled.div`
-  color: #FFD700;
-  font-size: 1.4rem;
-  font-weight: 600;
+const TimeValue = styled.span`
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: ${({ theme }) => theme.colors.primary};
+  
+  @media (max-width: 768px) {
+    font-size: 1.2rem;
+  }
 `;
 
-const CountdownLabel = styled.div`
+const TimeLabel = styled.span`
   font-size: 0.8rem;
   color: ${({ theme }) => theme.colors.text.light};
   text-transform: uppercase;
+  
+  @media (max-width: 768px) {
+    font-size: 0.7rem;
+  }
 `;
 
-export default function RaffleCountdown({ endDate, label = 'Raffle Ends' }: RaffleCountdownProps) {
+const ExpiredMessage = styled.div`
+  color: #ff4444;
+  font-weight: bold;
+  font-size: 1.1rem;
+`;
+
+export default function RaffleCountdown({ endDate, raffleName }: RaffleCountdownProps) {
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
     hours: number;
     minutes: number;
     seconds: number;
   }>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      const difference = new Date(endDate).getTime() - new Date().getTime();
-      
+      const now = new Date().getTime();
+      const end = new Date(endDate).getTime();
+      const difference = end - now;
+
       if (difference <= 0) {
+        setIsExpired(true);
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
         return;
       }
 
-      setTimeLeft({
-        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-        minutes: Math.floor((difference / 1000 / 60) % 60),
-        seconds: Math.floor((difference / 1000) % 60)
-      });
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+      setTimeLeft({ days, hours, minutes, seconds });
     };
 
     calculateTimeLeft();
@@ -98,44 +118,37 @@ export default function RaffleCountdown({ endDate, label = 'Raffle Ends' }: Raff
     return () => clearInterval(timer);
   }, [endDate]);
 
+  if (isExpired) {
+    return (
+      <CountdownContainer>
+        {raffleName && <RaffleName>{raffleName}</RaffleName>}
+        <ExpiredMessage>🎉 Raffle has ended!</ExpiredMessage>
+      </CountdownContainer>
+    );
+  }
+
   return (
-    <RaffleDetails>
-      <Detail>
-        <CountdownContainer>
-          <Label>{label}</Label>
-          <DateTimeDisplay>
-            {new Date(endDate).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            })}
-            <br />
-            {new Date(endDate).toLocaleTimeString('en-US', {
-              hour: 'numeric',
-              minute: '2-digit',
-              timeZoneName: 'short'
-            })}
-          </DateTimeDisplay>
-          <CountdownGrid>
-            <CountdownItem>
-              <CountdownValue>{timeLeft.days}</CountdownValue>
-              <CountdownLabel>Days</CountdownLabel>
-            </CountdownItem>
-            <CountdownItem>
-              <CountdownValue>{timeLeft.hours}</CountdownValue>
-              <CountdownLabel>Hours</CountdownLabel>
-            </CountdownItem>
-            <CountdownItem>
-              <CountdownValue>{timeLeft.minutes}</CountdownValue>
-              <CountdownLabel>Minutes</CountdownLabel>
-            </CountdownItem>
-            <CountdownItem>
-              <CountdownValue>{timeLeft.seconds}</CountdownValue>
-              <CountdownLabel>Seconds</CountdownLabel>
-            </CountdownItem>
-          </CountdownGrid>
-        </CountdownContainer>
-      </Detail>
-    </RaffleDetails>
+    <CountdownContainer>
+      {raffleName && <RaffleName>{raffleName}</RaffleName>}
+      <CountdownTitle>⏰ Raffle Ends In</CountdownTitle>
+      <CountdownTime>
+        <TimeUnit>
+          <TimeValue>{timeLeft.days}</TimeValue>
+          <TimeLabel>Days</TimeLabel>
+        </TimeUnit>
+        <TimeUnit>
+          <TimeValue>{timeLeft.hours}</TimeValue>
+          <TimeLabel>Hours</TimeLabel>
+        </TimeUnit>
+        <TimeUnit>
+          <TimeValue>{timeLeft.minutes}</TimeValue>
+          <TimeLabel>Minutes</TimeLabel>
+        </TimeUnit>
+        <TimeUnit>
+          <TimeValue>{timeLeft.seconds}</TimeValue>
+          <TimeLabel>Seconds</TimeLabel>
+        </TimeUnit>
+      </CountdownTime>
+    </CountdownContainer>
   );
 } 

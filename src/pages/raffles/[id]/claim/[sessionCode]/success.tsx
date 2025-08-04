@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import PageContainer from '@/components/PageContainer';
 import QuantityControls from '@/components/QuantityControls';
+import RaffleCountdown from '@/components/RaffleCountdown';
 
 interface Ticket {
   id: string;
@@ -20,6 +21,97 @@ interface Artist {
   raffle_artist_id: string;
 }
 
+const Modal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
+`;
+
+const ModalContent = styled.div`
+  background: ${({ theme }) => theme.colors.background.primary};
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+  position: relative;
+  
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+  }
+`;
+
+const CloseButton = styled.button`
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: ${({ theme }) => theme.colors.text.light};
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+`;
+
+const ModalTitle = styled.h1`
+  font-size: 2rem;
+  color: ${({ theme }) => theme.colors.primary};
+  margin-bottom: 1rem;
+  
+  @media (max-width: 768px) {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+  }
+`;
+
+const ModalSubtitle = styled.p`
+  color: ${({ theme }) => theme.colors.text.light};
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+    margin-bottom: 1rem;
+  }
+`;
+
+const ActionButton = styled.button`
+  background: ${({ theme }) => theme.colors.primary};
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.primaryHover};
+  }
+  
+  @media (max-width: 768px) {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+  }
+`;
 
 
 const Container = styled.div`
@@ -41,7 +133,7 @@ const Header = styled.div`
   text-align: center;
   
   @media (max-width: 768px) {
-    margin-bottom: 1rem;
+    margin-bottom: 2rem;
   }
 `;
 
@@ -52,7 +144,7 @@ const Title = styled.h1`
   
   @media (max-width: 768px) {
     font-size: 1.5rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
   }
 `;
 
@@ -62,7 +154,7 @@ const Subtitle = styled.p`
   margin-bottom: 1rem;
   
   @media (max-width: 768px) {
-    font-size: 1rem;
+    font-size: 0.8rem;
     margin-bottom: 0.5rem;
   }
 `;
@@ -103,7 +195,7 @@ const TicketsHeader = styled.h2`
   
   @media (max-width: 768px) {
     font-size: 1.25rem;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.25rem;
   }
 `;
 
@@ -147,28 +239,16 @@ const ArtistsGrid = styled.div`
 const ArtistCard = styled.div`
   background: ${({ theme }) => theme.colors.background.primary};
   border-radius: 12px;
-  overflow: hidden;
+  padding: 1.5rem;
   transition: transform 0.2s;
   display: flex;
+  align-items: flex-start;
   flex-direction: column;
+  gap: 1rem;
 
   &:hover {
     transform: translateY(-4px);
   }
-`;
-
-const ArtistImage = styled.img`
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
-`;
-
-const ArtistInfo = styled.div`
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  flex: 1;
   
   @media (max-width: 768px) {
     padding: 1rem;
@@ -176,17 +256,52 @@ const ArtistInfo = styled.div`
   }
 `;
 
+const ArtistImage = styled.img`
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  
+  @media (max-width: 768px) {
+    width: 50px;
+    height: 50px;
+  }
+`;
+
+const ArtistInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  flex: 1;
+  width: 100%;
+  
+  @media (max-width: 768px) {
+    gap: 0.75rem;
+  }
+`;
+
+const ArtistInfoRow = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+`;
+
 const ArtistName = styled.h3`
   font-size: 1.3rem;
   color: ${({ theme }) => theme.colors.text.primary};
   margin: 0;
+  line-height: 1.2;
 `;
 
 const ArtistBio = styled.p`
   color: ${({ theme }) => theme.colors.text.light};
   font-size: 0.9rem;
-  line-height: 1.5;
+  line-height: 1.3;
   margin: 0;
+  width: 100%;
 `;
 
 const QuantitySection = styled.div`
@@ -229,10 +344,26 @@ const ErrorMessage = styled.div`
   text-align: center;
 `;
 
-const LoadingMessage = styled.div`
-  text-align: center;
-  color: ${({ theme }) => theme.colors.text.light};
-  font-size: 1.1rem;
+const LoadingSpinner = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100%;
+`;
+
+const Spinner = styled.div`
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 `;
 
 export default function ClaimSuccess() {
@@ -240,12 +371,14 @@ export default function ClaimSuccess() {
   const { id, sessionCode } = router.query;
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [artists, setArtists] = useState<Artist[]>([]);
+  const [raffle, setRaffle] = useState<{ end_date: string; name: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [artistQuantities, setArtistQuantities] = useState<{ [artistId: string]: number }>({});
   const [existingSubmissions, setExistingSubmissions] = useState<{ ticket_id: string; raffle_artists: { artist_id: string } }[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const supabase = createClientComponentClient();
 
@@ -254,6 +387,10 @@ export default function ClaimSuccess() {
       fetchData();
     }
   }, [id, sessionCode]);
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
 
   const fetchData = async () => {
     try {
@@ -282,6 +419,19 @@ export default function ClaimSuccess() {
         if (!participant) {
           console.log('Participant not found in participants table');
         }
+      }
+
+      // Get raffle data for countdown
+      const { data: raffleData } = await supabase
+        .from('raffles')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      console.log('Raffle data:', raffleData);
+      
+      if (raffleData) {
+        setRaffle(raffleData);
       }
       
       // Get tickets for this specific participant
@@ -379,6 +529,16 @@ export default function ClaimSuccess() {
               }
             });
             setArtistQuantities(quantities);
+
+            // Check if there are unassigned tickets and show modal if needed
+            const assignedTicketIds = submissions?.map(sub => sub.ticket_id) || [];
+            const unassignedTickets = userTickets.filter(ticket => 
+              !assignedTicketIds.includes(ticket.id)
+            );
+            
+            if (unassignedTickets.length > 0) {
+              setIsModalOpen(true);
+            }
           }
         }
       } else {
@@ -487,9 +647,9 @@ export default function ClaimSuccess() {
   if (loading) {
     return (
       <PageContainer theme="dark">
-        <Container>
-          <LoadingMessage>Loading your tickets...</LoadingMessage>
-        </Container>
+        <LoadingSpinner>
+          <Spinner />
+        </LoadingSpinner>
       </PageContainer>
     );
   }
@@ -506,18 +666,24 @@ export default function ClaimSuccess() {
 
   return (
     <PageContainer theme="dark">
+      {isModalOpen && (
+        <Modal>
+          <ModalContent>
+            <CloseButton onClick={handleCloseModal}>×</CloseButton>
+            <ModalTitle>🎉 Tickets Claimed!</ModalTitle>
+            <ModalSubtitle>Now assign your tickets to your favorite artists</ModalSubtitle>
+            <ActionButton onClick={handleCloseModal}>
+              Select Artists
+            </ActionButton>
+          </ModalContent>
+        </Modal>
+      )}
+      
       <Container>
-        <Header>
-          <Title>🎉 Tickets Claimed Successfully!</Title>
-          <Subtitle>Now assign your tickets to your favorite artists</Subtitle>
-        </Header>
-
-        <SuccessMessage>
-          You have successfully claimed {tickets.length} ticket(s)!
-        </SuccessMessage>
+        {raffle && <RaffleCountdown endDate={raffle.end_date} raffleName={raffle.name} />}
 
         <TicketsSection>
-          <TicketsHeader>Your Tickets by Artist</TicketsHeader>
+          <TicketsHeader>Your Tickets</TicketsHeader>
           
           {/* Group tickets by artist */}
           {artists.map((artist) => {
@@ -531,19 +697,29 @@ export default function ClaimSuccess() {
             if (artistTickets.length === 0) return null;
             
             return (
-              <div key={artist.id} style={{ marginBottom: '2rem' }}>
+              <div key={artist.id} style={{ marginBottom: '1rem' }}>
                 <h3 style={{ 
                   color: '#4CAF50', 
-                  marginBottom: '0.5rem',
-                  fontSize: '1.2rem'
+                  marginBottom: '0rem',
+                  fontSize: '1.2rem',
+                  textAlign: 'center'
                 }}>
                   {artist.name}
                 </h3>
+                {/* <p style={{ 
+                  color: '#666', 
+                  marginBottom: '0.5rem',
+                  fontSize: '0.8rem',
+                  textAlign: 'center'
+                }}>
+                  {artistTickets.length} ticket(s)
+                </p> */}
                 <div style={{ 
                   display: 'flex', 
                   flexWrap: 'wrap', 
                   gap: '0.5rem',
-                  marginBottom: '0.5rem'
+                  marginBottom: '0.5rem',
+                  justifyContent: 'center'
                 }}>
                   {artistTickets.map((ticket) => (
                     <span key={ticket.id} style={{
@@ -551,18 +727,12 @@ export default function ClaimSuccess() {
                       color: 'white',
                       padding: '0.25rem 0.5rem',
                       borderRadius: '4px',
-                      fontSize: '0.8rem'
+                      fontSize: '1rem',
+                      fontWeight: 'bold'
                     }}>
                       #{ticket.ticket_number}
                     </span>
                   ))}
-                </div>
-                <div style={{ 
-                  fontSize: '0.9rem', 
-                  color: '#666',
-                  marginBottom: '1rem'
-                }}>
-                  Contact: {artist.name} - {artistTickets.length} ticket(s)
                 </div>
               </div>
             );
@@ -577,18 +747,20 @@ export default function ClaimSuccess() {
             
             if (unassignedTickets.length > 0) {
               return (
-                <div style={{ marginTop: '2rem' }}>
+                <div style={{ marginTop: '0.5rem' }}>
                   <h3 style={{ 
                     color: '#666', 
                     marginBottom: '0.5rem',
-                    fontSize: '1.2rem'
+                    fontSize: '1.2rem',
+                    textAlign: 'center'
                   }}>
                     Unassigned Tickets
                   </h3>
                   <div style={{ 
                     display: 'flex', 
                     flexWrap: 'wrap', 
-                    gap: '0.5rem'
+                    gap: '0.5rem',
+                    justifyContent: 'center'
                   }}>
                     {unassignedTickets.map((ticket) => (
                       <span key={ticket.id} style={{
@@ -612,17 +784,19 @@ export default function ClaimSuccess() {
 
         <ArtistsSection>
           <ArtistsHeader>Assign Tickets to Artists</ArtistsHeader>
-          <p style={{ textAlign: 'center', marginBottom: '2rem', color: '#666' }}>
+          <p style={{ textAlign: 'center', marginBottom: '2rem', color: '#666', fontSize: '0.8rem' }}>
             You have {remainingTickets} ticket(s) remaining to assign
           </p>
 
           <ArtistsGrid>
             {artists.map((artist) => (
               <ArtistCard key={artist.id}>
-                <ArtistImage src={artist.image_url} alt={artist.name} />
-                <ArtistInfo>
+                <ArtistInfoRow>  
+                  <ArtistImage src={artist.image_url} alt={artist.name} />
                   <ArtistName>{artist.name}</ArtistName>
-                  <ArtistBio>{artist.bio}</ArtistBio>
+                </ArtistInfoRow>
+                <ArtistInfo>
+                  {/* <ArtistBio>{artist.bio}</ArtistBio> */}
                   
                   <QuantitySection>
                     <QuantityControls

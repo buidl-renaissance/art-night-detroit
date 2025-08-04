@@ -3,12 +3,14 @@ import { useRouter } from 'next/router';
 import styled from 'styled-components';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import PageContainer from '@/components/PageContainer';
+import RaffleCountdown from '@/components/RaffleCountdown';
 import { ParticipantFormData } from '@/types/participants';
 
 interface Raffle {
   id: string;
   name: string;
   description: string;
+  end_date: string;
 }
 
 interface QRCodeSession {
@@ -28,7 +30,7 @@ const Container = styled.div`
   
   @media (max-width: 768px) {
     max-width: 100%;
-    padding: 1rem;
+    padding: 0rem;
     margin: 0;
   }
 `;
@@ -41,12 +43,12 @@ const Header = styled.div`
 const Title = styled.h1`
   font-size: 2rem;
   color: ${({ theme }) => theme.colors.primary};
-  margin-bottom: 1rem;
+  margin-bottom: 0rem;
 `;
 
 const Subtitle = styled.p`
   color: ${({ theme }) => theme.colors.text.light};
-  font-size: 1.1rem;
+  font-size: 0.8rem;
   margin-bottom: 1rem;
 `;
 
@@ -111,16 +113,6 @@ const Button = styled.button`
 const ErrorMessage = styled.div`
   color: #ff4444;
   margin-top: 1rem;
-  text-align: center;
-`;
-
-
-
-const SessionInfo = styled.div`
-  background: ${({ theme }) => theme.colors.background.primary};
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
   text-align: center;
 `;
 
@@ -193,7 +185,7 @@ export default function ClaimTickets() {
   const formatPhoneNumber = (value: string) => {
     // Remove all non-digits
     const phoneNumber = value.replace(/\D/g, '');
-    
+
     // Format as (XXX) XXX-XXXX
     if (phoneNumber.length <= 3) {
       return phoneNumber;
@@ -277,20 +269,20 @@ export default function ClaimTickets() {
   return (
     <PageContainer theme="dark">
       <Container>
-        <Header>
-          <Title>Claim Your Tickets</Title>
-          <Subtitle>Enter your information to claim your tickets</Subtitle>
-        </Header>
 
         {session && raffle && (
-          <SessionInfo>
-            <h3>{raffle.name}</h3>
-            <p>Tickets Available: {session.ticket_count}</p>
-            <p>Session Code: {session.session_code}</p>
-          </SessionInfo>
+          <>
+            <RaffleCountdown endDate={raffle.end_date} raffleName={raffle.name} />
+          </>
         )}
 
         <Form onSubmit={handleSubmit}>
+        <Header>
+          <Title>Claim Your Tickets</Title>
+          <Subtitle>Enter your information to claim your tickets</Subtitle>
+          <p>Session Code: {session?.session_code || 'N/A'}</p>
+        </Header>
+
           <FormGroup>
             <Label htmlFor="name">Full Name *</Label>
             <Input
