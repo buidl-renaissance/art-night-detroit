@@ -4,6 +4,9 @@ export interface Profile {
   full_name?: string;
   handle?: string;
   phone_number?: string;
+  tagline?: string;
+  website?: string;
+  image_url?: string;
   is_admin: boolean;
   created_at: string;
   updated_at: string;

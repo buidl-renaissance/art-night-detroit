@@ -1,6 +1,6 @@
 import { generateEventSlug } from '@/lib/events';
 import { supabase } from '@/lib/supabaseClient';
-import { Event, EventFormData } from '@/types/events';
+import { Event, EventFormData, EventParticipant } from '@/types/events';
 
 export async function getEvent(idOrSlug: string): Promise<Event | null> {
   if (idOrSlug.match(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/)) {
@@ -124,4 +124,54 @@ export async function updateEvent(id: string, eventData: Partial<EventFormData>)
   }
 
   return data;
+}
+
+export async function getNextEvent(): Promise<Event | null> {
+  const now = new Date();
+  const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours from now
+
+  const { data, error } = await supabase
+    .from('events')
+    .select('*')
+    .eq('status', 'active')
+    .lte('start_date', twentyFourHoursFromNow.toISOString())
+    .or(`end_date.gte.${now.toISOString()},end_date.is.null`)
+    .order('start_date', { ascending: true })
+    .limit(1)
+    .single();
+
+  if (error) {
+    console.error('Error fetching next event:', error);
+    return null;
+  }
+
+  return data;
+}
+
+export async function getEventParticipants(eventId: string): Promise<EventParticipant[]> {
+  const { data, error } = await supabase
+    .from('event_participants')
+    .select(`
+      *,
+      profile:profiles(*)
+    `)
+    .eq('event_id', eventId)
+    .order('role', { ascending: true })
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching event participants:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function getEventWithParticipants(eventId: string): Promise<{ event: Event | null; participants: EventParticipant[] }> {
+  const [event, participants] = await Promise.all([
+    getEventById(eventId),
+    getEventParticipants(eventId)
+  ]);
+
+  return { event, participants };
 }

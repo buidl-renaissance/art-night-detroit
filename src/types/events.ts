@@ -26,6 +26,28 @@ export interface EventWithRaffles extends Event {
   }[];
 }
 
+export interface EventParticipant {
+  id: string;
+  event_id: string;
+  profile_id: string;
+  role: 'DJ' | 'Featured Artist' | 'Vendor' | 'Attendee';
+  created_at: string;
+  updated_at: string;
+  profile?: {
+    id: string;
+    email: string;
+    full_name?: string;
+    handle?: string;
+    phone_number?: string;
+    tagline?: string;
+    website?: string;
+    image_url?: string;
+    is_admin: boolean;
+    created_at: string;
+    updated_at: string;
+  };
+}
+
 export interface EventFormData {
   name: string;
   description: string;

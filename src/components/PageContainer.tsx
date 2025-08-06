@@ -9,6 +9,7 @@ interface PageContainerProps {
   width?: ContainerWidth;
   theme?: ThemeMode;
   className?: string;
+  noPadding?: boolean;
 }
 
 const getMaxWidth = (width: ContainerWidth) => {
@@ -33,9 +34,9 @@ const Wrapper = styled.div<{ $themeMode: ThemeMode }>`
   color: ${({ $themeMode }) => $themeMode === 'dark' ? '#ffffff' : '#121212'};
 `;
 
-const Container = styled.div<{ $width: ContainerWidth }>`
+const Container = styled.div<{ $width: ContainerWidth; $noPadding: boolean }>`
   margin: 0 auto;
-  padding: 3rem 2rem;
+  padding: ${({ $noPadding }) => $noPadding ? '0' : '3rem 2rem'};
   width: 100%;
   max-width: ${({ $width }) => getMaxWidth($width)};
   display: flex;
@@ -43,7 +44,7 @@ const Container = styled.div<{ $width: ContainerWidth }>`
   
   /* Responsive padding */
   @media (min-width: 768px) {
-    padding: 60px 32px;
+    padding: ${({ $noPadding }) => $noPadding ? '0' : '60px 32px'};
   }
 `;
 
@@ -51,11 +52,12 @@ export const PageContainer = ({
   children, 
   width = 'medium', 
   theme = 'light',
-  className 
+  className,
+  noPadding = false
 }: PageContainerProps) => {
   return (
     <Wrapper $themeMode={theme}>
-      <Container $width={width} className={className}>
+      <Container $width={width} $noPadding={noPadding} className={className}>
         {children}
       </Container>
     </Wrapper>
