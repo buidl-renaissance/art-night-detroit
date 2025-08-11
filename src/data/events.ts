@@ -140,6 +140,10 @@ export async function getNextEvent(): Promise<Event | null> {
     .limit(1)
     .single();
 
+  if (activeError && activeError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+    console.error('Error fetching active event:', activeError);
+  }
+
   if (activeEvent) {
     return activeEvent;
   }

@@ -8,7 +8,6 @@ import { Container } from '@/components/Container';
 import ParticipantsDisplay from '@/components/ParticipantsDisplay';
 import Footer from '@/components/Footer';
 import BottomNavigation from '@/components/BottomNavigation';
-import { createClient } from '@supabase/supabase-js';
 
 interface ConnectPageProps {
   event: Event | null;

@@ -6,32 +6,15 @@ import { PageContainer } from '@/components/PageContainer';
 import { Container } from '@/components/Container';
 import { getEvent, getEventParticipants } from '@/data/events';
 import { Event, EventParticipant } from '@/types/events';
-import { createClient } from '@supabase/supabase-js';
 import ParticipantsDisplay from '@/components/ParticipantsDisplay';
 import Footer from '@/components/Footer';
 import BottomNavigation from '@/components/BottomNavigation';
 
-interface AnonymousParticipant {
-  id: string;
-  event_id: string;
-  email: string;
-  full_name: string;
-  tagline?: string;
-  website?: string;
-  instagram: string;
-  role: string;
-  image_url?: string;
-  performance_details?: string;
-  setup_requirements?: string;
-  social_links: Record<string, string>;
-  created_at: string;
-  updated_at: string;
-}
+
 
 interface ParticipantsPageProps {
   event: Event;
   participants: EventParticipant[];
-  anonymousParticipants: AnonymousParticipant[];
 }
 
 const HeroSection = styled.section<{ imageUrl?: string }>`
@@ -138,7 +121,7 @@ const PageWrapper = styled.div`
   padding-bottom: 80px; /* Account for fixed bottom navigation */
 `;
 
-export default function ParticipantsPage({ event, participants, anonymousParticipants }: ParticipantsPageProps) {
+export default function ParticipantsPage({ event, participants }: ParticipantsPageProps) {
   const router = useRouter();
   const [showQRCode, setShowQRCode] = useState(false);
 
@@ -202,7 +185,6 @@ export default function ParticipantsPage({ event, participants, anonymousPartici
         <Container>
           <ParticipantsDisplay
             participants={participants}
-            anonymousParticipants={anonymousParticipants}
             showAddButton={false}
             onAddParticipant={handleAddParticipant}
           />
@@ -246,21 +228,10 @@ export const getServerSideProps: GetServerSideProps = async ({ params }) => {
     // Get authenticated participants
     const participants = await getEventParticipants(event.id);
 
-    // Get anonymous participants
-    const { data: anonymousParticipants } = await createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
-      .from('anonymous_participants')
-      .select('*')
-      .eq('event_id', event.id)
-      .order('created_at', { ascending: true });
-
     return {
       props: {
         event,
         participants: participants || [],
-        anonymousParticipants: anonymousParticipants || [],
       },
     };
   } catch (error) {

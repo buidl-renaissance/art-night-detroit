@@ -582,7 +582,7 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
                   required
                 />
                 <p style={{ color: '#ccc', fontSize: '0.9rem', marginTop: '0.5rem' }}>
-                  We'll check if you already have a profile in our system.
+                  We&apos;ll check if you already have a profile in our system.
                 </p>
               </FormGroup>
 
@@ -629,7 +629,7 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
                 <Select
                   id="role"
                   value={formData.role}
-                  onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value as any }))}
+                  onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value as 'DJ' | 'Featured Artist' | 'Vendor' | 'Attendee' }))}
                   required
                 >
                   <option value="Attendee">Attendee</option>
