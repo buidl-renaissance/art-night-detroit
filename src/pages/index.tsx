@@ -31,7 +31,7 @@ const HomePage: React.FC<HomePageProps> = ({ events }) => {
         <PaintSplash top="7%" left="5%" color="#87CEEB" size="150px" rotation="-15deg" />
         <PaintSplash top="50%" left="85%" color="#F7DC6F" size="120px" rotation="25deg" />
         <PaintSplash top="78%" left="15%" color="#8E44AD" size="100px" rotation="10deg" />
-        <img src="/images/art-night-detroit-logo.png" alt="Art Night Detroit" width={300} height={300} />
+        <img src="/images/art-night-detroit-logo.png" alt="Art Night Detroit" width={300} height={300} style={{ marginBottom: '2rem' }} />
         <HeroSubtitle>Discover creative events in the heart of Detroit</HeroSubtitle>
         {/* <HeroCTA href="/events">Start Creating</HeroCTA> */}
       </HeroSection>
