@@ -10,27 +10,9 @@ import Footer from '@/components/Footer';
 import BottomNavigation from '@/components/BottomNavigation';
 import { createClient } from '@supabase/supabase-js';
 
-interface AnonymousParticipant {
-  id: string;
-  event_id: string;
-  email: string;
-  full_name: string;
-  tagline?: string;
-  website?: string;
-  instagram: string;
-  role: string;
-  image_url?: string;
-  performance_details?: string;
-  setup_requirements?: string;
-  social_links: Record<string, string>;
-  created_at: string;
-  updated_at: string;
-}
-
 interface ConnectPageProps {
   event: Event | null;
   participants: EventParticipant[];
-  anonymousParticipants: AnonymousParticipant[];
 }
 
 const HeroSection = styled.section<{ imageUrl?: string }>`
@@ -211,7 +193,7 @@ const isEventActive = (event: Event) => {
   return now >= startDate && (!endDate || now <= endDate);
 };
 
-export default function ConnectPage({ event, participants, anonymousParticipants }: ConnectPageProps) {
+export default function ConnectPage({ event, participants }: ConnectPageProps) {
   const [showQRCode, setShowQRCode] = useState(false);
 
   const handleShareClick = () => {
@@ -245,7 +227,6 @@ export default function ConnectPage({ event, participants, anonymousParticipants
             <Container>
               <ParticipantsDisplay
                 participants={participants}
-                anonymousParticipants={anonymousParticipants}
                 showAddButton={false}
               />
               
@@ -286,28 +267,16 @@ export const getServerSideProps: GetServerSideProps<ConnectPageProps> = async ()
         props: {
           event: null,
           participants: [],
-          anonymousParticipants: [],
         },
       };
     }
 
     const participants = await getEventParticipants(event.id);
 
-    // Get anonymous participants
-    const { data: anonymousParticipants } = await createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
-      .from('anonymous_participants')
-      .select('*')
-      .eq('event_id', event.id)
-      .order('created_at', { ascending: true });
-
     return {
       props: {
         event,
         participants,
-        anonymousParticipants: anonymousParticipants || [],
       },
     };
   } catch (error) {
@@ -316,7 +285,6 @@ export const getServerSideProps: GetServerSideProps<ConnectPageProps> = async ()
       props: {
         event: null,
         participants: [],
-        anonymousParticipants: [],
       },
     };
   }

@@ -306,7 +306,25 @@ interface UploadFormData {
   setup_requirements?: string;
 }
 
+interface Profile {
+  id: string;
+  email: string;
+  full_name?: string;
+  handle?: string;
+  phone_number?: string;
+  tagline?: string;
+  website?: string;
+  image_url?: string;
+  is_admin: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) => {
+  const [step, setStep] = useState<'handle' | 'existing-profile' | 'new-profile'>('handle');
+  const [handle, setHandle] = useState('');
+  const [existingProfile, setExistingProfile] = useState<Profile | null>(null);
+  const [checkingHandle, setCheckingHandle] = useState(false);
   const [formData, setFormData] = useState<UploadFormData>({
     name: '',
     email: '',
@@ -331,6 +349,82 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleHandleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!handle.trim()) return;
+
+    setCheckingHandle(true);
+    setStatus('idle');
+
+    try {
+      const response = await fetch('/api/profiles/check-handle', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ handle: handle.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to check handle');
+      }
+
+      if (data.exists) {
+        setExistingProfile(data.profile);
+        setStep('existing-profile');
+      } else {
+        setStep('new-profile');
+      }
+
+    } catch (error) {
+      setStatus('error');
+      setMessage(error instanceof Error ? error.message : 'An error occurred');
+    } finally {
+      setCheckingHandle(false);
+    }
+  };
+
+  const handleAddExistingProfile = async (role: string) => {
+    if (!existingProfile) return;
+
+    setSubmitting(true);
+    setStatus('idle');
+
+    try {
+      const response = await fetch(`/api/events/${event.id}/add-participant`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          profileId: existingProfile.id,
+          role,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to add participant');
+      }
+
+      setStatus('success');
+      setMessage('Profile added successfully! Redirecting...');
+      
+      setTimeout(() => {
+        window.location.href = data.redirectUrl;
+      }, 2000);
+
+    } catch (error) {
+      setStatus('error');
+      setMessage(error instanceof Error ? error.message : 'An error occurred');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -475,135 +569,265 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
             <ErrorMessage>{message}</ErrorMessage>
           )}
 
-          <Form onSubmit={handleSubmit}>
-            <FormGroup>
-              <ImageUploadContainer>
-                <ImagePreview 
-                  hasImage={!!imagePreview}
-                  style={{ backgroundImage: imagePreview ? `url(${imagePreview})` : 'none' }}
-                  onClick={handleImageClick}
-                >
-                  {!imagePreview && <UploadText>Click to upload</UploadText>}
-                </ImagePreview>
-                <FileInput
-                  id="profile-image-input"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
+          {step === 'handle' && (
+            <Form onSubmit={handleHandleSubmit}>
+              <FormGroup>
+                <Label htmlFor="handle">Enter your handle</Label>
+                <Input
+                  type="text"
+                  id="handle"
+                  value={handle}
+                  onChange={(e) => setHandle(e.target.value)}
+                  placeholder="your-handle"
+                  required
                 />
-                <UploadText>Upload a profile picture</UploadText>
-                {uploadingImage && <UploadProgress>Uploading...</UploadProgress>}
-              </ImageUploadContainer>
-            </FormGroup>
+                <p style={{ color: '#ccc', fontSize: '0.9rem', marginTop: '0.5rem' }}>
+                  We'll check if you already have a profile in our system.
+                </p>
+              </FormGroup>
 
-            <FormGroup>
-              <Label htmlFor="instagram">Instagram Handle *</Label>
-              <Input
-                type="text"
-                id="instagram"
-                name="instagram"
-                value={formData.instagram}
-                onChange={handleChange}
-                placeholder="@username"
-                required
-              />
-            </FormGroup>
+              <SubmitButton type="submit" disabled={checkingHandle}>
+                {checkingHandle ? 'Checking...' : 'Continue'}
+              </SubmitButton>
+            </Form>
+          )}
 
-            <FormGroup>
-              <Label htmlFor="name">Full Name *</Label>
-              <Input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Your full name"
-                required
-              />
-            </FormGroup>
+          {step === 'existing-profile' && existingProfile && (
+            <div>
+              <InfoBox>
+                <strong>Profile Found!</strong><br />
+                We found an existing profile for <strong>@{existingProfile.handle}</strong>
+              </InfoBox>
 
-            <FormGroup>
-              <Label htmlFor="email">Email *</Label>
-              <Input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="your.email@example.com"
-                required
-              />
-            </FormGroup>
+              <div style={{ 
+                background: 'rgba(255, 255, 255, 0.05)', 
+                padding: '1rem', 
+                borderRadius: '8px', 
+                marginBottom: '2rem' 
+              }}>
+                <h3 style={{ color: '#fff', marginBottom: '1rem' }}>Profile Information</h3>
+                <p style={{ color: '#ccc', marginBottom: '0.5rem' }}>
+                  <strong>Name:</strong> {existingProfile.full_name || 'Not provided'}
+                </p>
+                <p style={{ color: '#ccc', marginBottom: '0.5rem' }}>
+                  <strong>Email:</strong> {existingProfile.email}
+                </p>
+                {existingProfile.tagline && (
+                  <p style={{ color: '#ccc', marginBottom: '0.5rem' }}>
+                    <strong>Tagline:</strong> {existingProfile.tagline}
+                  </p>
+                )}
+                {existingProfile.website && (
+                  <p style={{ color: '#ccc', marginBottom: '0.5rem' }}>
+                    <strong>Website:</strong> {existingProfile.website}
+                  </p>
+                )}
+              </div>
 
-            <FormGroup>
-              <Label htmlFor="role">Your Role *</Label>
-              <Select
-                id="role"
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                required
-              >
-                <option value="Attendee">Attendee</option>
-                <option value="DJ">DJ</option>
-                <option value="Featured Artist">Featured Artist</option>
-                <option value="Vendor">Vendor</option>
-              </Select>
-            </FormGroup>
+              <FormGroup>
+                <Label htmlFor="role">Your Role for this Event *</Label>
+                <Select
+                  id="role"
+                  value={formData.role}
+                  onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value as any }))}
+                  required
+                >
+                  <option value="Attendee">Attendee</option>
+                  <option value="DJ">DJ</option>
+                  <option value="Featured Artist">Featured Artist</option>
+                  <option value="Vendor">Vendor</option>
+                </Select>
+              </FormGroup>
 
-            <FormGroup>
-              <Label htmlFor="tagline">Tagline</Label>
-              <Textarea
-                id="tagline"
-                name="tagline"
-                value={formData.tagline}
-                onChange={handleChange}
-                placeholder="Brief description about yourself, your work, or what you'll be doing at this event..."
-              />
-            </FormGroup>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+                <SubmitButton 
+                  type="button" 
+                  onClick={() => handleAddExistingProfile(formData.role)}
+                  disabled={submitting}
+                  style={{ flex: 1 }}
+                >
+                  {submitting ? 'Adding...' : 'Add to Event'}
+                </SubmitButton>
+                <SubmitButton 
+                  type="button" 
+                  onClick={() => setStep('new-profile')}
+                  disabled={submitting}
+                  style={{ 
+                    flex: 1, 
+                    background: 'transparent', 
+                    border: '1px solid #667eea',
+                    color: '#667eea'
+                  }}
+                >
+                  Create New Profile
+                </SubmitButton>
+              </div>
+            </div>
+          )}
 
-            <FormGroup>
-              <Label htmlFor="website">Website</Label>
-              <Input
-                type="url"
-                id="website"
-                name="website"
-                value={formData.website}
-                onChange={handleChange}
-                placeholder="https://yourwebsite.com"
-              />
-            </FormGroup>
+          {step === 'new-profile' && (
+            <Form onSubmit={handleSubmit}>
+              <InfoBox>
+                <strong>Create New Profile</strong><br />
+                No existing profile found for <strong>@{handle}</strong>. Please fill out your information below.
+              </InfoBox>
 
-            {(formData.role === 'DJ' || formData.role === 'Featured Artist') && (
-              <>
-                <FormGroup>
-                  <Label htmlFor="performance_details">Performance Details</Label>
-                  <Textarea
-                    id="performance_details"
-                    name="performance_details"
-                    value={formData.performance_details}
-                    onChange={handleChange}
-                    placeholder="Describe your performance, set, or what you'll be showcasing..."
+              <FormGroup>
+                <ImageUploadContainer>
+                  <ImagePreview 
+                    hasImage={!!imagePreview}
+                    style={{ backgroundImage: imagePreview ? `url(${imagePreview})` : 'none' }}
+                    onClick={handleImageClick}
+                  >
+                    {!imagePreview && <UploadText>Click to upload</UploadText>}
+                  </ImagePreview>
+                  <FileInput
+                    id="profile-image-input"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
                   />
-                </FormGroup>
+                  <UploadText>Upload a profile picture</UploadText>
+                  {uploadingImage && <UploadProgress>Uploading...</UploadProgress>}
+                </ImageUploadContainer>
+              </FormGroup>
 
-                <FormGroup>
-                  <Label htmlFor="setup_requirements">Setup Requirements</Label>
-                  <Textarea
-                    id="setup_requirements"
-                    name="setup_requirements"
-                    value={formData.setup_requirements}
-                    onChange={handleChange}
-                    placeholder="Any specific equipment, space, or setup requirements..."
-                  />
-                </FormGroup>
-              </>
-            )}
+              <FormGroup>
+                <Label htmlFor="handle">Handle *</Label>
+                <Input
+                  type="text"
+                  id="handle"
+                  name="handle"
+                  value={handle}
+                  disabled
+                  style={{ opacity: 0.7 }}
+                />
+              </FormGroup>
 
-            <SubmitButton type="submit" disabled={submitting || uploadingImage}>
-              {submitting ? 'Submitting...' : 'Submit Information'}
-            </SubmitButton>
-          </Form>
+              <FormGroup>
+                <Label htmlFor="instagram">Instagram Handle *</Label>
+                <Input
+                  type="text"
+                  id="instagram"
+                  name="instagram"
+                  value={formData.instagram}
+                  onChange={handleChange}
+                  placeholder="@username"
+                  required
+                />
+              </FormGroup>
+
+              <FormGroup>
+                <Label htmlFor="name">Full Name *</Label>
+                <Input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="Your full name"
+                  required
+                />
+              </FormGroup>
+
+              <FormGroup>
+                <Label htmlFor="email">Email *</Label>
+                <Input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="your.email@example.com"
+                  required
+                />
+              </FormGroup>
+
+              <FormGroup>
+                <Label htmlFor="role">Your Role *</Label>
+                <Select
+                  id="role"
+                  name="role"
+                  value={formData.role}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="Attendee">Attendee</option>
+                  <option value="DJ">DJ</option>
+                  <option value="Featured Artist">Featured Artist</option>
+                  <option value="Vendor">Vendor</option>
+                </Select>
+              </FormGroup>
+
+              <FormGroup>
+                <Label htmlFor="tagline">Tagline</Label>
+                <Textarea
+                  id="tagline"
+                  name="tagline"
+                  value={formData.tagline}
+                  onChange={handleChange}
+                  placeholder="Brief description about yourself, your work, or what you'll be doing at this event..."
+                />
+              </FormGroup>
+
+              <FormGroup>
+                <Label htmlFor="website">Website</Label>
+                <Input
+                  type="url"
+                  id="website"
+                  name="website"
+                  value={formData.website}
+                  onChange={handleChange}
+                  placeholder="https://yourwebsite.com"
+                />
+              </FormGroup>
+
+              {(formData.role === 'DJ' || formData.role === 'Featured Artist') && (
+                <>
+                  <FormGroup>
+                    <Label htmlFor="performance_details">Performance Details</Label>
+                    <Textarea
+                      id="performance_details"
+                      name="performance_details"
+                      value={formData.performance_details}
+                      onChange={handleChange}
+                      placeholder="Describe your performance, set, or what you'll be showcasing..."
+                    />
+                  </FormGroup>
+
+                  <FormGroup>
+                    <Label htmlFor="setup_requirements">Setup Requirements</Label>
+                    <Textarea
+                      id="setup_requirements"
+                      name="setup_requirements"
+                      value={formData.setup_requirements}
+                      onChange={handleChange}
+                      placeholder="Any specific equipment, space, or setup requirements..."
+                    />
+                  </FormGroup>
+                </>
+              )}
+
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+                <SubmitButton type="submit" disabled={submitting || uploadingImage} style={{ flex: 1 }}>
+                  {submitting ? 'Submitting...' : 'Submit Information'}
+                </SubmitButton>
+                <SubmitButton 
+                  type="button" 
+                  onClick={() => setStep('handle')}
+                  disabled={submitting}
+                  style={{ 
+                    flex: 1, 
+                    background: 'transparent', 
+                    border: '1px solid #667eea',
+                    color: '#667eea'
+                  }}
+                >
+                  Back to Handle
+                </SubmitButton>
+              </div>
+            </Form>
+          )}
           
           <ShareButton type="button" onClick={handleShareClick}>
             📱 Share Connect Page

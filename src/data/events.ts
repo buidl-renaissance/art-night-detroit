@@ -128,24 +128,38 @@ export async function updateEvent(id: string, eventData: Partial<EventFormData>)
 
 export async function getNextEvent(): Promise<Event | null> {
   const now = new Date();
-  const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours from now
 
-  const { data, error } = await supabase
+  // First, try to find currently active events (events that are happening now)
+  const { data: activeEvent, error: activeError } = await supabase
     .from('events')
     .select('*')
     .eq('status', 'active')
-    .lte('start_date', twentyFourHoursFromNow.toISOString())
+    .lte('start_date', now.toISOString())
     .or(`end_date.gte.${now.toISOString()},end_date.is.null`)
     .order('start_date', { ascending: true })
     .limit(1)
     .single();
 
-  if (error) {
-    console.error('Error fetching next event:', error);
+  if (activeEvent) {
+    return activeEvent;
+  }
+
+  // If no active event, find the next upcoming event
+  const { data: nextEvent, error: nextError } = await supabase
+    .from('events')
+    .select('*')
+    .eq('status', 'active')
+    .gt('start_date', now.toISOString())
+    .order('start_date', { ascending: true })
+    .limit(1)
+    .single();
+
+  if (nextError && nextError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+    console.error('Error fetching next event:', nextError);
     return null;
   }
 
-  return data;
+  return nextEvent;
 }
 
 export async function getEventParticipants(eventId: string): Promise<EventParticipant[]> {

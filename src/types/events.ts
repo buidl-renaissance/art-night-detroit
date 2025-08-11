@@ -1,3 +1,5 @@
+import { Profile } from './profiles';
+
 export interface Event {
   id: string;
   name: string;
@@ -31,21 +33,13 @@ export interface EventParticipant {
   event_id: string;
   profile_id: string;
   role: 'DJ' | 'Featured Artist' | 'Vendor' | 'Attendee';
+  bio?: string;
+  performance_details?: string;
+  setup_requirements?: string;
+  social_links?: Record<string, string>;
   created_at: string;
   updated_at: string;
-  profile?: {
-    id: string;
-    email: string;
-    full_name?: string;
-    handle?: string;
-    phone_number?: string;
-    tagline?: string;
-    website?: string;
-    image_url?: string;
-    is_admin: boolean;
-    created_at: string;
-    updated_at: string;
-  };
+  profile?: Profile;
 }
 
 export interface EventFormData {

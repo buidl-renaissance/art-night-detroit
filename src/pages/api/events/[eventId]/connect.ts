@@ -32,6 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       performance_details,
       setup_requirements,
       profile_image_url,
+      handle,
     } = req.body;
 
     console.log('Received form data:', {
@@ -44,9 +45,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       performance_details,
       setup_requirements,
       profile_image_url,
+      handle,
     });
 
-    if (!name || !email || !role || !instagram) {
+    if (!name || !email || !role || !instagram || !handle) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -71,101 +73,108 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     console.log('Found event:', event);
 
-    // Check if an anonymous participant already exists with this email for this event
-    const { data: existingAnonymousParticipant } = await supabase
-      .from('anonymous_participants')
+    // First, create or update the profile
+    const { data: existingProfile } = await supabase
+      .from('profiles')
       .select('id')
-      .eq('event_id', eventIdString)
-      .eq('email', email)
+      .eq('handle', handle)
       .single();
 
-    if (existingAnonymousParticipant) {
-      // Update existing anonymous participant
-      const updateData: {
-        full_name: string;
-        tagline: string | null;
-        website: string | null;
-        role: string;
-        instagram: string;
-        image_url?: string;
-        performance_details?: string;
-        setup_requirements?: string;
-        social_links: Record<string, string>;
-        updated_at: string;
-      } = {
-        full_name: name,
-        tagline: tagline || null,
-        website: website || null,
-        role,
-        instagram,
-        social_links: { instagram },
-        updated_at: new Date().toISOString(),
-      };
+    let profileId: string;
 
-      if (profile_image_url) {
-        updateData.image_url = profile_image_url;
+    if (existingProfile) {
+      // Update existing profile
+      const { error: updateProfileError } = await supabase
+        .from('profiles')
+        .update({
+          full_name: name,
+          email,
+          tagline: tagline || null,
+          website: website || null,
+          image_url: profile_image_url || null,
+          instagram: instagram || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingProfile.id);
+
+      if (updateProfileError) {
+        console.error('Error updating profile:', updateProfileError);
+        return res.status(500).json({ error: 'Failed to update profile' });
       }
 
-      if (performance_details) {
-        updateData.performance_details = performance_details;
+      profileId = existingProfile.id;
+    } else {
+      // Create new profile
+      const { data: newProfile, error: createProfileError } = await supabase
+        .from('profiles')
+        .insert({
+          handle,
+          full_name: name,
+          email,
+          tagline: tagline || null,
+          website: website || null,
+          image_url: profile_image_url || null,
+          instagram: instagram || null,
+          is_admin: false,
+          is_authenticated: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select('id')
+        .single();
+
+      if (createProfileError) {
+        console.error('Error creating profile:', createProfileError);
+        return res.status(500).json({ error: 'Failed to create profile' });
       }
 
-      if (setup_requirements) {
-        updateData.setup_requirements = setup_requirements;
-      }
+      profileId = newProfile.id;
+    }
 
-      const { error: updateError } = await supabase
-        .from('anonymous_participants')
-        .update(updateData)
-        .eq('id', existingAnonymousParticipant.id);
+    // Now add the profile to the event as a participant
+    const { data: existingParticipant } = await supabase
+      .from('event_participants')
+      .select('id')
+      .eq('event_id', eventIdString)
+      .eq('profile_id', profileId)
+      .single();
 
-      if (updateError) {
-        console.error('Error updating anonymous participant:', updateError);
-        return res.status(500).json({ error: 'Failed to update participant information' });
+    if (existingParticipant) {
+      // Update existing participant
+      const { error: updateParticipantError } = await supabase
+        .from('event_participants')
+        .update({
+          role,
+          bio: tagline || null,
+          performance_details: performance_details || null,
+          setup_requirements: setup_requirements || null,
+          social_links: { instagram: instagram || null },
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingParticipant.id);
+
+      if (updateParticipantError) {
+        console.error('Error updating participant:', updateParticipantError);
+        return res.status(500).json({ error: 'Failed to update participant' });
       }
     } else {
-      // Create new anonymous participant
-      const insertData: {
-        event_id: string;
-        email: string;
-        full_name: string;
-        tagline: string | null;
-        website: string | null;
-        instagram: string;
-        role: string;
-        image_url?: string;
-        performance_details?: string;
-        setup_requirements?: string;
-        social_links: Record<string, string>;
-      } = {
-        event_id: eventIdString,
-        email,
-        full_name: name,
-        tagline: tagline || null,
-        website: website || null,
-        instagram,
-        role,
-        social_links: { instagram },
-      };
+      // Create new participant
+      const { error: createParticipantError } = await supabase
+        .from('event_participants')
+        .insert({
+          event_id: eventIdString,
+          profile_id: profileId,
+          role,
+          bio: tagline || null,
+          performance_details: performance_details || null,
+          setup_requirements: setup_requirements || null,
+          social_links: { instagram: instagram || null },
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
 
-      if (profile_image_url) {
-        insertData.image_url = profile_image_url;
-      }
-
-      if (performance_details) {
-        insertData.performance_details = performance_details;
-      }
-
-      if (setup_requirements) {
-        insertData.setup_requirements = setup_requirements;
-      }
-
-      const { error: createError } = await supabase
-        .from('anonymous_participants')
-        .insert(insertData);
-
-      if (createError) {
-        console.error('Error creating anonymous participant:', createError);
+      if (createParticipantError) {
+        console.error('Error creating participant:', createParticipantError);
         return res.status(500).json({ error: 'Failed to create participant' });
       }
     }

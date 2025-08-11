@@ -5,26 +5,8 @@ import { faGlobe } from '@fortawesome/free-solid-svg-icons';
 import { faInstagram } from '@fortawesome/free-brands-svg-icons';
 import { EventParticipant } from '@/types/events';
 
-interface AnonymousParticipant {
-  id: string;
-  event_id: string;
-  email: string;
-  full_name: string;
-  tagline?: string;
-  website?: string;
-  instagram: string;
-  role: string;
-  image_url?: string;
-  performance_details?: string;
-  setup_requirements?: string;
-  social_links: Record<string, string>;
-  created_at: string;
-  updated_at: string;
-}
-
 interface ParticipantsDisplayProps {
   participants: EventParticipant[];
-  anonymousParticipants: AnonymousParticipant[];
   showAddButton?: boolean;
   onAddParticipant?: () => void;
 }
@@ -179,30 +161,17 @@ const AddButton = styled.button`
 
 export default function ParticipantsDisplay({ 
   participants, 
-  anonymousParticipants, 
   showAddButton = false, 
   onAddParticipant 
 }: ParticipantsDisplayProps) {
-  const allParticipants = [
-    ...participants.map(p => ({
-      ...p,
-      type: 'authenticated' as const,
-      displayName: p.profile?.full_name || 'Unknown',
-      tagline: p.profile?.tagline,
-      website: p.profile?.website,
-      imageUrl: p.profile?.image_url,
-      instagram: p.profile?.handle,
-    })),
-    ...anonymousParticipants.map(p => ({
-      ...p,
-      type: 'anonymous' as const,
-      displayName: p.full_name,
-      tagline: p.tagline,
-      website: p.website,
-      imageUrl: p.image_url,
-      instagram: p.instagram,
-    }))
-  ];
+  const allParticipants = participants.map(p => ({
+    ...p,
+    displayName: p.profile?.full_name || 'Unknown',
+    tagline: p.profile?.tagline || p.bio,
+    website: p.profile?.website,
+    imageUrl: p.profile?.image_url,
+    instagram: p.profile?.instagram || p.profile?.handle,
+  }));
 
   // Group participants by role in the specified order
   const roleOrder = ['Featured Artist', 'DJ', 'Vendor', 'Attendee'];
@@ -234,7 +203,7 @@ export default function ParticipantsDisplay({
               <GroupTitle>{group.role}s</GroupTitle>
               <ParticipantsGrid>
                 {group.participants.map((participant, index) => (
-                  <ParticipantCard key={`${participant.type}-${index}`}>
+                  <ParticipantCard key={`${participant.id}-${index}`}>
                     {participant.imageUrl && (
                       <ParticipantImage src={participant.imageUrl} alt={participant.displayName} />
                     )}
