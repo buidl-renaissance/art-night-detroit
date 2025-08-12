@@ -198,6 +198,12 @@ const ErrorMessage = styled.div`
   margin-bottom: 1rem;
 `;
 
+const FieldError = styled.div`
+  color: #ff6b6b;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+`;
+
 const InfoBox = styled.div`
   background: rgba(102, 126, 234, 0.1);
   border: 1px solid rgba(102, 126, 234, 0.3);
@@ -251,49 +257,13 @@ const UploadProgress = styled.div`
   text-align: center;
 `;
 
-const ShareButton = styled.button`
-  display: block;
-  width: auto;
-  padding: 0.5rem 1rem;
-  background-color: transparent;
-  color: #666;
-  border: none;
-  font-weight: 400;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: color 0.2s ease;
-  margin: 1rem auto 0;
-  text-decoration: underline;
-  text-align: center;
 
-  &:hover {
-    color: #333;
-  }
-`;
 
-const QRCodeContainer = styled.div`
-  margin-top: 2rem;
-  padding: 1.5rem;
-  background-color: #f0f0f0;
-  border-radius: 10px;
-  text-align: center;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-`;
 
-const QRCodeTitle = styled.h3`
-  font-size: 1.2rem;
-  color: #333;
-  margin-bottom: 0.8rem;
-`;
 
-const QRCodeImage = styled.img`
-  width: 200px;
-  height: 200px;
-  margin: 0 auto 1rem;
-  display: block;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-`;
+
+
+
 
 interface UploadFormData {
   name: string;
@@ -302,28 +272,14 @@ interface UploadFormData {
   tagline: string;
   website?: string;
   instagram?: string;
-  performance_details?: string;
-  setup_requirements?: string;
 }
 
-interface Profile {
-  id: string;
-  email: string;
-  full_name?: string;
-  handle?: string;
-  phone_number?: string;
-  tagline?: string;
-  website?: string;
-  image_url?: string;
-  is_admin: boolean;
-  created_at: string;
-  updated_at: string;
-}
+
 
 const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) => {
-  const [step, setStep] = useState<'handle' | 'existing-profile' | 'new-profile'>('handle');
+  const [step, setStep] = useState<'handle' | 'new-profile'>('handle');
   const [handle, setHandle] = useState('');
-  const [existingProfile, setExistingProfile] = useState<Profile | null>(null);
+
   const [checkingHandle, setCheckingHandle] = useState(false);
   const [formData, setFormData] = useState<UploadFormData>({
     name: '',
@@ -332,16 +288,15 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
     tagline: '',
     website: '',
     instagram: '',
-    performance_details: '',
-    setup_requirements: '',
   });
-  const [showQRCode, setShowQRCode] = useState(false);
+
   const [profileImageUrl, setProfileImageUrl] = useState<string>('');
   const [imagePreview, setImagePreview] = useState<string>('');
   const [uploadingImage, setUploadingImage] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
+  const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -349,14 +304,46 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
       ...prev,
       [name]: value
     }));
+    
+    // Clear validation error for this field when user starts typing
+    if (validationErrors[name]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+
+  const validateHandle = (handle: string): string | null => {
+    if (!handle.trim()) {
+      return 'Handle is required';
+    }
+    if (handle.length < 2) {
+      return 'Handle must be at least 2 characters long';
+    }
+    if (handle.length > 30) {
+      return 'Handle must be 30 characters or less';
+    }
+    if (!/^[a-zA-Z0-9_-]+$/.test(handle)) {
+      return 'Handle can only contain letters, numbers, hyphens, and underscores';
+    }
+    return null;
   };
 
   const handleHandleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!handle.trim()) return;
+    
+    const handleError = validateHandle(handle);
+    if (handleError) {
+      setStatus('error');
+      setMessage(handleError);
+      return;
+    }
 
     setCheckingHandle(true);
     setStatus('idle');
+    setValidationErrors({});
 
     try {
       const response = await fetch('/api/profiles/check-handle', {
@@ -374,23 +361,29 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
       }
 
       if (data.exists) {
-        setExistingProfile(data.profile);
-        setStep('existing-profile');
+        // Automatically add existing profile to the event
+        await handleAddExistingProfile(data.profile.id, 'Attendee'); // Default role
       } else {
         setStep('new-profile');
       }
 
     } catch (error) {
       setStatus('error');
-      setMessage(error instanceof Error ? error.message : 'An error occurred');
+      if (error instanceof Error) {
+        if (error.message.includes('network') || error.message.includes('fetch')) {
+          setMessage('Network error. Please check your internet connection and try again.');
+        } else {
+          setMessage(error.message);
+        }
+      } else {
+        setMessage('An unexpected error occurred. Please try again.');
+      }
     } finally {
       setCheckingHandle(false);
     }
   };
 
-  const handleAddExistingProfile = async (role: string) => {
-    if (!existingProfile) return;
-
+  const handleAddExistingProfile = async (profileId: string, role: string) => {
     setSubmitting(true);
     setStatus('idle');
 
@@ -401,7 +394,7 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          profileId: existingProfile.id,
+          profileId: profileId,
           role,
         }),
       });
@@ -421,7 +414,17 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
 
     } catch (error) {
       setStatus('error');
-      setMessage(error instanceof Error ? error.message : 'An error occurred');
+      if (error instanceof Error) {
+        if (error.message.includes('network') || error.message.includes('fetch')) {
+          setMessage('Network error. Please check your internet connection and try again.');
+        } else if (error.message.includes('duplicate')) {
+          setMessage('This profile is already registered for this event.');
+        } else {
+          setMessage(error.message);
+        }
+      } else {
+        setMessage('An unexpected error occurred while adding your profile. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -459,7 +462,13 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
       } catch (error) {
         console.error('Error uploading image:', error);
         setStatus('error');
-        setMessage('Failed to upload profile image. Please try again.');
+        if (error instanceof Error && error.message.includes('size')) {
+          setMessage('Image file is too large. Please choose an image smaller than 5MB.');
+        } else if (error instanceof Error && error.message.includes('type')) {
+          setMessage('Invalid file type. Please choose a JPEG, PNG, or WebP image.');
+        } else {
+          setMessage('Failed to upload profile image. Please try again.');
+        }
         setImagePreview('');
       } finally {
         setUploadingImage(false);
@@ -471,10 +480,63 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
     document.getElementById('profile-image-input')?.click();
   };
 
+  const validateForm = (): { [key: string]: string } => {
+    const errors: { [key: string]: string } = {};
+    
+    if (!formData.name.trim()) {
+      errors.name = 'Full name is required';
+    } else if (formData.name.trim().length < 2) {
+      errors.name = 'Name must be at least 2 characters long';
+    }
+    
+    if (!formData.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+    
+    if (!formData.instagram || !formData.instagram.trim()) {
+      errors.instagram = 'Instagram handle is required';
+    } else if (formData.instagram.trim().length < 2) {
+      errors.instagram = 'Instagram handle must be at least 2 characters long';
+    } else if (!/^@?[a-zA-Z0-9._]+$/.test(formData.instagram.replace('@', ''))) {
+      errors.instagram = 'Instagram handle can only contain letters, numbers, dots, and underscores';
+    }
+    
+    if (formData.website && formData.website.trim()) {
+      try {
+        new URL(formData.website);
+      } catch {
+        errors.website = 'Please enter a valid website URL (including http:// or https://)';
+      }
+    }
+    
+    if (formData.tagline && formData.tagline.length > 500) {
+      errors.tagline = 'Tagline must be 500 characters or less';
+    }
+    
+
+    
+
+    
+    return errors;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate form
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      setStatus('error');
+      setMessage('Please fix the errors below and try again.');
+      return;
+    }
+    
     setSubmitting(true);
     setStatus('idle');
+    setValidationErrors({});
 
     try {
       const response = await fetch(`/api/events/${event.id}/connect`, {
@@ -485,6 +547,7 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
         body: JSON.stringify({
           event_id: event.id,
           ...formData,
+          handle: handle.trim(),
           profile_image_url: profileImageUrl,
         }),
       });
@@ -505,7 +568,19 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
 
     } catch (error) {
       setStatus('error');
-      setMessage(error instanceof Error ? error.message : 'An error occurred');
+      if (error instanceof Error) {
+        if (error.message.includes('network') || error.message.includes('fetch')) {
+          setMessage('Network error. Please check your internet connection and try again.');
+        } else if (error.message.includes('duplicate')) {
+          setMessage('A profile with this email or handle already exists for this event.');
+        } else if (error.message.includes('validation')) {
+          setMessage('Please check your information and try again.');
+        } else {
+          setMessage(error.message);
+        }
+      } else {
+        setMessage('An unexpected error occurred while submitting your information. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -530,15 +605,9 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
     });
   };
 
-  const handleShareClick = () => {
-    setShowQRCode(!showQRCode);
-  };
 
-  const generateQRCode = () => {
-    const url = `https://artnightdetroit.com/events/${event.id}/connect`;
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
-    return qrCodeUrl;
-  };
+
+
 
   return (
     <PageContainer theme="dark" noPadding>
@@ -560,14 +629,6 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
             <strong>Event Participant Upload</strong><br />
             Please provide your information for this event. This will help us prepare for your participation and share your details with attendees.
           </InfoBox>
-
-          {status === 'success' && (
-            <SuccessMessage>{message}</SuccessMessage>
-          )}
-
-          {status === 'error' && (
-            <ErrorMessage>{message}</ErrorMessage>
-          )}
 
           {step === 'handle' && (
             <Form onSubmit={handleHandleSubmit}>
@@ -592,78 +653,15 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
             </Form>
           )}
 
-          {step === 'existing-profile' && existingProfile && (
-            <div>
-              <InfoBox>
-                <strong>Profile Found!</strong><br />
-                We found an existing profile for <strong>@{existingProfile.handle}</strong>
-              </InfoBox>
-
-              <div style={{ 
-                background: 'rgba(255, 255, 255, 0.05)', 
-                padding: '1rem', 
-                borderRadius: '8px', 
-                marginBottom: '2rem' 
-              }}>
-                <h3 style={{ color: '#fff', marginBottom: '1rem' }}>Profile Information</h3>
-                <p style={{ color: '#ccc', marginBottom: '0.5rem' }}>
-                  <strong>Name:</strong> {existingProfile.full_name || 'Not provided'}
-                </p>
-                <p style={{ color: '#ccc', marginBottom: '0.5rem' }}>
-                  <strong>Email:</strong> {existingProfile.email}
-                </p>
-                {existingProfile.tagline && (
-                  <p style={{ color: '#ccc', marginBottom: '0.5rem' }}>
-                    <strong>Tagline:</strong> {existingProfile.tagline}
-                  </p>
-                )}
-                {existingProfile.website && (
-                  <p style={{ color: '#ccc', marginBottom: '0.5rem' }}>
-                    <strong>Website:</strong> {existingProfile.website}
-                  </p>
-                )}
-              </div>
-
-              <FormGroup>
-                <Label htmlFor="role">Your Role for this Event *</Label>
-                <Select
-                  id="role"
-                  value={formData.role}
-                  onChange={(e) => setFormData(prev => ({ ...prev, role: e.target.value as 'DJ' | 'Featured Artist' | 'Vendor' | 'Attendee' }))}
-                  required
-                >
-                  <option value="Attendee">Attendee</option>
-                  <option value="DJ">DJ</option>
-                  <option value="Featured Artist">Featured Artist</option>
-                  <option value="Vendor">Vendor</option>
-                </Select>
-              </FormGroup>
-
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-                <SubmitButton 
-                  type="button" 
-                  onClick={() => handleAddExistingProfile(formData.role)}
-                  disabled={submitting}
-                  style={{ flex: 1 }}
-                >
-                  {submitting ? 'Adding...' : 'Add to Event'}
-                </SubmitButton>
-                <SubmitButton 
-                  type="button" 
-                  onClick={() => setStep('new-profile')}
-                  disabled={submitting}
-                  style={{ 
-                    flex: 1, 
-                    background: 'transparent', 
-                    border: '1px solid #667eea',
-                    color: '#667eea'
-                  }}
-                >
-                  Create New Profile
-                </SubmitButton>
-              </div>
-            </div>
+          {step === 'handle' && status === 'success' && (
+            <SuccessMessage>{message}</SuccessMessage>
           )}
+
+          {step === 'handle' && status === 'error' && (
+            <ErrorMessage>{message}</ErrorMessage>
+          )}
+
+
 
           {step === 'new-profile' && (
             <Form onSubmit={handleSubmit}>
@@ -715,6 +713,9 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
                   placeholder="@username"
                   required
                 />
+                {validationErrors.instagram && (
+                  <FieldError>{validationErrors.instagram}</FieldError>
+                )}
               </FormGroup>
 
               <FormGroup>
@@ -728,6 +729,9 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
                   placeholder="Your full name"
                   required
                 />
+                {validationErrors.name && (
+                  <FieldError>{validationErrors.name}</FieldError>
+                )}
               </FormGroup>
 
               <FormGroup>
@@ -741,6 +745,9 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
                   placeholder="your.email@example.com"
                   required
                 />
+                {validationErrors.email && (
+                  <FieldError>{validationErrors.email}</FieldError>
+                )}
               </FormGroup>
 
               <FormGroup>
@@ -768,6 +775,9 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
                   onChange={handleChange}
                   placeholder="Brief description about yourself, your work, or what you'll be doing at this event..."
                 />
+                {validationErrors.tagline && (
+                  <FieldError>{validationErrors.tagline}</FieldError>
+                )}
               </FormGroup>
 
               <FormGroup>
@@ -780,33 +790,12 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
                   onChange={handleChange}
                   placeholder="https://yourwebsite.com"
                 />
+                {validationErrors.website && (
+                  <FieldError>{validationErrors.website}</FieldError>
+                )}
               </FormGroup>
 
-              {(formData.role === 'DJ' || formData.role === 'Featured Artist') && (
-                <>
-                  <FormGroup>
-                    <Label htmlFor="performance_details">Performance Details</Label>
-                    <Textarea
-                      id="performance_details"
-                      name="performance_details"
-                      value={formData.performance_details}
-                      onChange={handleChange}
-                      placeholder="Describe your performance, set, or what you'll be showcasing..."
-                    />
-                  </FormGroup>
 
-                  <FormGroup>
-                    <Label htmlFor="setup_requirements">Setup Requirements</Label>
-                    <Textarea
-                      id="setup_requirements"
-                      name="setup_requirements"
-                      value={formData.setup_requirements}
-                      onChange={handleChange}
-                      placeholder="Any specific equipment, space, or setup requirements..."
-                    />
-                  </FormGroup>
-                </>
-              )}
 
               <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
                 <SubmitButton type="submit" disabled={submitting || uploadingImage} style={{ flex: 1 }}>
@@ -828,16 +817,13 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
               </div>
             </Form>
           )}
-          
-          <ShareButton type="button" onClick={handleShareClick}>
-            📱 Share Connect Page
-          </ShareButton>
-          
-          {showQRCode && (
-            <QRCodeContainer>
-              <QRCodeTitle>Scan to share this connect page</QRCodeTitle>
-              <QRCodeImage src={generateQRCode()} alt="QR Code for connect page" />
-            </QRCodeContainer>
+
+          {step === 'new-profile' && status === 'success' && (
+            <SuccessMessage>{message}</SuccessMessage>
+          )}
+
+          {step === 'new-profile' && status === 'error' && (
+            <ErrorMessage>{message}</ErrorMessage>
           )}
         </UploadSection>
       </Container>

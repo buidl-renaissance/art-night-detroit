@@ -1,23 +1,60 @@
 -- Consolidate all participant tables into a single profiles table
 
 -- Modify profiles table to handle both authenticated and anonymous users
-ALTER TABLE profiles 
-  DROP CONSTRAINT profiles_id_fkey;
+-- Drop foreign key constraint if it exists
+DO $$ BEGIN
+  ALTER TABLE profiles DROP CONSTRAINT IF EXISTS profiles_id_fkey;
+EXCEPTION
+  WHEN undefined_object THEN NULL;
+END $$;
 
-ALTER TABLE profiles 
-  ADD COLUMN handle TEXT UNIQUE,
-  ADD COLUMN phone_number TEXT,
-  ADD COLUMN tagline TEXT,
-  ADD COLUMN website TEXT,
-  ADD COLUMN image_url TEXT,
-  ADD COLUMN instagram TEXT,
-  ADD COLUMN is_authenticated BOOLEAN DEFAULT false,
-  ADD COLUMN auth_user_id UUID REFERENCES auth.users(id);
+-- Add columns only if they don't exist
+DO $$ BEGIN
+  -- Add handle column if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'handle') THEN
+    ALTER TABLE profiles ADD COLUMN handle TEXT UNIQUE;
+  END IF;
+  
+  -- Add phone_number column if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'phone_number') THEN
+    ALTER TABLE profiles ADD COLUMN phone_number TEXT;
+  END IF;
+  
+  -- Add tagline column if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'tagline') THEN
+    ALTER TABLE profiles ADD COLUMN tagline TEXT;
+  END IF;
+  
+  -- Add website column if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'website') THEN
+    ALTER TABLE profiles ADD COLUMN website TEXT;
+  END IF;
+  
+  -- Add image_url column if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'image_url') THEN
+    ALTER TABLE profiles ADD COLUMN image_url TEXT;
+  END IF;
+  
+  -- Add instagram column if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'instagram') THEN
+    ALTER TABLE profiles ADD COLUMN instagram TEXT;
+  END IF;
+  
+  -- Add is_authenticated column if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'is_authenticated') THEN
+    ALTER TABLE profiles ADD COLUMN is_authenticated BOOLEAN DEFAULT false;
+  END IF;
+  
+  -- Add auth_user_id column if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'auth_user_id') THEN
+    ALTER TABLE profiles ADD COLUMN auth_user_id UUID REFERENCES auth.users(id);
+  END IF;
+END $$;
 
--- Create indexes
-CREATE INDEX idx_profiles_handle ON profiles(handle);
-CREATE INDEX idx_profiles_instagram ON profiles(instagram);
-CREATE INDEX idx_profiles_auth_user_id ON profiles(auth_user_id);
+-- Create indexes if they don't exist
+CREATE INDEX IF NOT EXISTS idx_profiles_handle ON profiles(handle);
+CREATE INDEX IF NOT EXISTS idx_profiles_instagram ON profiles(instagram);
+CREATE INDEX IF NOT EXISTS idx_profiles_auth_user_id ON profiles(auth_user_id);
 
 -- Update existing profiles to mark them as authenticated
 UPDATE profiles 

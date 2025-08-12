@@ -7,10 +7,7 @@ export interface Profile {
   tagline?: string;
   website?: string;
   image_url?: string;
-  instagram?: string;
   is_admin: boolean;
-  is_authenticated: boolean;
-  auth_user_id?: string;
   created_at: string;
   updated_at: string;
 }

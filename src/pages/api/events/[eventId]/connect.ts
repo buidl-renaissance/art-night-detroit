@@ -29,8 +29,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       tagline,
       website,
       instagram,
-      performance_details,
-      setup_requirements,
       profile_image_url,
       handle,
     } = req.body;
@@ -42,8 +40,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       tagline,
       website,
       instagram,
-      performance_details,
-      setup_requirements,
       profile_image_url,
       handle,
     });
@@ -73,7 +69,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     console.log('Found event:', event);
 
-    // First, create or update the profile
+    // First, check if a profile exists with this handle
     const { data: existingProfile } = await supabase
       .from('profiles')
       .select('id')
@@ -91,9 +87,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           email,
           tagline: tagline || null,
           website: website || null,
-          image_url: profile_image_url || null,
-          instagram: instagram || null,
-          updated_at: new Date().toISOString()
+          image_url: profile_image_url || null
         })
         .eq('id', existingProfile.id);
 
@@ -104,34 +98,50 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       profileId = existingProfile.id;
     } else {
-      // Create new profile
+      // Create a temporary auth user for anonymous profile
+      const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+        email: email,
+        password: crypto.randomUUID(), // Random password they'll never use
+        email_confirm: true,
+        user_metadata: {
+          full_name: name,
+          handle: handle,
+          is_anonymous: true
+        }
+      });
+
+      if (authError) {
+        console.error('Error creating auth user:', authError);
+        return res.status(500).json({ error: 'Failed to create user account' });
+      }
+
+      // Now create the profile with the auth user ID
       const { data: newProfile, error: createProfileError } = await supabase
         .from('profiles')
         .insert({
+          id: authUser.user.id,
           handle,
           full_name: name,
           email,
           tagline: tagline || null,
           website: website || null,
           image_url: profile_image_url || null,
-          instagram: instagram || null,
-          is_admin: false,
-          is_authenticated: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          is_admin: false
         })
         .select('id')
         .single();
 
       if (createProfileError) {
         console.error('Error creating profile:', createProfileError);
-        return res.status(500).json({ error: 'Failed to create profile' });
+        return res.status(500).json({ error: 'Failed to create profile', details: createProfileError });
       }
 
       profileId = newProfile.id;
     }
 
-    // Now add the profile to the event as a participant
+    console.log('Using profileId for event participant:', profileId);
+
+    // Now add or update the event participant
     const { data: existingParticipant } = await supabase
       .from('event_participants')
       .select('id')
@@ -144,12 +154,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { error: updateParticipantError } = await supabase
         .from('event_participants')
         .update({
-          role,
-          bio: tagline || null,
-          performance_details: performance_details || null,
-          setup_requirements: setup_requirements || null,
-          social_links: { instagram: instagram || null },
-          updated_at: new Date().toISOString()
+          role
         })
         .eq('id', existingParticipant.id);
 
@@ -164,19 +169,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .insert({
           event_id: eventIdString,
           profile_id: profileId,
-          role,
-          bio: tagline || null,
-          performance_details: performance_details || null,
-          setup_requirements: setup_requirements || null,
-          social_links: { instagram: instagram || null },
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          role
         });
 
       if (createParticipantError) {
         console.error('Error creating participant:', createParticipantError);
         return res.status(500).json({ error: 'Failed to create participant' });
       }
+
+      console.log('Successfully created event participant with profile_id:', profileId);
     }
 
     return res.status(200).json({ 

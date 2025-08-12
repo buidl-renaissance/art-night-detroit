@@ -76,11 +76,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .insert({
           event_id: eventIdString,
           profile_id: profileId,
-          role,
-          bio: profile.tagline || null,
-          social_links: profile.instagram ? { instagram: profile.instagram } : {},
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          role
         });
 
       if (createError) {

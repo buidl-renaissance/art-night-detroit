@@ -34,12 +34,9 @@ export interface EventParticipant {
   profile_id: string;
   role: 'DJ' | 'Featured Artist' | 'Vendor' | 'Attendee';
   bio?: string;
-  performance_details?: string;
-  setup_requirements?: string;
-  social_links?: Record<string, string>;
   created_at: string;
   updated_at: string;
-  profile?: Profile;
+  profile?: Profile | null | undefined;
 }
 
 export interface EventFormData {

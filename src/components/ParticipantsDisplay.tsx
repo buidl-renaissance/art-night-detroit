@@ -164,14 +164,18 @@ export default function ParticipantsDisplay({
   showAddButton = false, 
   onAddParticipant 
 }: ParticipantsDisplayProps) {
+  console.log('ParticipantsDisplay received participants:', JSON.stringify(participants, null, 2));
+  
   const allParticipants = participants.map(p => ({
     ...p,
-    displayName: p.profile?.full_name || 'Unknown',
-    tagline: p.profile?.tagline || p.bio,
+    displayName: p.profile?.full_name || p.profile?.email || p.profile?.handle || `User-${p.profile_id?.slice(-4) || 'Unknown'}`,
+    tagline: p.profile?.tagline,
     website: p.profile?.website,
     imageUrl: p.profile?.image_url,
-    instagram: p.profile?.instagram || p.profile?.handle,
+    instagram: p.profile?.handle,
   }));
+  
+  console.log('Transformed participants:', JSON.stringify(allParticipants, null, 2));
 
   // Group participants by role in the specified order
   const roleOrder = ['Featured Artist', 'DJ', 'Vendor', 'Attendee'];
