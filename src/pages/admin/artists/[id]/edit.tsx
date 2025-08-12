@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import styled from 'styled-components';
 import { useRouter } from 'next/router';
@@ -16,6 +16,18 @@ const FormContainer = styled.div`
   margin: 0 auto;
   padding: 2rem;
   color: ${({ theme }) => theme.colors.text.primary};
+`;
+
+const Card = styled.div`
+  background: ${({ theme }) => theme.colors.background.secondary};
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-top: 2rem;
+  min-width: 400px;
+  @media (max-width: 768px) {
+    min-width: 100%;
+  }
 `;
 
 const Header = styled.div`
@@ -107,11 +119,137 @@ const Button = styled.button<{ variant?: 'secondary' }>`
   }
 `;
 
+
+
+const CurrentImage = styled.div<{ imageUrl?: string }>`
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background-image: ${props => props.imageUrl ? `url(${props.imageUrl})` : 'none'};
+  background-size: cover;
+  background-position: center;
+  border: 3px solid ${({ theme }) => theme.colors.border};
+  margin: 0 auto;
+  background-color: ${({ theme }) => theme.colors.background.primary};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${({ theme }) => theme.colors.text.light};
+  font-size: 2.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    border-color: ${({ theme }) => theme.colors.primary};
+    transform: scale(1.05);
+  }
+`;
+
+const FileInput = styled.input`
+  display: none;
+`;
+
+const ImageSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+`;
+
+const ImagePreview = styled.div<{ imageUrl: string }>`
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background-image: url(${props => props.imageUrl});
+  background-size: cover;
+  background-position: center;
+  border: 3px solid ${({ theme }) => theme.colors.primary};
+  margin: 0 auto;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    transform: scale(1.05);
+  }
+`;
+
+const RemoveButton = styled.button`
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: ${({ theme }) => theme.colors.background.primary};
+  border: 2px solid ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.primary};
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.primary};
+    color: white;
+    transform: scale(1.1);
+  }
+`;
+
+const ImageUploadHint = styled.p`
+  color: ${({ theme }) => theme.colors.text.light};
+  font-size: 0.9rem;
+  text-align: center;
+  margin-top: 0.5rem;
+  margin-bottom: 1.5rem;
+`;
+
+const UploadStatus = styled.div<{ status: 'idle' | 'uploading' | 'success' | 'error' }>`
+  padding: 0.5rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: ${({ theme, status }) => {
+    switch (status) {
+      case 'uploading':
+        return theme.colors.background.secondary;
+      case 'success':
+        return 'rgba(34, 197, 94, 0.1)';
+      case 'error':
+        return 'rgba(239, 68, 68, 0.1)';
+      default:
+        return 'transparent';
+    }
+  }};
+  color: ${({ theme, status }) => {
+    switch (status) {
+      case 'success':
+        return '#22c55e';
+      case 'error':
+        return '#ef4444';
+      default:
+        return theme.colors.text.primary;
+    }
+  }};
+`;
+
 export default function EditArtist() {
   const [artist, setArtist] = useState<Artist | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const [uploadMessage, setUploadMessage] = useState<string>('');
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { id } = router.query;
   const supabase = createClientComponentClient();
@@ -164,6 +302,58 @@ export default function EditArtist() {
     }
   };
 
+  const handleImageUpload = async (file: File) => {
+    setUploadStatus('uploading');
+    setUploadMessage('Uploading image...');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/upload-artist-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Upload failed');
+      }
+
+      setSelectedImage(result.url);
+      setUploadStatus('success');
+      setUploadMessage('Image uploaded successfully!');
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setUploadStatus('idle');
+        setUploadMessage('');
+      }, 3000);
+    } catch (err) {
+      setUploadStatus('error');
+      setUploadMessage(err instanceof Error ? err.message : 'Upload failed');
+    }
+  };
+
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleImageUpload(file);
+    }
+  };
+
+  const removeSelectedImage = () => {
+    setSelectedImage(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -174,7 +364,7 @@ export default function EditArtist() {
       const artistData = {
         name: formData.get('name'),
         bio: formData.get('bio'),
-        image_url: formData.get('image_url'),
+        image_url: selectedImage || formData.get('image_url'),
       };
 
       if (id === 'new') {
@@ -220,52 +410,84 @@ export default function EditArtist() {
           <p style={{ color: 'red', marginBottom: '1rem' }}>{error}</p>
         )}
 
-        <Form onSubmit={handleSubmit}>
-          <FormGroup>
-            <Label htmlFor="name">Name</Label>
-            <Input
-              type="text"
-              id="name"
-              name="name"
-              defaultValue={artist?.name}
-              required
-            />
-          </FormGroup>
+        {/* Form Card */}
+        <Card>
+          {/* Image Section */}
+          <ImageSection>
+            {/* Current Image Display */}
+            {!selectedImage && (
+              <CurrentImage 
+                imageUrl={artist?.image_url}
+                onClick={handleImageClick}
+              >
+                {!artist?.image_url && artist?.name?.charAt(0).toUpperCase()}
+              </CurrentImage>
+            )}
 
-          <FormGroup>
-            <Label htmlFor="bio">Bio</Label>
-            <TextArea
-              id="bio"
-              name="bio"
-              defaultValue={artist?.bio}
-              required
-            />
-          </FormGroup>
+            {/* New Image Preview */}
+            {selectedImage && (
+              <ImagePreview 
+                imageUrl={selectedImage}
+                onClick={handleImageClick}
+              >
+                <RemoveButton onClick={removeSelectedImage}>×</RemoveButton>
+              </ImagePreview>
+            )}
 
-          <FormGroup>
-            <Label htmlFor="image_url">Image URL</Label>
-            <Input
-              type="url"
-              id="image_url"
-              name="image_url"
-              defaultValue={artist?.image_url}
-              required
-            />
-          </FormGroup>
+            <ImageUploadHint>Click image to upload new photo</ImageUploadHint>
 
-          <ButtonGroup>
-            <Button type="submit" disabled={saving}>
-              {saving ? 'Saving...' : 'Save Artist'}
-            </Button>
-            <Button 
-              type="button" 
-              variant="secondary"
-              onClick={() => router.push('/admin/artists')}
-            >
-              Cancel
-            </Button>
-          </ButtonGroup>
-        </Form>
+            {/* Hidden File Input */}
+            <FileInput
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileSelect}
+            />
+
+            {/* Upload Status */}
+            {uploadStatus !== 'idle' && (
+              <UploadStatus status={uploadStatus}>
+                {uploadMessage}
+              </UploadStatus>
+            )}
+          </ImageSection>
+
+          <Form onSubmit={handleSubmit}>
+            <FormGroup>
+              <Label htmlFor="name">Name</Label>
+              <Input
+                type="text"
+                id="name"
+                name="name"
+                defaultValue={artist?.name}
+                required
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <Label htmlFor="bio">Bio</Label>
+              <TextArea
+                id="bio"
+                name="bio"
+                defaultValue={artist?.bio}
+                required
+              />
+            </FormGroup>
+
+            <ButtonGroup>
+              <Button type="submit" disabled={saving}>
+                {saving ? 'Saving...' : 'Save Artist'}
+              </Button>
+              <Button 
+                type="button" 
+                variant="secondary"
+                onClick={() => router.push('/admin/artists')}
+              >
+                Cancel
+              </Button>
+            </ButtonGroup>
+          </Form>
+        </Card>
       </FormContainer>
     </PageContainer>
   );

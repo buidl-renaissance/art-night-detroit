@@ -520,7 +520,10 @@ export default function ClaimSuccess() {
   };
 
   const totalTicketsRequested = Object.values(artistQuantities).reduce((sum, count) => sum + count, 0);
-  const remainingTickets = tickets.length - totalTicketsRequested;
+  const assignedTicketIds = existingSubmissions.map(sub => sub.ticket_id);
+  const unassignedTickets = tickets.filter(ticket => 
+    !assignedTicketIds.includes(ticket.id)
+  );
 
   const handleSubmit = async () => {
     if (totalTicketsRequested === 0) {
@@ -528,8 +531,8 @@ export default function ClaimSuccess() {
       return;
     }
 
-    if (totalTicketsRequested > tickets.length) {
-      setError('You cannot assign more tickets than you have');
+    if (totalTicketsRequested > unassignedTickets.length) {
+      setError(`You cannot assign more tickets than you have unassigned (${unassignedTickets.length} available)`);
       return;
     }
 
@@ -537,8 +540,8 @@ export default function ClaimSuccess() {
     setError(null);
 
     try {
-      // Get tickets to assign
-      const ticketsToAssign = tickets.slice(0, totalTicketsRequested);
+      // Get tickets to assign (only unassigned ones)
+      const ticketsToAssign = unassignedTickets.slice(0, totalTicketsRequested);
       
       // Create ticket submissions for each artist
       const submissions = [];
@@ -701,11 +704,6 @@ export default function ClaimSuccess() {
           
           {/* Unassigned tickets */}
           {(() => {
-            const assignedTicketIds = existingSubmissions.map(sub => sub.ticket_id);
-            const unassignedTickets = tickets.filter(ticket => 
-              !assignedTicketIds.includes(ticket.id)
-            );
-            
             if (unassignedTickets.length > 0) {
               return (
                 <div style={{ marginTop: '0.5rem' }}>
@@ -746,7 +744,7 @@ export default function ClaimSuccess() {
         <ArtistsSection>
           <ArtistsHeader>Assign Tickets to Artists</ArtistsHeader>
           <p style={{ textAlign: 'center', marginBottom: '2rem', color: '#666', fontSize: '0.8rem' }}>
-            You have {remainingTickets} ticket(s) remaining to assign
+            You have {unassignedTickets.length} unassigned ticket(s) available to assign
           </p>
 
           <ArtistsGrid>
@@ -763,7 +761,7 @@ export default function ClaimSuccess() {
                     <QuantityControls
                       quantity={artistQuantities[artist.id] || 0}
                       min={0}
-                      max={remainingTickets + (artistQuantities[artist.id] || 0)}
+                      max={unassignedTickets.length + (artistQuantities[artist.id] || 0)}
                       onChange={(value) => handleQuantityChange(artist.id, value)}
                     />
                   </QuantitySection>

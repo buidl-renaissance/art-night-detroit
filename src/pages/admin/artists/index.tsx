@@ -88,14 +88,23 @@ const ArtistCard = styled.div`
   }
 `;
 
-const ArtistImage = styled.div<{ imageUrl: string }>`
+const ArtistImage = styled.div<{ imageUrl?: string }>`
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background-image: url(${props => props.imageUrl});
+  background-image: ${props => props.imageUrl ? `url(${props.imageUrl})` : 'none'};
   background-size: cover;
   background-position: center;
   flex-shrink: 0;
+  border: 2px solid ${({ theme }) => theme.colors.border};
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: ${({ theme }) => theme.colors.background.primary};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${({ theme }) => theme.colors.text.light};
+  font-size: 1.5rem;
+  font-weight: bold;
 `;
 
 const ArtistInfo = styled.div`
@@ -225,7 +234,9 @@ export default function Artists() {
         <ArtistsGrid>
           {artists.map((artist) => (
             <ArtistCard key={artist.id}>
-              <ArtistImage imageUrl={artist.image_url} />
+              <ArtistImage imageUrl={artist.image_url}>
+                {!artist.image_url && artist.name.charAt(0).toUpperCase()}
+              </ArtistImage>
               <ArtistInfo>
                 <h3>{artist.name}</h3>
                 <p>{artist.bio}</p>
