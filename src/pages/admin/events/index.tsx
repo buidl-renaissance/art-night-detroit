@@ -191,7 +191,14 @@ const DetailItem = styled.div`
   }
 `;
 
-const EditLink = styled.a`
+const ActionLinks = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+`;
+
+const ActionLink = styled.a`
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -213,6 +220,9 @@ const EditLink = styled.a`
     height: 16px;
   }
 `;
+
+// Keep EditLink for backward compatibility
+const EditLink = ActionLink;
 
 const BackButton = styled.button`
   padding: 0.75rem 1rem;
@@ -372,12 +382,20 @@ export default function Events() {
                     </DetailItem>
                   )}
                 </EventDetails>
-                <EditLink onClick={() => router.push(`/admin/events/${event.id}/edit`)}>
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                  </svg>
-                  Edit Event
-                </EditLink>
+                <ActionLinks>
+                  <ActionLink onClick={() => router.push(`/admin/events/${event.id}/edit`)}>
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                    </svg>
+                    Edit Event
+                  </ActionLink>
+                  <ActionLink onClick={() => router.push(`/admin/events/${event.id}/participants`)}>
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zM4 18v-1c0-1.38 2.69-2.5 6-2.5.3 0 .61.01.91.03-.61-.58-1.15-1.25-1.58-1.99-.81-.05-1.59-.08-2.33-.08C3.34 12.46 1 13.84 1 15.32V18h3zm7.5 0v-1c0-1.38 2.69-2.5 6-2.5s6 1.12 6 2.5v1h-12zM10 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm7.5 8c-1.83 0-3.5.5-3.5 2v1h7v-1c0-1.5-1.67-2-3.5-2z"/>
+                    </svg>
+                    Manage Participants
+                  </ActionLink>
+                </ActionLinks>
               </EventInfo>
             </EventCard>
           ))}

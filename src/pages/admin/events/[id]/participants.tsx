@@ -219,6 +219,95 @@ const CopyButton = styled.button`
   }
 `;
 
+const SearchContainer = styled.div`
+  position: relative;
+`;
+
+const SearchInput = styled.input`
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 1rem;
+  width: 100%;
+
+  &:focus {
+    outline: none;
+    border-color: #667eea;
+  }
+
+  &::placeholder {
+    color: #ccc;
+  }
+`;
+
+const SearchResults = styled.div<{ isVisible: boolean }>`
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: rgba(30, 30, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 10;
+  display: ${({ isVisible }) => isVisible ? 'block' : 'none'};
+  backdrop-filter: blur(10px);
+`;
+
+const SearchResultItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+const ProfileImage = styled.div<{ imageUrl?: string }>`
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: ${({ imageUrl }) => 
+    imageUrl 
+      ? `url(${imageUrl})` 
+      : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+  };
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 0.9rem;
+`;
+
+const ProfileInfo = styled.div`
+  flex: 1;
+`;
+
+const ProfileName = styled.div`
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9rem;
+`;
+
+const ProfileHandle = styled.div`
+  color: #ccc;
+  font-size: 0.8rem;
+`;
+
 const LoadingMessage = styled.div`
   text-align: center;
   padding: 2rem;
@@ -240,6 +329,8 @@ interface Profile {
   is_admin: boolean;
   created_at: string;
   updated_at: string;
+  image_url?: string;
+  instagram?: string;
 }
 
 export default function EventParticipantsPage() {
@@ -258,6 +349,12 @@ export default function EventParticipantsPage() {
     profile_id: '',
     role: 'Attendee',
   });
+
+  // Search-related state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Profile[]>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -291,10 +388,10 @@ export default function EventParticipantsPage() {
       if (participantsError) throw participantsError;
       setParticipants(participantsData || []);
 
-      // Fetch all profiles for the dropdown
+      // Fetch all profiles for the dropdown (we'll use this for the initial load)
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, email, full_name, handle, phone_number, is_admin, created_at, updated_at, image_url, instagram')
         .order('full_name', { ascending: true });
 
       if (profilesError) throw profilesError;
@@ -308,6 +405,12 @@ export default function EventParticipantsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.profile_id) {
+      setError('Please select a profile');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -326,6 +429,10 @@ export default function EventParticipantsPage() {
         profile_id: '',
         role: 'Attendee',
       });
+      setSearchQuery('');
+      setSelectedProfile(null);
+      setSearchResults([]);
+      setShowSearchResults(false);
 
       // Refresh data
       await fetchData();
@@ -388,6 +495,68 @@ export default function EventParticipantsPage() {
     }));
   };
 
+  const searchProfiles = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, email, full_name, handle, phone_number, is_admin, created_at, updated_at, image_url, instagram')
+        .or(`handle.ilike.%${query}%,full_name.ilike.%${query}%,email.ilike.%${query}%,instagram.ilike.%${query}%`)
+        .order('full_name', { ascending: true })
+        .limit(10);
+
+      if (error) throw error;
+      setSearchResults(data || []);
+      setShowSearchResults(true);
+    } catch (err) {
+      console.error('Search error:', err);
+      setSearchResults([]);
+      setShowSearchResults(false);
+    }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    searchProfiles(query);
+  };
+
+  const handleProfileSelect = (profile: Profile) => {
+    setSelectedProfile(profile);
+    setFormData({ ...formData, profile_id: profile.id });
+    setSearchQuery(profile.full_name || profile.email || profile.handle || '');
+    setShowSearchResults(false);
+  };
+
+  const handleSearchInputFocus = () => {
+    if (searchResults.length > 0) {
+      setShowSearchResults(true);
+    }
+  };
+
+  const handleSearchInputBlur = () => {
+    // Delay hiding to allow clicking on results
+    setTimeout(() => {
+      setShowSearchResults(false);
+    }, 200);
+  };
+
+  const getProfileInitials = (profile: Profile) => {
+    if (profile.full_name) {
+      const names = profile.full_name.split(' ');
+      return names.map(name => name.charAt(0)).join('').substring(0, 2).toUpperCase();
+    }
+    if (profile.handle) {
+      return profile.handle.substring(0, 2).toUpperCase();
+    }
+    return profile.email.substring(0, 2).toUpperCase();
+  };
+
   if (loading) {
     return (
       <PageContainer theme="dark">
@@ -446,19 +615,78 @@ export default function EventParticipantsPage() {
           <h3 style={{ color: '#fff', marginBottom: '1rem' }}>Add Participant</h3>
           <Form onSubmit={handleSubmit}>
             <FormGroup>
-              <Label>Profile</Label>
-              <Select
-                value={formData.profile_id}
-                onChange={(e) => setFormData({ ...formData, profile_id: e.target.value })}
-                required
-              >
-                <option value="">Select a profile...</option>
-                {profiles.map((profile) => (
-                  <option key={profile.id} value={profile.id}>
-                    {profile.full_name || profile.email} {profile.handle && `(@${profile.handle})`}
-                  </option>
-                ))}
-              </Select>
+              <Label>Search Profile</Label>
+              <SearchContainer>
+                <SearchInput
+                  type="text"
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  onFocus={handleSearchInputFocus}
+                  onBlur={handleSearchInputBlur}
+                  placeholder="Search by name, handle, email, or Instagram..."
+                />
+                <SearchResults isVisible={showSearchResults && searchResults.length > 0}>
+                  {searchResults.map((profile) => (
+                    <SearchResultItem
+                      key={profile.id}
+                      onClick={() => handleProfileSelect(profile)}
+                    >
+                      <ProfileImage imageUrl={profile.image_url}>
+                        {!profile.image_url && getProfileInitials(profile)}
+                      </ProfileImage>
+                      <ProfileInfo>
+                        <ProfileName>
+                          {profile.full_name || profile.email}
+                        </ProfileName>
+                        <ProfileHandle>
+                          {profile.handle ? `@${profile.handle}` : profile.instagram ? `@${profile.instagram}` : profile.email}
+                        </ProfileHandle>
+                      </ProfileInfo>
+                    </SearchResultItem>
+                  ))}
+                </SearchResults>
+              </SearchContainer>
+              {selectedProfile && (
+                <div style={{ 
+                  marginTop: '0.5rem', 
+                  padding: '0.5rem', 
+                  background: 'rgba(102, 126, 234, 0.1)', 
+                  border: '1px solid rgba(102, 126, 234, 0.3)', 
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem'
+                }}>
+                  <ProfileImage imageUrl={selectedProfile.image_url}>
+                    {!selectedProfile.image_url && getProfileInitials(selectedProfile)}
+                  </ProfileImage>
+                  <ProfileInfo>
+                    <ProfileName>
+                      {selectedProfile.full_name || selectedProfile.email}
+                    </ProfileName>
+                    <ProfileHandle>
+                      {selectedProfile.handle ? `@${selectedProfile.handle}` : selectedProfile.instagram ? `@${selectedProfile.instagram}` : selectedProfile.email}
+                    </ProfileHandle>
+                  </ProfileInfo>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedProfile(null);
+                      setFormData({ ...formData, profile_id: '' });
+                      setSearchQuery('');
+                    }}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#ff6b6b',
+                      cursor: 'pointer',
+                      fontSize: '1.2rem'
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
             </FormGroup>
 
             <FormGroup>
