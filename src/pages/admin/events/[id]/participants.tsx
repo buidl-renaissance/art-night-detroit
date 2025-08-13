@@ -147,6 +147,78 @@ const DeleteButton = styled.button`
   }
 `;
 
+const ShareLinksSection = styled.div`
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 2rem;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: 2rem;
+`;
+
+const ShareLinkItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+`;
+
+const ShareLinkLabel = styled.div`
+  min-width: 120px;
+  font-weight: 600;
+  color: #fff;
+
+  @media (max-width: 768px) {
+    min-width: auto;
+  }
+`;
+
+const ShareLinkUrl = styled.input`
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 0.9rem;
+  font-family: monospace;
+
+  &:focus {
+    outline: none;
+    border-color: #667eea;
+  }
+`;
+
+const CopyButton = styled.button`
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: none;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  white-space: nowrap;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+`;
+
 const LoadingMessage = styled.div`
   text-align: center;
   padding: 2rem;
@@ -282,6 +354,40 @@ export default function EventParticipantsPage() {
     }
   };
 
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      // You could add a toast notification here
+      alert('Link copied to clipboard!');
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        alert('Link copied to clipboard!');
+      } catch (fallbackErr) {
+        console.error('Fallback copy failed:', fallbackErr);
+        alert('Failed to copy link. Please copy manually.');
+      }
+      document.body.removeChild(textArea);
+    }
+  };
+
+  const generateShareLinks = () => {
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    const roles = ['Attendee', 'DJ', 'Featured Artist', 'Vendor'];
+    
+    return roles.map(role => ({
+      role,
+      url: `${baseUrl}/events/${id}/connect/add?role=${encodeURIComponent(role)}`
+    }));
+  };
+
   if (loading) {
     return (
       <PageContainer theme="dark">
@@ -313,6 +419,28 @@ export default function EventParticipantsPage() {
             <p style={{ color: '#ccc' }}>Event ID: {event.id}</p>
           </div>
         )}
+
+        <ShareLinksSection>
+          <h3 style={{ color: '#fff', marginBottom: '1.5rem' }}>Share Registration Links</h3>
+          <p style={{ color: '#ccc', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+            Share these links to allow people to register directly for specific roles at this event.
+          </p>
+          {generateShareLinks().map(({ role, url }) => (
+            <ShareLinkItem key={role}>
+              <ShareLinkLabel>
+                <ParticipantRole role={role}>{role}</ParticipantRole>
+              </ShareLinkLabel>
+              <ShareLinkUrl
+                value={url}
+                readOnly
+                onClick={(e) => (e.target as HTMLInputElement).select()}
+              />
+              <CopyButton onClick={() => copyToClipboard(url)}>
+                Copy Link
+              </CopyButton>
+            </ShareLinkItem>
+          ))}
+        </ShareLinksSection>
 
         <FormSection>
           <h3 style={{ color: '#fff', marginBottom: '1rem' }}>Add Participant</h3>

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import styled from 'styled-components';
 import { GetServerSideProps } from 'next';
+import { useRouter } from 'next/router';
 import { Event } from '@/types/events';
 import { getEvent } from '@/data/events';
 import { PageContainer } from '@/components/PageContainer';
@@ -30,7 +31,7 @@ const HeroSection = styled.section<{ imageUrl?: string }>`
   overflow: hidden;
   border-bottom-left-radius: 30px;
   border-bottom-right-radius: 30px;
-  margin-bottom: 3rem;
+  margin-bottom: 1rem;
 
   @media (max-width: 768px) {
     padding: 3rem 1rem;
@@ -79,7 +80,6 @@ const UploadSection = styled.div`
 
   @media (max-width: 768px) {
     padding: 1.5rem;
-    margin: 0 1rem;
   }
 `;
 
@@ -139,24 +139,7 @@ const Textarea = styled.textarea`
   }
 `;
 
-const Select = styled.select`
-  padding: 0.75rem;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  font-size: 1rem;
 
-  &:focus {
-    outline: none;
-    border-color: #667eea;
-  }
-
-  option {
-    background: #1a1a1a;
-    color: #fff;
-  }
-`;
 
 const SubmitButton = styled.button`
   padding: 1rem 2rem;
@@ -204,14 +187,23 @@ const FieldError = styled.div`
   margin-top: 0.25rem;
 `;
 
-const InfoBox = styled.div`
-  background: rgba(102, 126, 234, 0.1);
-  border: 1px solid rgba(102, 126, 234, 0.3);
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 2rem;
-  color: #667eea;
-  font-size: 0.9rem;
+const ParticipantInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+`;
+
+const ParticipantInfoTitle = styled.h2`
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 0;
+`;
+
+const ParticipantInfoDescription = styled.p`
+  font-size: 1rem;
+  color: #aaa;
+  margin-bottom: 1.5rem;
 `;
 
 const ImageUploadContainer = styled.div`
@@ -268,7 +260,6 @@ const UploadProgress = styled.div`
 interface UploadFormData {
   name: string;
   email: string;
-  role: 'DJ' | 'Featured Artist' | 'Vendor' | 'Attendee';
   tagline: string;
   website?: string;
   instagram?: string;
@@ -277,14 +268,15 @@ interface UploadFormData {
 
 
 const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) => {
+  const router = useRouter();
   const [step, setStep] = useState<'handle' | 'new-profile'>('handle');
   const [handle, setHandle] = useState('');
+  const [defaultRole, setDefaultRole] = useState<'DJ' | 'Featured Artist' | 'Vendor' | 'Attendee'>('Attendee');
 
   const [checkingHandle, setCheckingHandle] = useState(false);
   const [formData, setFormData] = useState<UploadFormData>({
     name: '',
     email: '',
-    role: 'Attendee',
     tagline: '',
     website: '',
     instagram: '',
@@ -298,13 +290,23 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
   const [message, setMessage] = useState('');
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  // Extract role from query parameters
+  useEffect(() => {
+    if (router.query.role) {
+      const role = router.query.role as string;
+      if (['DJ', 'Featured Artist', 'Vendor', 'Attendee'].includes(role)) {
+        setDefaultRole(role as 'DJ' | 'Featured Artist' | 'Vendor' | 'Attendee');
+      }
+    }
+  }, [router.query.role]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-    
+
     // Clear validation error for this field when user starts typing
     if (validationErrors[name]) {
       setValidationErrors(prev => {
@@ -333,7 +335,7 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
 
   const handleHandleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const handleError = validateHandle(handle);
     if (handleError) {
       setStatus('error');
@@ -361,8 +363,8 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
       }
 
       if (data.exists) {
-        // Automatically add existing profile to the event
-        await handleAddExistingProfile(data.profile.id, 'Attendee'); // Default role
+        // Automatically add existing profile to the event with the specified role
+        await handleAddExistingProfile(data.profile.id, defaultRole);
       } else {
         setStep('new-profile');
       }
@@ -407,7 +409,7 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
 
       setStatus('success');
       setMessage('Profile added successfully! Redirecting...');
-      
+
       setTimeout(() => {
         window.location.href = data.redirectUrl;
       }, 2000);
@@ -434,7 +436,7 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
     const file = e.target.files?.[0];
     if (file) {
       setUploadingImage(true);
-      
+
       // Create preview immediately
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -446,7 +448,7 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
         // Upload image to Supabase Storage
         const formData = new FormData();
         formData.append('file', file);
-        
+
         const response = await fetch('/api/upload-profile-image', {
           method: 'POST',
           body: formData,
@@ -482,19 +484,19 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
 
   const validateForm = (): { [key: string]: string } => {
     const errors: { [key: string]: string } = {};
-    
+
     if (!formData.name.trim()) {
       errors.name = 'Full name is required';
     } else if (formData.name.trim().length < 2) {
       errors.name = 'Name must be at least 2 characters long';
     }
-    
+
     if (!formData.email.trim()) {
       errors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       errors.email = 'Please enter a valid email address';
     }
-    
+
     if (!formData.instagram || !formData.instagram.trim()) {
       errors.instagram = 'Instagram handle is required';
     } else if (formData.instagram.trim().length < 2) {
@@ -502,7 +504,7 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
     } else if (!/^@?[a-zA-Z0-9._]+$/.test(formData.instagram.replace('@', ''))) {
       errors.instagram = 'Instagram handle can only contain letters, numbers, dots, and underscores';
     }
-    
+
     if (formData.website && formData.website.trim()) {
       try {
         new URL(formData.website);
@@ -510,21 +512,21 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
         errors.website = 'Please enter a valid website URL (including http:// or https://)';
       }
     }
-    
+
     if (formData.tagline && formData.tagline.length > 500) {
       errors.tagline = 'Tagline must be 500 characters or less';
     }
-    
 
-    
 
-    
+
+
+
     return errors;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate form
     const errors = validateForm();
     if (Object.keys(errors).length > 0) {
@@ -533,7 +535,7 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
       setMessage('Please fix the errors below and try again.');
       return;
     }
-    
+
     setSubmitting(true);
     setStatus('idle');
     setValidationErrors({});
@@ -547,6 +549,7 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
         body: JSON.stringify({
           event_id: event.id,
           ...formData,
+          role: defaultRole,
           handle: handle.trim(),
           profile_image_url: profileImageUrl,
         }),
@@ -560,7 +563,7 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
 
       setStatus('success');
       setMessage('Thank you! Your information has been submitted successfully.');
-      
+
       // Redirect to connect list after successful submission
       setTimeout(() => {
         window.location.href = `/events/${event.id}/connect`;
@@ -617,18 +620,20 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
       </Head>
 
       <HeroSection imageUrl={event.image_url}>
-        <HeroTitle>Participant Information</HeroTitle>
-        <HeroSubtitle>
-          {event.name} • {formatDate(event.start_date)} • {formatTime(event.start_date)}
-        </HeroSubtitle>
+        <HeroTitle>{event.name}</HeroTitle>
+        <HeroSubtitle>{formatDate(event.start_date)}</HeroSubtitle>
+        <HeroSubtitle>{formatTime(event.start_date)}{event.end_date && ` - ${formatTime(event.end_date)}`}</HeroSubtitle>
       </HeroSection>
 
       <Container>
         <UploadSection>
-          <InfoBox>
-            <strong>Event Participant Upload</strong><br />
-            Please provide your information for this event. This will help us prepare for your participation and share your details with attendees.
-          </InfoBox>
+
+          <ParticipantInfo>
+            <ParticipantInfoTitle>Participant Information</ParticipantInfoTitle>
+            <ParticipantInfoDescription>
+              Fill out the following to connect with other participants at the event.
+            </ParticipantInfoDescription>
+          </ParticipantInfo>
 
           {step === 'handle' && (
             <Form onSubmit={handleHandleSubmit}>
@@ -642,9 +647,6 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
                   placeholder="your-handle"
                   required
                 />
-                <p style={{ color: '#ccc', fontSize: '0.9rem', marginTop: '0.5rem' }}>
-                  We&apos;ll check if you already have a profile in our system.
-                </p>
               </FormGroup>
 
               <SubmitButton type="submit" disabled={checkingHandle}>
@@ -665,14 +667,11 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
 
           {step === 'new-profile' && (
             <Form onSubmit={handleSubmit}>
-              <InfoBox>
-                <strong>Create New Profile</strong><br />
-                No existing profile found for <strong>@{handle}</strong>. Please fill out your information below.
-              </InfoBox>
+
 
               <FormGroup>
                 <ImageUploadContainer>
-                  <ImagePreview 
+                  <ImagePreview
                     hasImage={!!imagePreview}
                     style={{ backgroundImage: imagePreview ? `url(${imagePreview})` : 'none' }}
                     onClick={handleImageClick}
@@ -750,21 +749,7 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
                 )}
               </FormGroup>
 
-              <FormGroup>
-                <Label htmlFor="role">Your Role *</Label>
-                <Select
-                  id="role"
-                  name="role"
-                  value={formData.role}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="Attendee">Attendee</option>
-                  <option value="DJ">DJ</option>
-                  <option value="Featured Artist">Featured Artist</option>
-                  <option value="Vendor">Vendor</option>
-                </Select>
-              </FormGroup>
+
 
               <FormGroup>
                 <Label htmlFor="tagline">Tagline</Label>
@@ -795,24 +780,9 @@ const ParticipantUploadPage: React.FC<ParticipantUploadPageProps> = ({ event }) 
                 )}
               </FormGroup>
 
-
-
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                 <SubmitButton type="submit" disabled={submitting || uploadingImage} style={{ flex: 1 }}>
-                  {submitting ? 'Submitting...' : 'Submit Information'}
-                </SubmitButton>
-                <SubmitButton 
-                  type="button" 
-                  onClick={() => setStep('handle')}
-                  disabled={submitting}
-                  style={{ 
-                    flex: 1, 
-                    background: 'transparent', 
-                    border: '1px solid #667eea',
-                    color: '#667eea'
-                  }}
-                >
-                  Back to Handle
+                  {submitting ? 'Submitting...' : 'Submit Profile'}
                 </SubmitButton>
               </div>
             </Form>
