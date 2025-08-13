@@ -166,101 +166,13 @@ export async function getNextEvent(): Promise<Event | null> {
   return nextEvent;
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export async function getEventParticipants(eventId: string): Promise<EventParticipant[]> {
-  console.log('=== DEBUGGING EVENT PARTICIPANTS ===');
-  console.log('Fetching participants for event:', eventId);
-  console.log('Event ID type:', typeof eventId);
-  
-  // Check Supabase configuration
-  console.log('Supabase client check:');
-  console.log('- URL exists:', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
-  console.log('- Key exists:', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-  console.log('- Client exists:', !!supabase);
-  
-  // First test basic database connectivity
-  try {
-    console.log('Testing basic database connection...');
-    const { data: testData, error: testError } = await supabase
-      .from('event_participants')
-      .select('*')
-      .limit(1);
-    
-    console.log('Basic DB test result:', { testData, testError });
-    
-    if (testError) {
-      console.error('Basic database connection failed:', testError);
-      return [];
-    }
-  } catch (dbError) {
-    console.error('Database connection exception:', dbError);
-    return [];
-  }
+  console.log('=== FETCHING EVENT PARTICIPANTS WITH MANUAL JOIN ===');
+  console.log('Event ID:', eventId);
 
-  // Test if the event exists
-  console.log('Testing if event exists...');
-  const { data: eventTest, error: eventError } = await supabase
-    .from('events')
-    .select('id, name')
-    .eq('id', eventId)
-    .single();
-  
-  console.log('Event existence test:', { eventTest, eventError });
-
-  // Get participants without join first
-  console.log('Getting participants without join...');
-  const { data: basicParticipants, error: basicError } = await supabase
-    .from('event_participants')
-    .select('*')
-    .eq('event_id', eventId);
-
-  console.log('Basic participants query:', { basicParticipants, basicError });
-
-  if (basicError) {
-    console.error('Basic participants query failed:', basicError);
-    return [];
-  }
-
-  if (!basicParticipants || basicParticipants.length === 0) {
-    console.log('No participants found for event:', eventId);
-    return [];
-  }
-
-  // Test if the specific profile exists
-  const profileIds = basicParticipants.map(p => p.profile_id).filter(Boolean);
-  console.log('Testing if profiles exist for IDs:', profileIds);
-  
-  const { data: profileCheck, error: profileCheckError } = await supabase
-    .from('profiles')
-    .select('*')
-    .in('id', profileIds);
-  
-  console.log('Profile existence check:', { profileCheck, profileCheckError });
-  console.log('Profile check - full data:', JSON.stringify(profileCheck, null, 2));
-  
-  if (profileCheckError) {
-    console.error('⚠️  ERROR: Failed to query profiles table:', profileCheckError);
-    console.error('This suggests a database schema issue');
-  } else if (profileCheck && profileCheck.length === 0) {
-    console.warn('⚠️  PROBLEM: No profiles found for the participant profile IDs!');
-    console.warn('This means the profile_id in event_participants points to non-existent profiles');
-    
-    // Let's also try to see what profiles DO exist
-    const { data: allProfiles, error: allProfilesError } = await supabase
-      .from('profiles')
-      .select('id, full_name, email, handle')
-      .limit(5);
-    
-    console.log('Sample of existing profiles:', { allProfiles, allProfilesError });
-  } else {
-    console.log('✅ Found profiles! The issue is with the join syntax.');
-  }
-
-  // Try multiple relational query approaches
-  console.log('Attempting relational query with explicit foreign key...');
-  
-  // First try with explicit foreign key reference
-  let { data, error } = await supabase
+  // Step 1: Get event participants (without profiles)
+  console.log('Step 1: Fetching event participants...');
+  const { data: participants, error: participantsError } = await supabase
     .from('event_participants')
     .select(`
       id,
@@ -268,176 +180,139 @@ export async function getEventParticipants(eventId: string): Promise<EventPartic
       profile_id,
       role,
       created_at,
-      updated_at,
-      profile:profiles!profile_id (
-        id,
-        email,
-        full_name,
-        handle,
-        phone_number,
-        tagline,
-        website,
-        image_url,
-        is_admin,
-        created_at,
-        updated_at
-      )
+      updated_at
     `)
     .eq('event_id', eventId)
     .order('role', { ascending: true })
     .order('created_at', { ascending: true });
 
-  console.log('Explicit FK query result:', { data, error });
-
-  // If that fails, try with inner join
-  if (error || !data || (data as any[]).every((p: any) => !p.profile)) {
-    console.log('Trying with inner join syntax...');
-    
-    const result2 = await supabase
-      .from('event_participants')
-      .select(`
-        id,
-        event_id,
-        profile_id,
-        role,
-        created_at,
-        updated_at,
-        profiles!inner (
-          id,
-          email,
-          full_name,
-          handle,
-          phone_number,
-          tagline,
-          website,
-          image_url,
-          is_admin,
-          created_at,
-          updated_at
-        )
-      `)
-      .eq('event_id', eventId)
-      .order('role', { ascending: true })
-      .order('created_at', { ascending: true });
-
-    console.log('Inner join query result:', { data: result2.data, error: result2.error });
-    
-    if (!error) {
-      data = result2.data as any;
-      error = result2.error;
-    }
+  if (participantsError) {
+    console.error('Error fetching participants:', participantsError);
+    return [];
   }
 
-  // If both fail, try the basic syntax again
-  if (error || !data || (data as any[]).every((p: any) => !p.profile && !p.profiles)) {
-    console.log('Trying basic profiles syntax...');
-    
-    const result3 = await supabase
-      .from('event_participants')
-      .select(`
-        id,
-        event_id,
-        profile_id,
-        role,
-        created_at,
-        updated_at,
-        profiles (
-          id,
-          email,
-          full_name,
-          handle,
-          phone_number,
-          tagline,
-          website,
-          image_url,
-          is_admin,
-          created_at,
-          updated_at
-        )
-      `)
-      .eq('event_id', eventId)
-      .order('role', { ascending: true })
-      .order('created_at', { ascending: true });
-
-    console.log('Basic profiles query result:', { data: result3.data, error: result3.error });
-    
-    if (!error) {
-      data = result3.data as any;
-      error = result3.error;
-    }
+  if (!participants || participants.length === 0) {
+    console.log('No participants found for event:', eventId);
+    return [];
   }
 
-  console.log('Relational query result:', { data, error });
+  console.log(`Found ${participants.length} participants`);
+
+  // Step 2: Extract all unique profile IDs
+  const profileIds = participants
+    .map(p => p.profile_id)
+    .filter((id): id is string => Boolean(id))
+    .filter((id, index, array) => array.indexOf(id) === index); // Remove duplicates
+
+  console.log('Step 2: Profile IDs to fetch:', profileIds);
+
+  if (profileIds.length === 0) {
+    console.warn('No valid profile IDs found');
+    return participants.map(p => ({ ...p, profile: null }));
+  }
+
+  // Step 3: Fetch all profiles in a single query
+  console.log('Step 3: Fetching profiles...');
+  console.log('Profile IDs to query:', JSON.stringify(profileIds));
+  console.log('Profile IDs types:', profileIds.map(id => ({ id, type: typeof id, length: id.length })));
+
+  const { data: profiles, error: profilesError } = await supabase
+    .from('profiles')
+    .select(`
+      id,
+      email,
+      full_name,
+      handle,
+      phone_number,
+      tagline,
+      website,
+      image_url,
+      is_admin,
+      created_at,
+      updated_at
+    `)
+    .in('id', profileIds);
+
+  console.log('Profile query result:', { profiles, profilesError });
+  console.log('Raw profile data:', JSON.stringify(profiles, null, 2));
+
+  if (profilesError) {
+    console.error('Error fetching profiles:', profilesError);
+    console.error('Error details:', JSON.stringify(profilesError, null, 2));
+    return participants.map(p => ({ ...p, profile: null }));
+  }
+
+  // Test with a direct query for the specific profile ID
+  const testProfileId = profileIds[0];
+  console.log('Testing direct profile query for ID:', testProfileId);
   
-  if (error) {
-    console.error('Error fetching event participants with profiles:', error);
-    console.log('Error details:', JSON.stringify(error, null, 2));
-    
-    // Fallback to basic participants without profiles
-    console.log('Falling back to basic participants...');
-    return basicParticipants.map(p => ({ ...p, profile: null }));
-  }
+  const { data: directProfile, error: directError } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', testProfileId)
+    .single();
+  
+  console.log('Direct profile query result:', { directProfile, directError });
 
-  if (!data || data.length === 0) {
-    console.log('No data returned from relational query');
-    
-    // Use the basic participants we already fetched
-    console.log('Using basic participants without profiles...');
-    return basicParticipants.map(p => ({ ...p, profile: null }));
-  }
+  // Also test if any profiles exist at all
+  const { data: anyProfiles, error: anyError } = await supabase
+    .from('profiles')
+    .select('id, full_name, email')
+    .limit(3);
+  
+  console.log('Sample profiles in database:', { anyProfiles, anyError });
 
-  console.log('Raw data structure analysis:');
-  data.forEach((participant: any, index: number) => {
-    console.log(`Participant ${index}:`, {
-      id: participant.id,
-      profile_id: participant.profile_id,
-      has_profile_field: 'profile' in participant,
-      has_profiles_field: 'profiles' in participant,
-      profile_type: typeof participant.profile,
-      profiles_field: typeof participant.profiles,
-      profiles_isArray: Array.isArray(participant.profiles),
-      profiles_value: participant.profiles,
-      profiles_length: Array.isArray(participant.profiles) ? participant.profiles.length : 'N/A'
-    });
+  // Test if we can bypass RLS by using the service role (if available)
+  console.log('Testing if this is an RLS policy issue...');
+  
+  // Try to get count of profiles (this might reveal RLS blocking)
+  const { count, error: countError } = await supabase
+    .from('profiles')
+    .select('*', { count: 'exact', head: true });
+  
+  console.log('Profile count test:', { count, countError });
+  
+  // Check current user context
+  const { data: session } = await supabase.auth.getSession();
+  console.log('Current auth session:', { 
+    user: session?.session?.user?.id || 'anonymous',
+    role: session?.session?.user?.role || 'anon'
   });
 
-  // Map the result to ensure profile is a single object (not array)
-  const participants = data.map((participant: any) => {
-    let profile;
+  console.log(`Found ${profiles?.length || 0} profiles via .in() query`);
+  console.log('Profiles fetched:', profiles?.map(p => ({ id: p.id, name: p.full_name, email: p.email })));
+
+  // Step 4: Create a profile lookup map for fast access
+  const profileMap = new Map();
+  (profiles || []).forEach(profile => {
+    profileMap.set(profile.id, profile);
+  });
+
+  console.log('Step 4: Created profile map with', profileMap.size, 'entries');
+
+  // Step 5: Map participants with their profiles
+  console.log('Step 5: Mapping participants with profiles...');
+  const participantsWithProfiles = participants.map(participant => {
+    const profile = profileMap.get(participant.profile_id);
     
-    // Check for profile field first (from explicit FK queries)
-    if (participant.profile && typeof participant.profile === 'object') {
-      profile = participant.profile;
-      console.log(`Direct profile for ${participant.id}: found profile object`);
-    }
-    // Then check for profiles field (from basic queries)
-    else if (Array.isArray(participant.profiles)) {
-      profile = participant.profiles.length > 0 ? participant.profiles[0] : undefined;
-      console.log(`Array profiles for ${participant.id}: found ${participant.profiles.length} profiles`);
-    } else if (participant.profiles && typeof participant.profiles === 'object') {
-      profile = participant.profiles;
-      console.log(`Object profiles for ${participant.id}: found profile object`);
+    if (profile) {
+      console.log(`✅ Participant ${participant.id} mapped to profile: ${profile.full_name || profile.email || profile.handle}`);
     } else {
-      profile = undefined;
-      console.log(`No profile for ${participant.id}: profile=${typeof participant.profile}, profiles=${typeof participant.profiles}`);
+      console.log(`❌ No profile found for participant ${participant.id} (profile_id: ${participant.profile_id})`);
     }
 
-    // Return clean participant object
     return {
-      id: participant.id,
-      event_id: participant.event_id,
-      profile_id: participant.profile_id,
-      role: participant.role,
-      created_at: participant.created_at,
-      updated_at: participant.updated_at,
+      ...participant,
       profile: profile || null
     };
   });
 
-  console.log('=== FINAL MAPPED PARTICIPANTS ===');
-  console.log(JSON.stringify(participants, null, 2));
+  console.log('=== FINAL RESULT ===');
+  console.log(`Successfully mapped ${participantsWithProfiles.length} participants`);
+  console.log('Participants with profiles:', participantsWithProfiles.filter(p => p.profile).length);
+  console.log('Participants without profiles:', participantsWithProfiles.filter(p => !p.profile).length);
 
-  return participants;
+  return participantsWithProfiles;
 }
 
 export async function getEventWithParticipants(eventId: string): Promise<{ event: Event | null; participants: EventParticipant[] }> {
