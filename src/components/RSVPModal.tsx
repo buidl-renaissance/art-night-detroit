@@ -17,6 +17,9 @@ interface RSVPData {
 }
 
 const RSVPModal: React.FC<RSVPModalProps> = ({ event, isOpen, onClose, onRSVPSuccess }) => {
+  const [step, setStep] = useState<'handle' | 'profile-form'>('handle');
+  const [handle, setHandle] = useState('');
+  const [checkingHandle, setCheckingHandle] = useState(false);
   const [formData, setFormData] = useState<RSVPData>({
     handle: "",
     name: "",
@@ -70,6 +73,134 @@ const RSVPModal: React.FC<RSVPModalProps> = ({ event, isOpen, onClose, onRSVPSuc
     }));
   };
 
+  const validateHandle = (handle: string): string | null => {
+    if (!handle.trim()) {
+      return 'Handle is required';
+    }
+    if (handle.length < 2) {
+      return 'Handle must be at least 2 characters long';
+    }
+    if (handle.length > 30) {
+      return 'Handle must be 30 characters or less';
+    }
+    if (!/^[a-zA-Z0-9_-]+$/.test(handle)) {
+      return 'Handle can only contain letters, numbers, hyphens, and underscores';
+    }
+    return null;
+  };
+
+  const handleHandleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const handleError = validateHandle(handle);
+    if (handleError) {
+      setFormStatus('error');
+      setErrorMessage(handleError);
+      return;
+    }
+
+    setCheckingHandle(true);
+    setFormStatus(null);
+    setErrorMessage('');
+
+    try {
+      const response = await fetch('/api/profiles/check-handle', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ handle: handle.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to check handle');
+      }
+
+      if (data.exists && data.profile) {
+        // Automatically RSVP using existing profile
+        await handleRSVPWithExistingProfile(data.profile);
+      } else {
+        // Show profile creation form
+        setStep('profile-form');
+        setFormStatus(null);
+        setErrorMessage('');
+      }
+
+    } catch (error) {
+      setFormStatus('error');
+      if (error instanceof Error) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage('An unexpected error occurred. Please try again.');
+      }
+    } finally {
+      setCheckingHandle(false);
+    }
+  };
+
+  const handleRSVPWithExistingProfile = async (profile: any) => {
+    try {
+      const response = await fetch("/api/rsvp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          event_id: event.id,
+          handle: profile.handle,
+          name: profile.full_name || profile.handle,
+          email: profile.email,
+          phone: profile.phone_number || '',
+          profile_id: profile.id,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // If user has already RSVP'd, treat it as success
+        if (response.status === 409 && data.error?.includes('already RSVP')) {
+          setFormStatus("success");
+          setErrorMessage("");
+          setLastRsvpStatus("confirmed");
+          
+          // Notify parent component of successful RSVP
+          if (onRSVPSuccess) {
+            onRSVPSuccess();
+          }
+          
+          // Close modal after success
+          setTimeout(() => {
+            onClose();
+          }, 2000);
+          return;
+        }
+        
+        setErrorMessage(data.error || "Failed to submit RSVP");
+        throw new Error(data.error || "Failed to submit RSVP");
+      }
+
+      setFormStatus("success");
+      setErrorMessage("");
+      setLastRsvpStatus(data.status || "confirmed");
+
+      // Notify parent component of successful RSVP
+      if (onRSVPSuccess) {
+        onRSVPSuccess();
+      }
+
+      // Close modal after success
+      setTimeout(() => {
+        onClose();
+      }, 2000);
+    } catch (error) {
+      console.error("RSVP submission error:", error);
+      setFormStatus("error");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormStatus(null);
@@ -82,6 +213,7 @@ const RSVPModal: React.FC<RSVPModalProps> = ({ event, isOpen, onClose, onRSVPSuc
         },
         body: JSON.stringify({
           event_id: event.id,
+          handle: handle.trim(),
           ...formData,
         }),
       });
@@ -96,7 +228,7 @@ const RSVPModal: React.FC<RSVPModalProps> = ({ event, isOpen, onClose, onRSVPSuc
           setLastRsvpStatus("confirmed");
           
           // Save user data to localStorage
-          localStorage.setItem('rsvp_user_data', JSON.stringify(formData));
+          localStorage.setItem('rsvp_user_data', JSON.stringify({...formData, handle}));
           
           // Notify parent component of successful RSVP
           if (onRSVPSuccess) {
@@ -115,7 +247,7 @@ const RSVPModal: React.FC<RSVPModalProps> = ({ event, isOpen, onClose, onRSVPSuc
       }
 
       // Save user data to localStorage
-      localStorage.setItem('rsvp_user_data', JSON.stringify(formData));
+      localStorage.setItem('rsvp_user_data', JSON.stringify({...formData, handle}));
 
       setFormStatus("success");
       setErrorMessage("");
@@ -177,77 +309,122 @@ const RSVPModal: React.FC<RSVPModalProps> = ({ event, isOpen, onClose, onRSVPSuc
           )}
         </EventInfo>
 
-        <RSVPForm onSubmit={handleSubmit}>
-          {formStatus === "success" && (
-            <SuccessMessage>
-              {lastRsvpStatus === "waitlisted"
-                ? "Thank you! You've been added to the waitlist. We'll notify you if a spot becomes available."
-                : "Thank you for your RSVP! We'll see you at the event."}
-            </SuccessMessage>
-          )}
-          {formStatus === "error" && (
-            <ErrorMessage>
-              {errorMessage || "There was an error submitting your RSVP. Please try again."}
-            </ErrorMessage>
-          )}
-          
-          <FormGroup>
-            <FormLabel htmlFor="handle">Handle</FormLabel>
-            <FormInput
-              type="text"
-              id="handle"
-              name="handle"
-              value={formData.handle}
-              onChange={handleChange}
-              placeholder="Your handle"
-              required
-            />
-          </FormGroup>
-          
-          <FormGroup>
-            <FormLabel htmlFor="name">Name</FormLabel>
-            <FormInput
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Your name"
-              required
-            />
-          </FormGroup>
-          
-          <FormGroup>
-            <FormLabel htmlFor="email">Email</FormLabel>
-            <FormInput
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Your email address"
-              required
-            />
-          </FormGroup>
-          
-          <FormGroup>
-            <FormLabel htmlFor="phone">Phone Number (Optional)</FormLabel>
-            <FormInput
-              type="tel"
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="Your phone number"
-            />
-          </FormGroup>
-          
-          <SubmitButton type="submit">
-            {rsvpStats && event?.attendance_limit && event.attendance_limit - rsvpStats.confirmed <= 0
-              ? "Join Waitlist"
-              : "Submit RSVP"}
-          </SubmitButton>
-        </RSVPForm>
+        {step === 'handle' && (
+          <RSVPForm onSubmit={handleHandleSubmit}>
+            {formStatus === "success" && (
+              <SuccessMessage>
+                {lastRsvpStatus === "waitlisted"
+                  ? "Thank you! You've been added to the waitlist. We'll notify you if a spot becomes available."
+                  : "Thank you for your RSVP! We'll see you at the event."}
+              </SuccessMessage>
+            )}
+            {formStatus === "error" && (
+              <ErrorMessage>
+                {errorMessage || "There was an error submitting your RSVP. Please try again."}
+              </ErrorMessage>
+            )}
+            
+            <FormTitle>Enter Your Handle</FormTitle>
+            <FormSubtitle>We'll check if you already have a profile with us</FormSubtitle>
+            
+            <FormGroup>
+              <FormLabel htmlFor="handle">Handle</FormLabel>
+              <FormInput
+                type="text"
+                id="handle"
+                name="handle"
+                value={handle}
+                onChange={(e) => setHandle(e.target.value)}
+                placeholder="your-handle"
+                required
+              />
+            </FormGroup>
+            
+            <SubmitButton type="submit" disabled={checkingHandle}>
+              {checkingHandle ? 'Checking...' : 'Continue'}
+            </SubmitButton>
+          </RSVPForm>
+        )}
+
+        {step === 'profile-form' && (
+          <RSVPForm onSubmit={handleSubmit}>
+            {formStatus === "success" && (
+              <SuccessMessage>
+                {lastRsvpStatus === "waitlisted"
+                  ? "Thank you! You've been added to the waitlist. We'll notify you if a spot becomes available."
+                  : "Thank you for your RSVP! We'll see you at the event."}
+              </SuccessMessage>
+            )}
+            {formStatus === "error" && (
+              <ErrorMessage>
+                {errorMessage || "There was an error submitting your RSVP. Please try again."}
+              </ErrorMessage>
+            )}
+            
+            <FormTitle>Complete Your Profile</FormTitle>
+            <FormSubtitle>We'll create a profile for you and register your RSVP</FormSubtitle>
+            
+            <FormGroup>
+              <FormLabel htmlFor="handle-display">Handle</FormLabel>
+              <FormInput
+                type="text"
+                id="handle-display"
+                value={handle}
+                disabled
+                style={{ opacity: 0.7, backgroundColor: '#f5f5f5' }}
+              />
+            </FormGroup>
+            
+            <FormGroup>
+              <FormLabel htmlFor="name">Name</FormLabel>
+              <FormInput
+                type="text"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="Your full name"
+                required
+              />
+            </FormGroup>
+            
+            <FormGroup>
+              <FormLabel htmlFor="email">Email</FormLabel>
+              <FormInput
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Your email address"
+                required
+              />
+            </FormGroup>
+            
+            <FormGroup>
+              <FormLabel htmlFor="phone">Phone Number (Optional)</FormLabel>
+              <FormInput
+                type="tel"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="Your phone number"
+              />
+            </FormGroup>
+            
+            <ButtonGroup>
+              <BackButton type="button" onClick={() => setStep('handle')}>
+                ← Back
+              </BackButton>
+              <SubmitButton type="submit">
+                {rsvpStats && event?.attendance_limit && event.attendance_limit - rsvpStats.confirmed <= 0
+                  ? "Join Waitlist"
+                  : "Submit RSVP"}
+              </SubmitButton>
+            </ButtonGroup>
+          </RSVPForm>
+        )}
       </ModalContent>
     </ModalOverlay>
   );
@@ -397,6 +574,7 @@ const SubmitButton = styled.button`
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  flex: 2;
   
   &:hover {
     background-color: #219653;
@@ -424,4 +602,44 @@ const ErrorMessage = styled.div`
   border-radius: 8px;
   margin-bottom: 1rem;
   border: 1px solid #f5c6cb;
+`;
+
+const FormTitle = styled.h3`
+  font-family: 'Baloo 2', cursive;
+  font-size: 1.4rem;
+  color: #333;
+  margin: 0 0 0.5rem 0;
+  text-align: center;
+`;
+
+const FormSubtitle = styled.p`
+  color: #666;
+  margin: 0 0 1.5rem 0;
+  text-align: center;
+  font-size: 0.85rem;
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+`;
+
+const BackButton = styled.button`
+  padding: 0.75rem 1.5rem;
+  background-color: transparent;
+  color: #666;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+
+  &:hover {
+    background-color: #f5f5f5;
+    color: #333;
+    border-color: #ccc;
+  }
 `; 

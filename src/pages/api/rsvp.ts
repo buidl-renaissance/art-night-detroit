@@ -11,7 +11,7 @@ export default async function handler(
   }
 
   try {
-    const { event_id, handle, name, email, phone }: CreateRSVPData = req.body;
+    const { event_id, handle, name, email, phone, profile_id }: CreateRSVPData & { profile_id?: string } = req.body;
 
     // Validate required fields
     if (!event_id || !handle || !name || !email) {
@@ -37,12 +37,51 @@ export default async function handler(
       return res.status(404).json({ error: 'Event not found' });
     }
 
-    // Check if user has already RSVP'd for this event
+    let profileIdToUse = profile_id;
+
+    // If no profile_id provided, we need to create a profile first
+    if (!profile_id) {
+      // Check if a profile already exists with this handle or email
+      const { data: existingProfile, error: profileCheckError } = await supabase
+        .from('profiles')
+        .select('id')
+        .or(`handle.eq.${handle},email.eq.${email}`)
+        .single();
+
+      if (profileCheckError && profileCheckError.code !== 'PGRST116') {
+        return res.status(500).json({ error: 'Error checking existing profile' });
+      }
+
+      if (existingProfile) {
+        return res.status(409).json({ error: 'A profile with this handle or email already exists' });
+      }
+
+      // Create new profile
+      const { data: newProfile, error: profileCreateError } = await supabase
+        .from('profiles')
+        .insert({
+          handle,
+          full_name: name,
+          email,
+          phone_number: phone || null,
+        })
+        .select()
+        .single();
+
+      if (profileCreateError) {
+        console.error('Error creating profile:', profileCreateError);
+        return res.status(500).json({ error: 'Failed to create profile' });
+      }
+
+      profileIdToUse = newProfile.id;
+    }
+
+    // Check if user has already RSVP'd for this event (by email or handle)
     const { data: existingRSVP, error: checkError } = await supabase
       .from('rsvps')
       .select('id')
       .eq('event_id', event_id)
-      .eq('email', email)
+      .or(`email.eq.${email},handle.eq.${handle}`)
       .single();
 
     if (checkError && checkError.code !== 'PGRST116') {
@@ -100,7 +139,8 @@ export default async function handler(
         ? 'RSVP submitted successfully. You have been added to the waitlist.' 
         : 'RSVP submitted successfully',
       rsvp,
-      status: rsvpStatus
+      status: rsvpStatus,
+      profileCreated: !profile_id
     });
 
   } catch (error) {

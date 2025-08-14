@@ -9,8 +9,10 @@ import Footer from "@/components/Footer";
 
 const RSVPPage = () => {
   const router = useRouter();
+  const [step, setStep] = useState<'handle' | 'profile-form'>('handle');
+  const [handle, setHandle] = useState('');
+  const [checkingHandle, setCheckingHandle] = useState(false);
   const [formData, setFormData] = useState({
-    handle: "",
     name: "",
     phone: "",
     email: "",
@@ -66,6 +68,121 @@ const RSVPPage = () => {
     }));
   };
 
+  const validateHandle = (handle: string): string | null => {
+    if (!handle.trim()) {
+      return 'Handle is required';
+    }
+    if (handle.length < 2) {
+      return 'Handle must be at least 2 characters long';
+    }
+    if (handle.length > 30) {
+      return 'Handle must be 30 characters or less';
+    }
+    if (!/^[a-zA-Z0-9_-]+$/.test(handle)) {
+      return 'Handle can only contain letters, numbers, hyphens, and underscores';
+    }
+    return null;
+  };
+
+  const handleHandleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const handleError = validateHandle(handle);
+    if (handleError) {
+      setFormStatus('error');
+      setErrorMessage(handleError);
+      return;
+    }
+
+    setCheckingHandle(true);
+    setFormStatus(null);
+    setErrorMessage('');
+
+    try {
+      const response = await fetch('/api/profiles/check-handle', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ handle: handle.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to check handle');
+      }
+
+      if (data.exists && data.profile) {
+        // Automatically RSVP using existing profile
+        await handleRSVPWithExistingProfile(data.profile);
+      } else {
+        // Show profile creation form
+        setStep('profile-form');
+        setFormStatus(null);
+        setErrorMessage('');
+      }
+
+    } catch (error) {
+      setFormStatus('error');
+      if (error instanceof Error) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage('An unexpected error occurred. Please try again.');
+      }
+    } finally {
+      setCheckingHandle(false);
+    }
+  };
+
+  const handleRSVPWithExistingProfile = async (profile: any) => {
+    if (!event) {
+      setErrorMessage("No event available for RSVP");
+      setFormStatus("error");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/rsvp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          event_id: event.id,
+          handle: profile.handle,
+          name: profile.full_name || profile.handle,
+          email: profile.email,
+          phone: profile.phone_number || '',
+          profile_id: profile.id,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setErrorMessage(data.error || "Failed to submit RSVP");
+        throw new Error(data.error || "Failed to submit RSVP");
+      }
+
+      setFormStatus("success");
+      setErrorMessage("");
+      setLastRsvpStatus(data.status || "confirmed");
+
+      // Redirect to success page with event name and status
+      setTimeout(() => {
+        const params = new URLSearchParams({
+          eventName: event?.name || "",
+          status: data.status || "confirmed",
+        });
+        router.push(`/rsvp/success?${params.toString()}`);
+      }, 1500);
+    } catch (error) {
+      console.error("RSVP submission error:", error);
+      setFormStatus("error");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormStatus(null);
@@ -84,6 +201,7 @@ const RSVPPage = () => {
         },
         body: JSON.stringify({
           event_id: event.id,
+          handle: handle.trim(),
           ...formData,
         }),
       });
@@ -99,11 +217,11 @@ const RSVPPage = () => {
       setErrorMessage("");
       setLastRsvpStatus(data.status || "confirmed");
       setFormData({
-        handle: "",
         name: "",
         phone: "",
         email: "",
       });
+      setHandle("");
 
       // Redirect to success page with event name and status
       setTimeout(() => {
@@ -253,75 +371,117 @@ const RSVPPage = () => {
       </HeroSection>
 
       <RSVPContainer>
-        <RSVPForm onSubmit={handleSubmit}>
-          {formStatus === "success" && (
-            <SuccessMessage>
-              {lastRsvpStatus === "waitlisted"
-                ? "Thank you! You've been added to the waitlist. We'll notify you if a spot becomes available."
-                : "Thank you for your RSVP! We'll see you at the event."}
-            </SuccessMessage>
-          )}
-          {formStatus === "error" && (
-            <ErrorMessage>
-              {errorMessage ||
-                "There was an error submitting your RSVP. Please try again."}
-            </ErrorMessage>
-          )}
-          <FormGroup>
-            <FormLabel htmlFor="handle">Handle</FormLabel>
-            <FormInput
-              type="text"
-              id="handle"
-              name="handle"
-              value={formData.handle}
-              onChange={handleChange}
-              placeholder="Your handle"
-              required
-            />
-          </FormGroup>
-          <FormGroup>
-            <FormLabel htmlFor="name">Name</FormLabel>
-            <FormInput
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Your name"
-              required
-            />
-          </FormGroup>
-          <FormGroup>
-            <FormLabel htmlFor="email">Email</FormLabel>
-            <FormInput
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Your email address"
-              required
-            />
-          </FormGroup>
-          <FormGroup>
-            <FormLabel htmlFor="phone">Phone Number (Optional)</FormLabel>
-            <FormInput
-              type="tel"
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder="Your phone number"
-            />
-          </FormGroup>
-          <SubmitButton type="submit">
-            {rsvpStats &&
-            event?.attendance_limit &&
-            event.attendance_limit - rsvpStats.confirmed <= 0
-              ? "Join Waitlist"
-              : "Submit RSVP"}
-          </SubmitButton>
-        </RSVPForm>
+        {step === 'handle' && (
+          <RSVPForm onSubmit={handleHandleSubmit}>
+            {formStatus === "success" && (
+              <SuccessMessage>
+                {lastRsvpStatus === "waitlisted"
+                  ? "Thank you! You've been added to the waitlist. We'll notify you if a spot becomes available."
+                  : "Thank you for your RSVP! We'll see you at the event."}
+              </SuccessMessage>
+            )}
+            {formStatus === "error" && (
+              <ErrorMessage>
+                {errorMessage ||
+                  "There was an error submitting your RSVP. Please try again."}
+              </ErrorMessage>
+            )}
+            <FormTitle>Enter Your Handle</FormTitle>
+            <FormSubtitle>We'll check if you already have a profile with us</FormSubtitle>
+            <FormGroup>
+              <FormLabel htmlFor="handle">Handle</FormLabel>
+              <FormInput
+                type="text"
+                id="handle"
+                name="handle"
+                value={handle}
+                onChange={(e) => setHandle(e.target.value)}
+                placeholder="your-handle"
+                required
+              />
+            </FormGroup>
+            <SubmitButton type="submit" disabled={checkingHandle}>
+              {checkingHandle ? 'Checking...' : 'Continue'}
+            </SubmitButton>
+          </RSVPForm>
+        )}
+
+        {step === 'profile-form' && (
+          <RSVPForm onSubmit={handleSubmit}>
+            {formStatus === "success" && (
+              <SuccessMessage>
+                {lastRsvpStatus === "waitlisted"
+                  ? "Thank you! You've been added to the waitlist. We'll notify you if a spot becomes available."
+                  : "Thank you for your RSVP! We'll see you at the event."}
+              </SuccessMessage>
+            )}
+            {formStatus === "error" && (
+              <ErrorMessage>
+                {errorMessage ||
+                  "There was an error submitting your RSVP. Please try again."}
+              </ErrorMessage>
+            )}
+            <FormTitle>Complete Your Profile</FormTitle>
+            <FormSubtitle>We'll create a profile for you and register your RSVP</FormSubtitle>
+            <FormGroup>
+              <FormLabel htmlFor="handle-display">Handle</FormLabel>
+              <FormInput
+                type="text"
+                id="handle-display"
+                value={handle}
+                disabled
+                style={{ opacity: 0.7, backgroundColor: '#f5f5f5' }}
+              />
+            </FormGroup>
+            <FormGroup>
+              <FormLabel htmlFor="name">Name</FormLabel>
+              <FormInput
+                type="text"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="Your full name"
+                required
+              />
+            </FormGroup>
+            <FormGroup>
+              <FormLabel htmlFor="email">Email</FormLabel>
+              <FormInput
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Your email address"
+                required
+              />
+            </FormGroup>
+            <FormGroup>
+              <FormLabel htmlFor="phone">Phone Number (Optional)</FormLabel>
+              <FormInput
+                type="tel"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="Your phone number"
+              />
+            </FormGroup>
+            <ButtonGroup>
+              <BackButton type="button" onClick={() => setStep('handle')}>
+                ← Back
+              </BackButton>
+              <SubmitButton type="submit">
+                {rsvpStats &&
+                event?.attendance_limit &&
+                event.attendance_limit - rsvpStats.confirmed <= 0
+                  ? "Join Waitlist"
+                  : "Submit RSVP"}
+              </SubmitButton>
+            </ButtonGroup>
+          </RSVPForm>
+        )}
         
         <ShareButton type="button" onClick={handleShareClick}>
           📱 Share Event
@@ -527,11 +687,19 @@ const SubmitButton = styled.button`
     background-color 0.2s ease,
     transform 0.2s ease,
     box-shadow 0.2s ease;
+  flex: 2;
 
   &:hover {
     background-color: #a93226;
     transform: translateY(-3px);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  &:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
 `;
 
@@ -600,6 +768,46 @@ const QRCodeText = styled.p`
   font-size: 0.9rem;
   color: #666;
   margin-top: 0.5rem;
+`;
+
+const FormTitle = styled.h2`
+  font-family: "Baloo 2", cursive;
+  font-size: 1.8rem;
+  color: #333;
+  margin: 0 0 0.5rem 0;
+  text-align: center;
+`;
+
+const FormSubtitle = styled.p`
+  color: #666;
+  margin: 0 0 2rem 0;
+  text-align: center;
+  font-size: 0.9rem;
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+`;
+
+const BackButton = styled.button`
+  padding: 1rem 2rem;
+  background-color: transparent;
+  color: #666;
+  border: 2px solid #ddd;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+
+  &:hover {
+    background-color: #f5f5f5;
+    color: #333;
+    border-color: #ccc;
+  }
 `;
 
 
