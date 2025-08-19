@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import styled from 'styled-components';
 import { useRouter } from 'next/router';
@@ -254,6 +254,24 @@ export default function EditArtist() {
   const { id } = router.query;
   const supabase = createClientComponentClient();
 
+
+  const fetchArtist = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('artists')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      setArtist(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  }, [id, supabase]);
+  
   useEffect(() => {
     const checkAdmin = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -283,24 +301,7 @@ export default function EditArtist() {
     if (router.isReady) {
       checkAdmin();
     }
-  }, [router.isReady, id]);
-
-  const fetchArtist = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('artists')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
-      setArtist(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [router.isReady, id, supabase, router, fetchArtist]);
 
   const handleImageUpload = async (file: File) => {
     setUploadStatus('uploading');

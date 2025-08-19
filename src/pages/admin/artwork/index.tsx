@@ -195,7 +195,7 @@ export default function ArtworkAdmin() {
     };
 
     checkAdmin();
-  }, []);
+  });
 
   const fetchArtwork = async () => {
     try {

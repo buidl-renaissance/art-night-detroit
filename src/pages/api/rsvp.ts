@@ -74,6 +74,7 @@ export default async function handler(
       }
 
       profileIdToUse = newProfile.id;
+      console.log('New profile created:', newProfile, profileIdToUse);
     }
 
     // Check if user has already RSVP'd for this event (by email or handle)

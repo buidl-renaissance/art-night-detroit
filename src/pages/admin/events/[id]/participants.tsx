@@ -340,7 +340,7 @@ export default function EventParticipantsPage() {
 
   const [event, setEvent] = useState<Event | null>(null);
   const [participants, setParticipants] = useState<EventParticipant[]>([]);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);

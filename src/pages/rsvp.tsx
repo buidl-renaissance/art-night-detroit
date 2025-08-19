@@ -135,7 +135,13 @@ const RSVPPage = () => {
     }
   };
 
-  const handleRSVPWithExistingProfile = async (profile: any) => {
+  const handleRSVPWithExistingProfile = async (profile: {
+    id: string;
+    handle: string;
+    full_name?: string;
+    email: string;
+    phone_number?: string;
+  }) => {
     if (!event) {
       setErrorMessage("No event available for RSVP");
       setFormStatus("error");
@@ -387,7 +393,7 @@ const RSVPPage = () => {
               </ErrorMessage>
             )}
             <FormTitle>Enter Your Handle</FormTitle>
-            <FormSubtitle>We'll check if you already have a profile with us</FormSubtitle>
+            <FormSubtitle>We&apos;ll check if you already have a profile with us</FormSubtitle>
             <FormGroup>
               <FormLabel htmlFor="handle">Handle</FormLabel>
               <FormInput
@@ -422,7 +428,7 @@ const RSVPPage = () => {
               </ErrorMessage>
             )}
             <FormTitle>Complete Your Profile</FormTitle>
-            <FormSubtitle>We'll create a profile for you and register your RSVP</FormSubtitle>
+            <FormSubtitle>We&apos;ll create a profile for you and register your RSVP</FormSubtitle>
             <FormGroup>
               <FormLabel htmlFor="handle-display">Handle</FormLabel>
               <FormInput

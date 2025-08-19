@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import styled from 'styled-components';
 import { useRouter } from 'next/router';
@@ -144,6 +144,48 @@ export default function ArtistRaffles() {
   const { id } = router.query;
   const supabase = createClientComponentClient();
 
+  const fetchArtist = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('artists')
+        .select('id, name')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      setArtist(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    }
+  }, [supabase, id]);
+
+  const fetchRaffles = useCallback(async () => {
+    try {
+      // Fetch all active raffles
+      const { data: rafflesData, error: rafflesError } = await supabase
+        .from('raffles')
+        .select('*')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+
+      if (rafflesError) throw rafflesError;
+      setRaffles(rafflesData || []);
+
+      // Fetch artist's raffles
+      const { data: artistRafflesData, error: artistRafflesError } = await supabase
+        .from('raffle_artists')
+        .select('*')
+        .eq('artist_id', id);
+
+      if (artistRafflesError) throw artistRafflesError;
+      setArtistRaffles(artistRafflesData || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  }, [supabase, id]);
+
   useEffect(() => {
     const checkAdmin = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -172,49 +214,9 @@ export default function ArtistRaffles() {
     if (router.isReady) {
       checkAdmin();
     }
-  }, [router.isReady, id]);
+  }, [router.isReady, id, router, supabase, fetchArtist, fetchRaffles]);
 
-  const fetchArtist = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('artists')
-        .select('id, name')
-        .eq('id', id)
-        .single();
 
-      if (error) throw error;
-      setArtist(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    }
-  };
-
-  const fetchRaffles = async () => {
-    try {
-      // Fetch all active raffles
-      const { data: rafflesData, error: rafflesError } = await supabase
-        .from('raffles')
-        .select('*')
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
-
-      if (rafflesError) throw rafflesError;
-      setRaffles(rafflesData || []);
-
-      // Fetch artist's raffles
-      const { data: artistRafflesData, error: artistRafflesError } = await supabase
-        .from('raffle_artists')
-        .select('*')
-        .eq('artist_id', id);
-
-      if (artistRafflesError) throw artistRafflesError;
-      setArtistRaffles(artistRafflesData || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleAddToRaffle = async (raffleId: string) => {
     try {

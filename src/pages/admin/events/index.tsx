@@ -221,9 +221,6 @@ const ActionLink = styled.a`
   }
 `;
 
-// Keep EditLink for backward compatibility
-const EditLink = ActionLink;
-
 const BackButton = styled.button`
   padding: 0.75rem 1rem;
   border: none;

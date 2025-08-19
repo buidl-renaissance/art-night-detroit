@@ -140,7 +140,13 @@ const RSVPModal: React.FC<RSVPModalProps> = ({ event, isOpen, onClose, onRSVPSuc
     }
   };
 
-  const handleRSVPWithExistingProfile = async (profile: any) => {
+  const handleRSVPWithExistingProfile = async (profile: {
+    id: string;
+    handle: string;
+    full_name?: string;
+    email: string;
+    phone_number?: string;
+  }) => {
     try {
       const response = await fetch("/api/rsvp", {
         method: "POST",
@@ -213,8 +219,8 @@ const RSVPModal: React.FC<RSVPModalProps> = ({ event, isOpen, onClose, onRSVPSuc
         },
         body: JSON.stringify({
           event_id: event.id,
-          handle: handle.trim(),
           ...formData,
+          handle: handle.trim(),
         }),
       });
 
@@ -325,7 +331,7 @@ const RSVPModal: React.FC<RSVPModalProps> = ({ event, isOpen, onClose, onRSVPSuc
             )}
             
             <FormTitle>Enter Your Handle</FormTitle>
-            <FormSubtitle>We'll check if you already have a profile with us</FormSubtitle>
+            <FormSubtitle>We&apos;ll check if you already have a profile with us</FormSubtitle>
             
             <FormGroup>
               <FormLabel htmlFor="handle">Handle</FormLabel>
@@ -362,7 +368,7 @@ const RSVPModal: React.FC<RSVPModalProps> = ({ event, isOpen, onClose, onRSVPSuc
             )}
             
             <FormTitle>Complete Your Profile</FormTitle>
-            <FormSubtitle>We'll create a profile for you and register your RSVP</FormSubtitle>
+            <FormSubtitle>We&apos;ll create a profile for you and register your RSVP</FormSubtitle>
             
             <FormGroup>
               <FormLabel htmlFor="handle-display">Handle</FormLabel>

@@ -227,7 +227,7 @@ export default function Checkout() {
     };
 
     fetchRaffleAndArtistInfo();
-  }, []);
+  }, [supabase]);
 
   const handleQuantityChange = (newQuantity: number) => {
     setQuantity(newQuantity);

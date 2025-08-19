@@ -183,7 +183,7 @@ export default function Artists() {
     };
 
     checkAdmin();
-  }, []);
+  });
 
   const fetchArtists = async () => {
     try {

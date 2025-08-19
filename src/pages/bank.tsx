@@ -117,6 +117,7 @@ const CTAButton = styled.button`
   @media (max-width: ${({ theme }) => theme.breakpoints.sm}) {
     font-size: 1rem;
     padding: 0.875rem 2rem;
+    width: 100%;
   }
 `;
 
@@ -383,13 +384,27 @@ export default function FractionalOwnership() {
     setSubmitStatus('idle');
 
     try {
-      // Here you would integrate with your email service (Mailchimp, ConvertKit, etc.)
-      // For now, we'll simulate a successful submission
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch('/api/subscribe-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          source: 'cultural-bank'
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to subscribe');
+      }
       
       setSubmitStatus('success');
       setEmail('');
-    } catch {
+    } catch (error) {
+      console.error('Email subscription error:', error);
       setSubmitStatus('error');
     } finally {
       setIsSubmitting(false);
