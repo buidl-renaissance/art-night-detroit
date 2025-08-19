@@ -36,7 +36,7 @@ const Wrapper = styled.div<{ $themeMode: ThemeMode }>`
 
 const Container = styled.div<{ $width: ContainerWidth; $noPadding: boolean }>`
   margin: 0 auto;
-  padding: ${({ $noPadding }) => $noPadding ? '0' : '3rem 2rem'};
+  padding: ${({ $noPadding }) => $noPadding ? '0' : '2rem 1.5rem'};
   width: 100%;
   max-width: ${({ $width }) => getMaxWidth($width)};
   display: flex;
