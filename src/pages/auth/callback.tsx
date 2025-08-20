@@ -8,18 +8,30 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const handleAuthCallback = async () => {
-      const { error } = await supabase.auth.getSession();
+      const { data: { session }, error } = await supabase.auth.getSession();
       if (error) {
         console.error('Error during auth callback:', error);
         router.push('/login?error=Authentication failed');
-      } else {
+      } else if (session) {
         // Get the redirect path from the URL hash
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const redirectTo = hashParams.get('redirect_to') || router.query.redirect_to as string;
         
-        // If there's a redirect path, go there, otherwise go to dashboard
+        // If there's a specific redirect path, use it
         if (redirectTo) {
           router.push(decodeURIComponent(redirectTo));
+          return;
+        }
+
+        // Check if user is admin and redirect accordingly
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profile?.is_admin) {
+          router.push('/admin');
         } else {
           router.push('/dashboard');
         }

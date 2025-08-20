@@ -16,7 +16,18 @@ export default function SignupPage() {
         if (redirect_to && typeof redirect_to === 'string') {
           router.push(redirect_to);
         } else {
-          router.push('/dashboard');
+          // Check if user is admin and redirect accordingly
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('is_admin')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profile?.is_admin) {
+            router.push('/admin');
+          } else {
+            router.push('/dashboard');
+          }
         }
       }
     };
