@@ -109,6 +109,7 @@ export default function RaffleTickets() {
             `)
             .in('participant_id', participantIds);
           claimedTicketsData.push(...(claimedData || []));
+          console.log('Claimed tickets data with participants:', claimedData);
         }
 
         // Method 3: Get purchased tickets with full details
@@ -174,18 +175,25 @@ export default function RaffleTickets() {
             };
           }),
           // Claimed tickets
-          ...claimedTicketsData.map(ticket => ({
-            id: ticket.id,
-            ticket_number: ticket.ticket_number,
-            user_id: '', // No user_id for claimed tickets
-            created_at: ticket.created_at,
-            email: ticket.participants?.[0]?.email || '',
-            full_name: ticket.participants?.[0]?.name || null,
-            artist_name: ticket.artist_id ? artistsMap.get(ticket.artist_id) : null,
-            artist_id: ticket.artist_id || null,
-            submission_date: ticket.artist_id ? ticket.created_at : null,
-            source: 'claimed'
-          }))
+          ...claimedTicketsData.map(ticket => {
+            // Handle both array and object forms of participants data
+            const participant = Array.isArray(ticket.participants) 
+              ? ticket.participants[0] 
+              : ticket.participants;
+            
+            return {
+              id: ticket.id,
+              ticket_number: ticket.ticket_number,
+              user_id: '', // No user_id for claimed tickets
+              created_at: ticket.created_at,
+              email: participant?.email || '',
+              full_name: participant?.name || null,
+              artist_name: ticket.artist_id ? artistsMap.get(ticket.artist_id) : null,
+              artist_id: ticket.artist_id || null,
+              submission_date: ticket.artist_id ? ticket.created_at : null,
+              source: 'claimed'
+            };
+          })
         ];
 
         // Sort by ticket number
@@ -225,7 +233,7 @@ export default function RaffleTickets() {
         <Title>{raffle.name} - Tickets</Title>
         <Stats>
           <Stat>
-            <StatLabel>Total Tickets</StatLabel>
+            <StatLabel>Total</StatLabel>
             <StatValue>{tickets.length}</StatValue>
           </Stat>
           <Stat>
@@ -236,11 +244,35 @@ export default function RaffleTickets() {
             <StatLabel>Unassigned</StatLabel>
             <StatValue>{tickets.filter(t => !t.artist_name).length}</StatValue>
           </Stat>
-          <Stat>
-            <StatLabel>Remaining</StatLabel>
-            <StatValue>{raffle.max_tickets - tickets.length}</StatValue>
-          </Stat>
         </Stats>
+
+        {/* Artist Allocation Summary */}
+        {tickets.length > 0 && (
+          <ArtistSummary>
+            <SummaryTitle>Ticket Allocation by Artist</SummaryTitle>
+            <ArtistAllocationGrid>
+              {(() => {
+                // Group tickets by artist
+                const artistAllocations = tickets.reduce((acc, ticket) => {
+                  if (ticket.artist_name) {
+                    acc[ticket.artist_name] = (acc[ticket.artist_name] || 0) + 1;
+                  }
+                  return acc;
+                }, {} as Record<string, number>);
+
+                const sortedAllocations = Object.entries(artistAllocations)
+                  .sort(([, a], [, b]) => b - a); // Sort by count descending
+
+                return sortedAllocations.map(([artistName, count]) => (
+                  <ArtistAllocationCard key={artistName}>
+                    <ArtistAllocationName>{artistName}</ArtistAllocationName>
+                    <ArtistAllocationCount>{count} ticket{count !== 1 ? 's' : ''}</ArtistAllocationCount>
+                  </ArtistAllocationCard>
+                ));
+              })()}
+            </ArtistAllocationGrid>
+          </ArtistSummary>
+        )}
       </Header>
 
       {error && <ErrorMessage>{error}</ErrorMessage>}
@@ -254,9 +286,8 @@ export default function RaffleTickets() {
         <TicketTable>
           <thead>
             <tr>
-              <Th>Ticket #</Th>
+              <Th>#</Th>
               <Th>Owner</Th>
-              <Th>Email</Th>
               <Th>Assigned To</Th>
               <Th>Source</Th>
               <Th>Created Date</Th>
@@ -268,7 +299,6 @@ export default function RaffleTickets() {
               <tr key={ticket.id}>
                 <Td>#{ticket.ticket_number}</Td>
                 <Td>{ticket.full_name || 'Anonymous'}</Td>
-                <Td>{ticket.email}</Td>
                 <Td>
                   {ticket.artist_name ? (
                     <AssignedArtist>{ticket.artist_name}</AssignedArtist>
@@ -319,45 +349,76 @@ export default function RaffleTickets() {
 
 const Header = styled.div`
   margin-bottom: 2rem;
+
+  @media (max-width: 768px) {
+    margin-bottom: 1.5rem;
+  }
 `;
 
 const Title = styled.h1`
   font-size: 2.5rem;
-  color: #ffd700;
+  color: ${({ theme }) => theme.colors.primary};
   font-family: var(--font-decorative);
   margin-bottom: 1.5rem;
+
+  @media (max-width: 768px) {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
 `;
 
 const Stats = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
   margin-bottom: 2rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
 `;
 
 const Stat = styled.div`
-  background: rgba(255, 215, 0, 0.1);
-  padding: 1.5rem;
+  background: ${({ theme }) => theme.colors.background.secondary};
+  padding: 1rem;
   border-radius: 12px;
   text-align: center;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+
+  @media (max-width: 768px) {
+    padding: 0.75rem 0.5rem;
+    border-radius: 8px;
+  }
 `;
 
 const StatLabel = styled.div`
-  color: #e0e0e0;
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
+  color: ${({ theme }) => theme.colors.text.light};
+  font-size: 0.8rem;
+  margin-bottom: 0.25rem;
+
+  @media (max-width: 768px) {
+    font-size: 0.7rem;
+    margin-bottom: 0.2rem;
+  }
 `;
 
 const StatValue = styled.div`
-  color: #ffd700;
-  font-size: 2rem;
+  color: ${({ theme }) => theme.colors.primary};
+  font-size: 1.5rem;
   font-weight: 600;
   font-family: var(--font-decorative);
+
+  @media (max-width: 768px) {
+    font-size: 1.2rem;
+  }
 `;
 
 const LoadingMessage = styled.div`
   text-align: center;
-  color: #e0e0e0;
+  color: ${({ theme }) => theme.colors.text.light};
   font-size: 1.2rem;
   padding: 40px;
 `;
@@ -375,20 +436,22 @@ const ErrorMessage = styled.div`
 const EmptyState = styled.div`
   text-align: center;
   padding: 60px 20px;
-  background: rgba(255, 215, 0, 0.1);
-  border-radius: 24px;
+  background: ${({ theme }) => theme.colors.background.secondary};
+  border-radius: 12px;
   margin-bottom: 2rem;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
 `;
 
 const EmptyStateText = styled.h2`
   font-size: 1.5rem;
-  color: #ffd700;
+  color: ${({ theme }) => theme.colors.primary};
   margin-bottom: 8px;
   font-family: var(--font-decorative);
 `;
 
 const EmptyStateSubtext = styled.p`
-  color: #e0e0e0;
+  color: ${({ theme }) => theme.colors.text.light};
   font-size: 1.1rem;
 `;
 
@@ -396,26 +459,44 @@ const TicketTable = styled.table`
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 2rem;
-  background: rgba(255, 215, 0, 0.1);
+  background: ${({ theme }) => theme.colors.background.secondary};
   border-radius: 12px;
   overflow: hidden;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+
+  @media (max-width: 768px) {
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+  }
 `;
 
 const Th = styled.th`
   padding: 1rem;
   text-align: left;
-  color: #ffd700;
+  color: ${({ theme }) => theme.colors.primary};
   font-weight: 600;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+  background: ${({ theme }) => theme.colors.background.primary};
+
+  @media (max-width: 768px) {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.8rem;
+  }
 `;
 
 const Td = styled.td`
   padding: 1rem;
-  color: #e0e0e0;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+  color: ${({ theme }) => theme.colors.text.primary};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
 
   &:last-child {
     border-bottom: none;
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.8rem;
   }
 `;
 
@@ -423,6 +504,11 @@ const ButtonGroup = styled.div`
   display: flex;
   gap: 1rem;
   justify-content: flex-end;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
 `;
 
 const Button = styled.button<{ variant?: 'secondary' }>`
@@ -431,13 +517,21 @@ const Button = styled.button<{ variant?: 'secondary' }>`
   border: none;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s;
-  background: ${({ variant }) => variant === 'secondary' ? 'transparent' : '#ffd700'};
-  color: ${({ variant }) => variant === 'secondary' ? '#e0e0e0' : '#121212'};
-  border: ${({ variant }) => variant === 'secondary' ? '1px solid rgba(255, 215, 0, 0.3)' : 'none'};
+  transition: all 0.2s;
+  background: ${({ variant, theme }) => variant === 'secondary' ? 'transparent' : theme.colors.primary};
+  color: ${({ variant, theme }) => variant === 'secondary' ? theme.colors.text.primary : 'white'};
+  border: ${({ variant, theme }) => variant === 'secondary' ? `1px solid ${theme.colors.border}` : 'none'};
+  box-shadow: ${({ variant }) => variant === 'secondary' ? 'none' : '0 2px 4px rgba(0, 0, 0, 0.2)'};
 
   &:hover {
-    opacity: 0.9;
+    background: ${({ variant, theme }) => variant === 'secondary' ? theme.colors.background.secondary : theme.colors.primaryHover};
+    transform: ${({ variant }) => variant === 'secondary' ? 'none' : 'translateY(-1px)'};
+    box-shadow: ${({ variant }) => variant === 'secondary' ? 'none' : '0 4px 8px rgba(0, 0, 0, 0.3)'};
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
   }
 `;
 
@@ -447,7 +541,7 @@ const AssignedArtist = styled.span`
 `;
 
 const UnassignedText = styled.span`
-  color: #a0a0a0;
+  color: ${({ theme }) => theme.colors.text.light};
   font-style: italic;
 `;
 
@@ -461,4 +555,86 @@ const SourceBadge = styled.span<{ source: string }>`
   background: ${({ source }) => source === 'purchased' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(59, 130, 246, 0.2)'};
   color: ${({ source }) => source === 'purchased' ? '#22c55e' : '#3b82f6'};
   border: 1px solid ${({ source }) => source === 'purchased' ? 'rgba(34, 197, 94, 0.3)' : 'rgba(59, 130, 246, 0.3)'};
+
+  @media (max-width: 768px) {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.65rem;
+    border-radius: 3px;
+  }
+`;
+
+const ArtistSummary = styled.div`
+  background: ${({ theme }) => theme.colors.background.secondary};
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+`;
+
+const SummaryTitle = styled.h3`
+  font-size: 1.2rem;
+  color: ${({ theme }) => theme.colors.text.primary};
+  margin-bottom: 1rem;
+  text-align: center;
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+`;
+
+const ArtistAllocationGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+  }
+`;
+
+const ArtistAllocationCard = styled.div`
+  background: ${({ theme }) => theme.colors.background.primary};
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  transition: transform 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.75rem;
+  }
+`;
+
+const ArtistAllocationName = styled.div`
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+    margin-bottom: 0.25rem;
+  }
+`;
+
+const ArtistAllocationCount = styled.div`
+  color: ${({ theme }) => theme.colors.primary};
+  font-weight: 600;
+  font-size: 1.1rem;
+
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
 `; 

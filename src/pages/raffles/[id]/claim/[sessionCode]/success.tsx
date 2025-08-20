@@ -119,12 +119,14 @@ const Container = styled.div`
   max-width: 800px;
   margin: 0 auto;
   padding: 2rem;
+  padding-bottom: 120px; /* Add space for fixed bottom bar */
   width: 100%;
   box-sizing: border-box;
   
   @media (max-width: 768px) {
     max-width: 100%;
     padding: 0.5rem;
+    padding-bottom: 120px;
     margin: 0;
   }
 `;
@@ -145,55 +147,17 @@ const SuccessMessage = styled.div`
   }
 `;
 
-const TicketsSection = styled.div`
-  background: ${({ theme }) => theme.colors.background.secondary};
-  padding: 2rem;
-  border-radius: 12px;
-  margin-bottom: 2rem;
-  
-  @media (max-width: 768px) {
-    padding: 1rem;
-    margin-bottom: 1rem;
-  }
-`;
-
-const TicketsHeader = styled.h2`
-  font-size: 1.5rem;
-  color: ${({ theme }) => theme.colors.text.primary};
-  margin-bottom: 1rem;
-  text-align: center;
-  
-  @media (max-width: 768px) {
-    font-size: 1.25rem;
-    margin-bottom: 0.25rem;
-  }
-`;
 
 
 
 
 
-const ArtistsSection = styled.div`
-  background: ${({ theme }) => theme.colors.background.secondary};
-  padding: 2rem;
-  border-radius: 12px;
-  
-  @media (max-width: 768px) {
-    padding: 1rem;
-  }
-`;
 
-const ArtistsHeader = styled.h2`
-  font-size: 1.5rem;
-  color: ${({ theme }) => theme.colors.text.primary};
-  margin-bottom: 1rem;
-  text-align: center;
-  
-  @media (max-width: 768px) {
-    font-size: 1.25rem;
-    margin-bottom: 0.75rem;
-  }
-`;
+
+
+
+
+
 
 const ArtistsGrid = styled.div`
   display: grid;
@@ -259,6 +223,13 @@ const ArtistInfoRow = styled.div`
   width: 100%;
 `;
 
+const ArtistNameAndTickets = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+`;
+
 const ArtistName = styled.h3`
   font-size: 1.3rem;
   color: ${({ theme }) => theme.colors.text.primary};
@@ -282,7 +253,7 @@ const SubmitButton = styled.button`
   cursor: pointer;
   width: 100%;
   transition: all 0.2s;
-  margin-top: 2rem;
+
 
   &:hover {
     background: ${({ theme }) => theme.colors.primaryHover};
@@ -321,7 +292,7 @@ const Spinner = styled.div`
   border-top: 4px solid #007bff;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  
+
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -462,21 +433,8 @@ export default function ClaimSuccess() {
           if (userTickets && userTickets.length > 0) {
             console.log('User tickets for assignment check:', userTickets);
             
-            // Pre-populate artist quantities based on existing assignments
-            const quantities: { [artistId: string]: number } = {};
-            const assignedTickets: { ticket_id: string; artist_id: string }[] = [];
-            
-            userTickets.forEach((ticket: Ticket) => {
-              if (ticket.artist_id) {
-                quantities[ticket.artist_id] = (quantities[ticket.artist_id] || 0) + 1;
-                assignedTickets.push({
-                  ticket_id: ticket.id,
-                  artist_id: ticket.artist_id
-                });
-              }
-            });
-            
-            setArtistQuantities(quantities);
+            // artistQuantities should only track NEW assignments in this session
+            // Existing assignments are shown as chips, quantity controls start at 0
             
 
 
@@ -629,135 +587,220 @@ export default function ClaimSuccess() {
       <Container>
         {raffle && <RaffleCountdown endDate={raffle.end_date} raffleName={raffle.name} />}
 
-        <TicketsSection>
-          <TicketsHeader>Your Tickets</TicketsHeader>
-          
-          {/* Group tickets by artist */}
-          {artists.map((artist) => {
-            const artistTickets = tickets.filter((ticket: Ticket) => 
-              ticket.artist_id === artist.id
-            );
-            
-            if (artistTickets.length === 0) return null;
-            
-            return (
-              <div key={artist.id} style={{ marginBottom: '1rem' }}>
-                <h3 style={{ 
-                  color: '#4CAF50', 
-                  marginBottom: '0rem',
-                  fontSize: '1.2rem',
-                  textAlign: 'center'
-                }}>
-                  {artist.name}
-                </h3>
-                {/* <p style={{ 
-                  color: '#666', 
-                  marginBottom: '0.5rem',
-                  fontSize: '0.8rem',
-                  textAlign: 'center'
-                }}>
-                  {artistTickets.length} ticket(s)
-                </p> */}
-                <div style={{ 
-                  display: 'flex', 
-                  flexWrap: 'wrap', 
-                  gap: '0.5rem',
-                  marginBottom: '0.5rem',
-                  justifyContent: 'center'
-                }}>
-                  {artistTickets.map((ticket: Ticket) => (
-                    <span key={ticket.id} style={{
-                      background: '#4CAF50',
-                      color: 'white',
-                      padding: '0.25rem 0.5rem',
-                      borderRadius: '4px',
-                      fontSize: '1rem',
-                      fontWeight: 'bold'
-                    }}>
-                      #{ticket.ticket_number}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-          
-          {/* Unassigned tickets */}
-          {(() => {
-            if (unassignedTickets.length > 0) {
-              return (
-                <div style={{ marginTop: '0.5rem' }}>
-                  <h3 style={{ 
-                    color: '#666', 
-                    marginBottom: '0.5rem',
-                    fontSize: '1.2rem',
-                    textAlign: 'center'
-                  }}>
-                    Unassigned Tickets
-                  </h3>
-                  <div style={{ 
-                    display: 'flex', 
-                    flexWrap: 'wrap', 
-                    gap: '0.5rem',
-                    justifyContent: 'center'
-                  }}>
-                    {unassignedTickets.map((ticket: Ticket) => (
-                      <span key={ticket.id} style={{
-                        background: '#f0f0f0',
-                        color: '#666',
-                        padding: '0.25rem 0.5rem',
-                        borderRadius: '4px',
-                        fontSize: '0.8rem',
-                        border: '1px solid #ddd'
-                      }}>
-                        #{ticket.ticket_number}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              );
-            }
-            return null;
-          })()}
-        </TicketsSection>
+        <CombinedSection>
+          <CombinedHeader>Ticket Assignment</CombinedHeader>
 
-        <ArtistsSection>
-          <ArtistsHeader>Assign Tickets to Artists</ArtistsHeader>
-          <p style={{ textAlign: 'center', marginBottom: '2rem', color: '#666', fontSize: '0.8rem' }}>
-            You have {unassignedTickets.length} unassigned ticket(s) available to assign
-          </p>
+          {/* Show unassigned tickets above artists */}
+          {unassignedTickets.length > 0 && (
+            <UnassignedTicketsDisplay>
+              <UnassignedTicketsTitle>{unassignedTickets.length} Unassigned Ticket{unassignedTickets.length === 1 ? '' : 's'}</UnassignedTicketsTitle>
+              <UnassignedTicketsContainer>
+                {unassignedTickets.map((ticket: Ticket) => (
+                  <UnassignedTicketChip key={ticket.id}>
+                    #{ticket.ticket_number}
+                  </UnassignedTicketChip>
+                ))}
+              </UnassignedTicketsContainer>
+            </UnassignedTicketsDisplay>
+          )}
 
           <ArtistsGrid>
-            {artists.map((artist) => (
-              <ArtistCard key={artist.id}>
-                <ArtistInfoRow>  
-                  <ArtistImage src={artist.image_url} alt={artist.name} />
-                  <ArtistName>{artist.name}</ArtistName>
-                </ArtistInfoRow>
-                <ArtistInfo>
-                  {/* <ArtistBio>{artist.bio}</ArtistBio> */}
+            {artists.map((artist) => {
+              const artistTickets = tickets.filter((ticket: Ticket) => 
+                ticket.artist_id === artist.id
+              );
+              
+              return (
+                <ArtistCard key={artist.id}>
+                  <ArtistInfoRow>  
+                    <ArtistImage src={artist.image_url} alt={artist.name} />
+                    <ArtistNameAndTickets>
+                      <ArtistName>{artist.name}</ArtistName>
+                      {/* Show assigned ticket chips directly below artist name */}
+                      {artistTickets.length > 0 && (
+                        <TicketChipsContainer>
+                          {artistTickets.map((ticket: Ticket) => (
+                            <TicketChip key={ticket.id}>
+                              #{ticket.ticket_number}
+                            </TicketChip>
+                          ))}
+                        </TicketChipsContainer>
+                      )}
+                    </ArtistNameAndTickets>
+                  </ArtistInfoRow>
                   
-                  <QuantitySection>
-                    <QuantityControls
-                      quantity={artistQuantities[artist.id] || 0}
-                      min={0}
-                      max={unassignedTickets.length + (artistQuantities[artist.id] || 0)}
-                      onChange={(value) => handleQuantityChange(artist.id, value)}
-                    />
-                  </QuantitySection>
-                </ArtistInfo>
-              </ArtistCard>
-            ))}
+                  <ArtistInfo>
+                    {/* Only show quantity controls if there are unassigned tickets */}
+                    {unassignedTickets.length > 0 && (
+                      <QuantitySection>
+                        <QuantityControls
+                          quantity={artistQuantities[artist.id] || 0}
+                          min={0}
+                          max={(() => {
+                            // Calculate how many tickets are available for this artist
+                            const totalTicketsBeingAllocated = Object.entries(artistQuantities)
+                              .filter(([id]) => id !== artist.id) // Exclude current artist
+                              .reduce((sum, [, qty]) => sum + qty, 0);
+                            const availableForThisArtist = unassignedTickets.length - totalTicketsBeingAllocated;
+                            return Math.max(0, availableForThisArtist);
+                          })()}
+                          onChange={(value) => handleQuantityChange(artist.id, value)}
+                        />
+                      </QuantitySection>
+                    )}
+                  </ArtistInfo>
+                </ArtistCard>
+              );
+            })}
           </ArtistsGrid>
 
-          <SubmitButton onClick={handleSubmit} disabled={submitting || totalTicketsRequested === 0}>
-            {submitting ? 'Submitting...' : `Submit ${totalTicketsRequested} Ticket(s)`}
-          </SubmitButton>
+
 
           {error && <ErrorMessage>{error}</ErrorMessage>}
           {success && <SuccessMessage>{success}</SuccessMessage>}
-        </ArtistsSection>
+        </CombinedSection>
+
+
       </Container>
+
+      {unassignedTickets.length > 0 && (
+        <BottomBar>
+          <ButtonContainer>
+            <SubmitButton onClick={handleSubmit} disabled={submitting || totalTicketsRequested === 0}>
+              {submitting ? 'Submitting...' : `Submit ${totalTicketsRequested} Ticket${totalTicketsRequested === 1 ? '' : 's'}`}
+            </SubmitButton>
+          </ButtonContainer>
+          <RemainingTickets>
+            {unassignedTickets.length - totalTicketsRequested} tickets remaining
+          </RemainingTickets>
+        </BottomBar>
+      )}
     </PageContainer>
   );
-} 
+}
+
+const UnassignedTicketsInfo = styled.p`
+  text-align: center;
+  margin-bottom: 2rem;
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: 1rem;
+  font-weight: 500;
+  
+  @media (max-width: 768px) {
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+  }
+`;
+
+const BottomBar = styled.div`
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: ${({ theme }) => theme.colors.background.secondary};
+  padding: 1rem;
+  text-align: center;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  border-top: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
+const ButtonContainer = styled.div`
+  margin-bottom: 0.5rem;
+`;
+
+const RemainingTickets = styled.div`
+  font-size: 0.9rem;
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-weight: 500;
+`;
+
+const CombinedSection = styled.div`
+  background: ${({ theme }) => theme.colors.background.secondary};
+  padding: 2rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  
+  @media (max-width: 768px) {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+`;
+
+const CombinedHeader = styled.h2`
+  font-size: 1.5rem;
+  color: ${({ theme }) => theme.colors.text.primary};
+  margin-bottom: 1rem;
+  text-align: center;
+  
+  @media (max-width: 768px) {
+    font-size: 1.3rem;
+    margin-bottom: 0.75rem;
+  }
+`;
+
+const TicketChipsContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-start;
+  
+  @media (max-width: 768px) {
+    gap: 0.375rem;
+  }
+`;
+
+const TicketChip = styled.span`
+  background: #4CAF50;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  
+  @media (max-width: 768px) {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.8rem;
+  }
+`;
+
+const UnassignedTicketsDisplay = styled.div`
+  margin-bottom: 2rem;
+  text-align: center;
+  
+  @media (max-width: 768px) {
+    margin-bottom: 1.5rem;
+  }
+`;
+
+const UnassignedTicketsTitle = styled.h3`
+  color: ${({ theme }) => theme.colors.text.light};
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  
+  @media (max-width: 768px) {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+`;
+
+const UnassignedTicketsContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+`;
+
+const UnassignedTicketChip = styled.span`
+  background: #f0f0f0;
+  color: #666;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  border: 1px solid #ddd;
+  
+  @media (max-width: 768px) {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.75rem;
+  }
+`; 
