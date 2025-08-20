@@ -42,7 +42,7 @@ export default async function handler(
     console.error('Test email error:', error);
     return res.status(500).json({ 
       error: 'Failed to send test email',
-      details: error.message 
+      details: (error as Error)?.message || 'No message'
     });
   }
 }

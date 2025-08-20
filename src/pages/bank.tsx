@@ -431,7 +431,7 @@ export default function FractionalOwnership() {
         <HeroSection>
           <HeroTitle>Earn Interest in People, Not Debt</HeroTitle>
           <HeroSubtitle>
-            What if your bank earned interest from collective growth—their art, their healing, their journey? 
+            What if your bank earned interest from collective growth—their art, their stories, their journey? 
           </HeroSubtitle>
           
           <EmailForm onSubmit={handleEmailSubmit}>
@@ -528,7 +528,7 @@ export default function FractionalOwnership() {
               <StepNumber>4</StepNumber>
               <StepTitle>Earn Cultural Interest</StepTitle>
               <StepDescription>
-                Watch your investment grow not from debt, but from the collective healing and shared humanity.
+                Watch your investment grow not from debt, but from the collective growth and shared humanity.
               </StepDescription>
             </StepCard>
           </StepsContainer>
@@ -541,7 +541,7 @@ export default function FractionalOwnership() {
               <BenefitIcon>🏦</BenefitIcon>
               <BenefitTitle>Not Your Traditional Bank</BenefitTitle>
               <BenefitDescription>
-                While banks extract interest from your debt, our cultural bank earns from collective growth, creativity, and healing journeys.
+                While banks extract interest from your debt, our cultural bank earns from collective growth, creativity, and stories.
               </BenefitDescription>
             </BenefitCard>
             
@@ -549,7 +549,7 @@ export default function FractionalOwnership() {
               <BenefitIcon>📖</BenefitIcon>
               <BenefitTitle>Stories as Currency</BenefitTitle>
               <BenefitDescription>
-                Every artist&apos;s journey becomes valuable currency. Their growth, breakthroughs, and healing create real returns for the community.
+                Every artist&apos;s journey becomes valuable currency. Their growth, breakthroughs, and stories create real returns for the community.
               </BenefitDescription>
             </BenefitCard>
           </BenefitsGrid>
