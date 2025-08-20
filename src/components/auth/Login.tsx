@@ -106,7 +106,7 @@ const Login = () => {
         </Divider>
 
         <SignupLink>
-          Don't have an account? <Link href="/signup">Create one here</Link>
+          Don&apos;t have an account? <Link href="/signup">Create one here</Link>
         </SignupLink>
 
         <GoogleButton type="button" onClick={handleGoogleLogin} disabled={loading}>

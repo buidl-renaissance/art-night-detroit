@@ -80,7 +80,7 @@ const Signup = () => {
         <SuccessCard>
           <SuccessTitle>Check Your Email!</SuccessTitle>
           <SuccessMessage>
-            We've sent you a confirmation link at <strong>{email}</strong>. 
+            We&apos;ve sent you a confirmation link at <strong>{email}</strong>. 
             Please check your email and click the link to complete your registration.
           </SuccessMessage>
           <LoginLink>
