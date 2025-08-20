@@ -26,15 +26,24 @@ const QRPage: React.FC = () => {
           />
         </LogoContainer>
 
-        {/* <QRContainer>
-          <QRCode
-            value="https://artnightdetroit.com"
-            size={188}
-            level="H"
-            bgColor="#ffffff"
-            fgColor="#000000"
-          />
-        </QRContainer> */}
+        {/* Payment QR Codes Section */}
+        <PaymentSection>
+          <PaymentHeader>Support Art Night Detroit</PaymentHeader>
+          <PaymentGrid>
+            <PaymentCard>
+              <PaymentTitle>Cash App</PaymentTitle>
+              <PaymentQRWrapper>
+                <PaymentQRImage src="/images/jg-cash-app.jpg" alt="Cash App QR Code" />
+              </PaymentQRWrapper>
+            </PaymentCard>
+            <PaymentCard>
+              <PaymentTitle>Venmo</PaymentTitle>
+              <PaymentQRWrapper>
+                <PaymentQRImage src="/images/jg-venmo.jpg" alt="Venmo QR Code" />
+              </PaymentQRWrapper>
+            </PaymentCard>
+          </PaymentGrid>
+        </PaymentSection>
 
         <ArtRaffleContainer>
           <ArtRaffleLogoContainer>
@@ -95,7 +104,7 @@ const LogoContainer = styled.div`
 `;
 
 const Logo = styled.img`
-  width: 200px;
+  width: 00px;
   height: auto;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
   margin-bottom: 2rem;
@@ -153,4 +162,69 @@ const QRContainer = styled.div`
   height: 256px;
   padding: 16px;
   margin-bottom: 4rem;
+`;
+
+const PaymentSection = styled.div`
+  margin: 3rem 0;
+  width: 100%;
+  max-width: 600px;
+`;
+
+const PaymentHeader = styled.h2`
+  font-size: 2rem;
+  color: white;
+  text-align: center;
+  margin-bottom: 2rem;
+  font-family: "Baloo 2", sans-serif;
+  font-weight: 600;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+`;
+
+const PaymentGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+`;
+
+const PaymentCard = styled.div`
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 1.5rem;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+`;
+
+const PaymentTitle = styled.h3`
+  font-size: 1.4rem;
+  color: white;
+  margin-bottom: 1rem;
+  font-family: "Baloo 2", sans-serif;
+  font-weight: 600;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+`;
+
+const PaymentQRWrapper = styled.div`
+  background: white;
+  padding: 0.75rem;
+  border-radius: 12px;
+  display: inline-block;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+`;
+
+const PaymentQRImage = styled.img`
+  width: 160px;
+  height: 160px;
+  object-fit: contain;
+  
+  @media (max-width: 768px) {
+    width: 140px;
+    height: 140px;
+  }
 `;

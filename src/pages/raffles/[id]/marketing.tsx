@@ -113,7 +113,7 @@ const ArtistsGrid = styled.div`
     grid-template-columns: 1fr;
   }
   @media print {
-    grid-template-columns: repeat(3, 1fr) !important;
+    grid-template-columns: repeat(4, 1fr) !important;
     gap: 0.5rem !important;
     margin: 0 !important;
     width: 100% !important;

@@ -131,6 +131,71 @@ const SuccessMessage = styled.div`
   text-align: center;
 `;
 
+const PaymentSection = styled.div`
+  margin-bottom: 5rem;
+  padding-top: 2rem;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
+const PaymentHeader = styled.h2`
+  font-size: 1.8rem;
+  color: ${({ theme }) => theme.colors.primary};
+  text-align: center;
+  margin-bottom: 0.5rem;
+`;
+
+const PaymentSubtitle = styled.p`
+  color: ${({ theme }) => theme.colors.text.light};
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+`;
+
+const PaymentGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+`;
+
+const PaymentCard = styled.div`
+  background: ${({ theme }) => theme.colors.background.secondary};
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+`;
+
+const PaymentTitle = styled.h3`
+  font-size: 1.3rem;
+  color: ${({ theme }) => theme.colors.text.primary};
+  margin-bottom: 1rem;
+`;
+
+const PaymentQRWrapper = styled.div`
+  background: white;
+  padding: 1rem;
+  border-radius: 8px;
+  display: inline-block;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+`;
+
+const PaymentQRImage = styled.img`
+  width: 200px;
+  height: 200px;
+  object-fit: contain;
+  
+  @media (max-width: 768px) {
+    width: 180px;
+    height: 180px;
+  }
+`;
+
 export default function QRGenerator() {
   const router = useRouter();
   const { id } = router.query;
@@ -256,6 +321,27 @@ export default function QRGenerator() {
   return (
     <PageContainer theme="dark">
       <Container>
+
+         {/* Payment QR Codes Section */}
+         <PaymentSection>
+          <PaymentHeader>Payment QR Codes</PaymentHeader>
+          <PaymentSubtitle>Share these QR codes for donations and payments</PaymentSubtitle>
+          <PaymentGrid>
+            <PaymentCard>
+              <PaymentTitle>Cash App</PaymentTitle>
+              <PaymentQRWrapper>
+                <PaymentQRImage src="/images/jg-cash-app.jpg" alt="Cash App QR Code" />
+              </PaymentQRWrapper>
+            </PaymentCard>
+            <PaymentCard>
+              <PaymentTitle>Venmo</PaymentTitle>
+              <PaymentQRWrapper>
+                <PaymentQRImage src="/images/jg-venmo.jpg" alt="Venmo QR Code" />
+              </PaymentQRWrapper>
+            </PaymentCard>
+          </PaymentGrid>
+        </PaymentSection>
+
         <Header>
           <Title>{raffle.name}</Title>
           <Subtitle>Generate QR codes for ticket distribution</Subtitle>
@@ -302,6 +388,9 @@ export default function QRGenerator() {
             </ResetButton>
           </div>
         )}
+
+        <div style={{ height: '15rem' }}></div>
+
       </Container>
     </PageContainer>
   );
