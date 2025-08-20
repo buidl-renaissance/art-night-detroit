@@ -11,16 +11,13 @@ interface Ticket {
   created_at: string;
   email: string;
   full_name: string | null;
+  artist_name?: string | null;
+  artist_id?: string | null;
+  submission_date?: string | null;
+  source: string;
 }
 
-interface TicketResponse {
-  id: string;
-  ticket_number: number;
-  user_id: string;
-  created_at: string;
-  email: string;
-  full_name: string | null;
-}
+
 
 interface Raffle {
   id: string;
@@ -71,15 +68,131 @@ export default function RaffleTickets() {
         if (raffleError) throw raffleError;
         setRaffle(raffleData);
 
-        // Fetch tickets
-        const { data: ticketsData, error: ticketsError } = await supabase
-          .rpc('get_tickets_with_profiles', { raffle_id: id });
-
-        if (ticketsError) throw ticketsError;
+        // Fetch tickets directly from the tickets table, using participant or user relationships
+        // We need to handle both old ticket_orders system and new QR claim system
         
-        // Type assertion to handle the nested user object
-        const typedTickets = ticketsData as unknown as TicketResponse[];
-        setTickets(typedTickets);
+        // Method 1: Get tickets from ticket_orders (for purchased tickets)
+        const { data: ticketOrdersData } = await supabase
+          .from('ticket_orders')
+          .select(`
+            user_id,
+            issued_tickets,
+            profiles!inner(email, full_name)
+          `)
+          .eq('raffle_id', id)
+          .eq('status', 'completed');
+
+        const purchasedTicketIds = ticketOrdersData?.flatMap(order => order.issued_tickets || []) || [];
+        
+        // Method 2: Get tickets with participant_id (for QR claimed tickets) 
+        // We need to filter by raffle_id, but tickets table doesn't have raffle_id anymore
+        // Let's get QR sessions for this raffle and then find tickets created for those sessions
+        const { data: qrSessions } = await supabase
+          .from('qr_code_sessions')
+          .select('participant_id')
+          .eq('raffle_id', id)
+          .not('participant_id', 'is', null);
+
+        const participantIds = qrSessions?.map(session => session.participant_id).filter(Boolean) || [];
+
+        const claimedTicketsData = [];
+        if (participantIds.length > 0) {
+          const { data: claimedData } = await supabase
+            .from('tickets')
+            .select(`
+              id,
+              ticket_number,
+              created_at,
+              artist_id,
+              participant_id,
+              participants(name, email, phone)
+            `)
+            .in('participant_id', participantIds);
+          claimedTicketsData.push(...(claimedData || []));
+        }
+
+        // Method 3: Get purchased tickets with full details
+        const purchasedTickets = [];
+        if (purchasedTicketIds.length > 0) {
+          const { data: purchasedTicketsData } = await supabase
+            .from('tickets')
+            .select('id, ticket_number, created_at, artist_id')
+            .in('id', purchasedTicketIds)
+            .order('ticket_number');
+          purchasedTickets.push(...(purchasedTicketsData || []));
+        }
+
+        // Create maps for user info
+        const ticketToUserMap = new Map();
+        ticketOrdersData?.forEach(order => {
+          order.issued_tickets?.forEach((ticketId: string) => {
+            ticketToUserMap.set(ticketId, {
+              user_id: order.user_id,
+              email: order.profiles?.[0]?.email,
+              full_name: order.profiles?.[0]?.full_name,
+              source: 'purchased'
+            });
+          });
+        });
+
+        // Get artist names for assigned tickets
+        const artistIds = [
+          ...new Set([
+            ...purchasedTickets.filter(t => t.artist_id).map(t => t.artist_id),
+            ...claimedTicketsData.filter(t => t.artist_id).map(t => t.artist_id)
+          ])
+        ];
+
+        const artistsMap = new Map();
+        if (artistIds.length > 0) {
+          const { data: artistsData } = await supabase
+            .from('artists')
+            .select('id, name')
+            .in('id', artistIds);
+          
+          artistsData?.forEach(artist => {
+            artistsMap.set(artist.id, artist.name);
+          });
+        }
+
+        // Combine all tickets
+        const allTickets = [
+          // Purchased tickets
+          ...purchasedTickets.map(ticket => {
+            const userInfo = ticketToUserMap.get(ticket.id);
+            return {
+              id: ticket.id,
+              ticket_number: ticket.ticket_number,
+              user_id: userInfo?.user_id || '',
+              created_at: ticket.created_at,
+              email: userInfo?.email || '',
+              full_name: userInfo?.full_name || null,
+              artist_name: ticket.artist_id ? artistsMap.get(ticket.artist_id) : null,
+              artist_id: ticket.artist_id || null,
+              submission_date: ticket.artist_id ? ticket.created_at : null, // Use ticket creation as assignment date for purchased tickets
+              source: 'purchased'
+            };
+          }),
+          // Claimed tickets
+          ...claimedTicketsData.map(ticket => ({
+            id: ticket.id,
+            ticket_number: ticket.ticket_number,
+            user_id: '', // No user_id for claimed tickets
+            created_at: ticket.created_at,
+            email: ticket.participants?.[0]?.email || '',
+            full_name: ticket.participants?.[0]?.name || null,
+            artist_name: ticket.artist_id ? artistsMap.get(ticket.artist_id) : null,
+            artist_id: ticket.artist_id || null,
+            submission_date: ticket.artist_id ? ticket.created_at : null,
+            source: 'claimed'
+          }))
+        ];
+
+        // Sort by ticket number
+        allTickets.sort((a, b) => a.ticket_number - b.ticket_number);
+
+        console.log('All tickets:', allTickets);
+        setTickets(allTickets);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
@@ -116,8 +229,12 @@ export default function RaffleTickets() {
             <StatValue>{tickets.length}</StatValue>
           </Stat>
           <Stat>
-            <StatLabel>Max Tickets</StatLabel>
-            <StatValue>{raffle.max_tickets}</StatValue>
+            <StatLabel>Assigned</StatLabel>
+            <StatValue>{tickets.filter(t => t.artist_name).length}</StatValue>
+          </Stat>
+          <Stat>
+            <StatLabel>Unassigned</StatLabel>
+            <StatValue>{tickets.filter(t => !t.artist_name).length}</StatValue>
           </Stat>
           <Stat>
             <StatLabel>Remaining</StatLabel>
@@ -138,9 +255,12 @@ export default function RaffleTickets() {
           <thead>
             <tr>
               <Th>Ticket #</Th>
-              <Th>Purchased By</Th>
+              <Th>Owner</Th>
               <Th>Email</Th>
-              <Th>Date</Th>
+              <Th>Assigned To</Th>
+              <Th>Source</Th>
+              <Th>Created Date</Th>
+              <Th>Assignment Date</Th>
             </tr>
           </thead>
           <tbody>
@@ -150,11 +270,34 @@ export default function RaffleTickets() {
                 <Td>{ticket.full_name || 'Anonymous'}</Td>
                 <Td>{ticket.email}</Td>
                 <Td>
+                  {ticket.artist_name ? (
+                    <AssignedArtist>{ticket.artist_name}</AssignedArtist>
+                  ) : (
+                    <UnassignedText>Not assigned</UnassignedText>
+                  )}
+                </Td>
+                <Td>
+                  <SourceBadge source={ticket.source}>
+                    {ticket.source === 'purchased' ? 'Purchased' : 'QR Claimed'}
+                  </SourceBadge>
+                </Td>
+                <Td>
                   {new Date(ticket.created_at).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
                   })}
+                </Td>
+                <Td>
+                  {ticket.submission_date ? (
+                    new Date(ticket.submission_date).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })
+                  ) : (
+                    <UnassignedText>-</UnassignedText>
+                  )}
                 </Td>
               </tr>
             ))}
@@ -296,4 +439,26 @@ const Button = styled.button<{ variant?: 'secondary' }>`
   &:hover {
     opacity: 0.9;
   }
+`;
+
+const AssignedArtist = styled.span`
+  color: #4ade80;
+  font-weight: 500;
+`;
+
+const UnassignedText = styled.span`
+  color: #a0a0a0;
+  font-style: italic;
+`;
+
+const SourceBadge = styled.span<{ source: string }>`
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  background: ${({ source }) => source === 'purchased' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(59, 130, 246, 0.2)'};
+  color: ${({ source }) => source === 'purchased' ? '#22c55e' : '#3b82f6'};
+  border: 1px solid ${({ source }) => source === 'purchased' ? 'rgba(34, 197, 94, 0.3)' : 'rgba(59, 130, 246, 0.3)'};
 `; 

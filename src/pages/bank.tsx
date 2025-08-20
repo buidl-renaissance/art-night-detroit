@@ -461,99 +461,56 @@ export default function FractionalOwnership() {
         </HeroSection>
 
         <Section>
-          <SectionHeader>The Art Money Printer</SectionHeader>
+          <SectionHeader>Bank for Culture.</SectionHeader>
           <BenefitsGrid>
             <BenefitCard>
-              <BenefitIcon>🌱</BenefitIcon>
-              <BenefitTitle>Invest in Growth</BenefitTitle>
-              <BenefitDescription>
-                Every fraction collected earns interest in human growth. Watch artists evolve and your investment grow with their journey.
-              </BenefitDescription>
-            </BenefitCard>
-            
-            <BenefitCard>
               <BenefitIcon>🎨</BenefitIcon>
-              <BenefitTitle>Returns from Brushstrokes</BenefitTitle>
+              <BenefitTitle>Direct Artist Investment</BenefitTitle>
               <BenefitDescription>
-                Banks profit from loans. We profit from love. Each painting, each creative act, grows the collective balance.
+                Put your money directly into Detroit artists. Watch your investment grow as they create and thrive.
               </BenefitDescription>
             </BenefitCard>
             
             <BenefitCard>
-              <BenefitIcon>💝</BenefitIcon>
-              <BenefitTitle>Backed by Creativity</BenefitTitle>
+              <BenefitIcon>💰</BenefitIcon>
+              <BenefitTitle>Cultural Returns</BenefitTitle>
               <BenefitDescription>
-                This is what banking looks like when it&apos;s backed by creativity and shared human stories.
-              </BenefitDescription>
-            </BenefitCard>
-            
-            <BenefitCard>
-              <BenefitIcon>🌍</BenefitIcon>
-              <BenefitTitle>Collective Dividends</BenefitTitle>
-              <BenefitDescription>
-                Every fraction shared is a dividend in our shared humanity. Earn interest in culture, not debt.
+                Earn returns from artistic growth, not corporate debt. Your profit comes from supporting creativity.
               </BenefitDescription>
             </BenefitCard>
           </BenefitsGrid>
         </Section>
 
         <Section>
-          <SectionHeader>Banking on Human Stories</SectionHeader>
+          <SectionHeader>How It Works</SectionHeader>
           <StepsContainer>
             <StepCard>
               <StepNumber>1</StepNumber>
-              <StepTitle>Find Your Artist</StepTitle>
+              <StepTitle>Choose an Artist</StepTitle>
               <StepDescription>
-                Connect with Detroit creators whose journeys resonate with you.
+                Browse Detroit artists and invest in their creative journey.
               </StepDescription>
             </StepCard>
             
             <StepCard>
               <StepNumber>2</StepNumber>
-              <StepTitle>Collect a Fraction</StepTitle>
+              <StepTitle>Invest & Support</StepTitle>
               <StepDescription>
-                Start with $100 and become part of their creative growth story.
+                Start with as little as $100. Your money funds their art and growth.
               </StepDescription>
             </StepCard>
             
             <StepCard>
               <StepNumber>3</StepNumber>
-              <StepTitle>Grow Together</StepTitle>
+              <StepTitle>Earn Together</StepTitle>
               <StepDescription>
-                Your returns compound with every brushstroke, every breakthrough, every moment of artistic growth.
-              </StepDescription>
-            </StepCard>
-            
-            <StepCard>
-              <StepNumber>4</StepNumber>
-              <StepTitle>Earn Cultural Interest</StepTitle>
-              <StepDescription>
-                Watch your investment grow not from debt, but from the collective growth and shared humanity.
+                As artists succeed and create value, your investment grows with the culture.
               </StepDescription>
             </StepCard>
           </StepsContainer>
         </Section>
 
-        <Section>
-          <SectionHeader>The Cultural Central Bank</SectionHeader>
-          <BenefitsGrid>
-            <BenefitCard>
-              <BenefitIcon>🏦</BenefitIcon>
-              <BenefitTitle>Not Your Traditional Bank</BenefitTitle>
-              <BenefitDescription>
-                While banks extract interest from your debt, our cultural bank earns from collective growth, creativity, and stories.
-              </BenefitDescription>
-            </BenefitCard>
-            
-            <BenefitCard>
-              <BenefitIcon>📖</BenefitIcon>
-              <BenefitTitle>Stories as Currency</BenefitTitle>
-              <BenefitDescription>
-                Every artist&apos;s journey becomes valuable currency. Their growth, breakthroughs, and stories create real returns for the community.
-              </BenefitDescription>
-            </BenefitCard>
-          </BenefitsGrid>
-        </Section>
+
 
 
       </MarketingContainer>

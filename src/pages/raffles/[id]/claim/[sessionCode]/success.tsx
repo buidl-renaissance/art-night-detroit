@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import styled from 'styled-components';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
@@ -9,8 +9,9 @@ import RaffleCountdown from '@/components/RaffleCountdown';
 interface Ticket {
   id: string;
   ticket_number: number;
-  raffle_id: string;
   participant_id: string;
+  artist_id?: string;
+  created_at: string;
 }
 
 interface Artist {
@@ -338,22 +339,16 @@ export default function ClaimSuccess() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [artistQuantities, setArtistQuantities] = useState<{ [artistId: string]: number }>({});
-  const [existingSubmissions, setExistingSubmissions] = useState<{ ticket_id: string; raffle_artists: { artist_id: string } }[]>([]);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const supabase = createClientComponentClient();
-
-  useEffect(() => {
-    if (id && sessionCode) {
-      fetchData();
-    }
-  }, [id, sessionCode]);
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
   };
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       // Get the session to find the participant
       const { data: session } = await supabase
@@ -396,14 +391,13 @@ export default function ClaimSuccess() {
       }
       
       // Get tickets for this specific participant
-      let userTickets = [];
+      let userTickets: Ticket[] = [];
       
       if (session && session.participant_id) {
         // If we have a session with participant_id, get tickets for this specific participant
         const { data: ticketsData } = await supabase
           .from('tickets')
-          .select('*')
-          .eq('raffle_id', id)
+          .select('id, ticket_number, participant_id, artist_id, created_at')
           .eq('participant_id', session.participant_id)
           .order('ticket_number');
 
@@ -464,37 +458,31 @@ export default function ClaimSuccess() {
           console.log('Formatted artists:', formattedArtists);
           setArtists(formattedArtists);
 
-          // Get existing ticket submissions for this user
+          // Check existing ticket assignments (using tickets.artist_id)
           if (userTickets && userTickets.length > 0) {
-            const ticketIds = userTickets.map((ticket: { id: string }) => ticket.id);
-            const { data: submissions } = await supabase
-              .from('ticket_submissions')
-              .select(`
-                *,
-                raffle_artists (
-                  id,
-                  artist_id
-                )
-              `)
-              .in('ticket_id', ticketIds);
-
-            console.log('Existing submissions:', submissions);
-            setExistingSubmissions(submissions || []);
-
-            // Pre-populate artist quantities based on existing submissions
+            console.log('User tickets for assignment check:', userTickets);
+            
+            // Pre-populate artist quantities based on existing assignments
             const quantities: { [artistId: string]: number } = {};
-            submissions?.forEach((submission: { raffle_artists: { artist_id: string } }) => {
-              const artistId = submission.raffle_artists?.artist_id;
-              if (artistId) {
-                quantities[artistId] = (quantities[artistId] || 0) + 1;
+            const assignedTickets: { ticket_id: string; artist_id: string }[] = [];
+            
+            userTickets.forEach((ticket: Ticket) => {
+              if (ticket.artist_id) {
+                quantities[ticket.artist_id] = (quantities[ticket.artist_id] || 0) + 1;
+                assignedTickets.push({
+                  ticket_id: ticket.id,
+                  artist_id: ticket.artist_id
+                });
               }
             });
+            
             setArtistQuantities(quantities);
+            
+
 
             // Check if there are unassigned tickets and show modal if needed
-            const assignedTicketIds = submissions?.map(sub => sub.ticket_id) || [];
-            const unassignedTickets = userTickets.filter(ticket => 
-              !assignedTicketIds.includes(ticket.id)
+            const unassignedTickets = userTickets.filter((ticket: Ticket) => 
+              !ticket.artist_id
             );
             
             if (unassignedTickets.length > 0) {
@@ -510,7 +498,13 @@ export default function ClaimSuccess() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, sessionCode, supabase]);
+
+  useEffect(() => {
+    if (id && sessionCode) {
+      fetchData();
+    }
+  }, [id, sessionCode, fetchData]);
 
   const handleQuantityChange = (artistId: string, quantity: number) => {
     setArtistQuantities(prev => ({
@@ -520,9 +514,8 @@ export default function ClaimSuccess() {
   };
 
   const totalTicketsRequested = Object.values(artistQuantities).reduce((sum, count) => sum + count, 0);
-  const assignedTicketIds = existingSubmissions.map(sub => sub.ticket_id);
-  const unassignedTickets = tickets.filter(ticket => 
-    !assignedTicketIds.includes(ticket.id)
+  const unassignedTickets = tickets.filter((ticket: Ticket) => 
+    !ticket.artist_id
   );
 
   const handleSubmit = async () => {
@@ -543,64 +536,54 @@ export default function ClaimSuccess() {
       // Get tickets to assign (only unassigned ones)
       const ticketsToAssign = unassignedTickets.slice(0, totalTicketsRequested);
       
-      // Create ticket submissions for each artist
-      const submissions = [];
+      // Track assignments for each artist
+      const assignments: { ticketId: string; artistId: string }[] = [];
       let ticketIndex = 0;
 
       for (const [artistId, quantity] of Object.entries(artistQuantities)) {
         if (quantity > 0) {
-          // Find the raffle_artist_id for this artist
-          const artist = artists.find(a => a.id === artistId);
-          const raffleArtistId = artist?.raffle_artist_id;
-          
-          if (raffleArtistId) {
-            for (let i = 0; i < quantity; i++) {
-              if (ticketIndex < ticketsToAssign.length) {
-                submissions.push({
-                  raffle_artist_id: raffleArtistId,
-                  ticket_id: ticketsToAssign[ticketIndex].id,
-                  submitted_at: new Date().toISOString()
-                });
-                ticketIndex++;
-              }
+          for (let i = 0; i < quantity; i++) {
+            if (ticketIndex < ticketsToAssign.length) {
+              assignments.push({
+                ticketId: ticketsToAssign[ticketIndex].id,
+                artistId: artistId
+              });
+              ticketIndex++;
             }
           }
         }
       }
 
-      // Check for existing submissions to avoid duplicates
-      const ticketIds = ticketsToAssign.map(ticket => ticket.id);
-      const { data: existingSubmissions } = await supabase
-        .from('ticket_submissions')
-        .select('ticket_id')
-        .in('ticket_id', ticketIds);
-
-      const existingTicketIds = existingSubmissions?.map(sub => sub.ticket_id) || [];
-      const newSubmissions = submissions.filter(sub => !existingTicketIds.includes(sub.ticket_id));
-
-      if (newSubmissions.length === 0) {
-        setError('All tickets have already been submitted');
+      if (assignments.length === 0) {
+        setError('No assignments to process');
         return;
       }
 
-      // Insert only new ticket submissions
-      console.log('Submitting new tickets:', newSubmissions);
+      console.log('Updating tickets with artist assignments:', assignments);
       
-      const { error: submitError } = await supabase
-        .from('ticket_submissions')
-        .insert(newSubmissions);
+      // Update each ticket with its artist_id directly
+      const updatePromises = assignments.map(assignment => 
+        supabase
+          .from('tickets')
+          .update({ artist_id: assignment.artistId })
+          .eq('id', assignment.ticketId)
+      );
 
-      if (submitError) {
-        console.error('Submit error:', submitError);
-        throw new Error(`Failed to submit tickets: ${submitError.message}`);
+      const results = await Promise.all(updatePromises);
+      
+      // Check for any errors
+      const errors = results.filter(result => result.error);
+      if (errors.length > 0) {
+        console.error('Update errors:', errors);
+        throw new Error(`Failed to update ${errors.length} ticket(s)`);
       }
 
-      setSuccess(`Successfully submitted ${newSubmissions.length} ticket(s) to artists!`);
+      setSuccess(`Successfully assigned ${assignments.length} ticket(s) to artists!`);
       
-      // Refresh the page data to show updated submissions
+      // Refresh the page data to show updated assignments
       fetchData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred while submitting tickets');
+      setError(err instanceof Error ? err.message : 'An error occurred while assigning tickets');
     } finally {
       setSubmitting(false);
     }
@@ -651,11 +634,8 @@ export default function ClaimSuccess() {
           
           {/* Group tickets by artist */}
           {artists.map((artist) => {
-            const artistSubmissions = existingSubmissions.filter(sub => 
-              sub.raffle_artists?.artist_id === artist.id
-            );
-            const artistTickets = tickets.filter(ticket => 
-              artistSubmissions.some(sub => sub.ticket_id === ticket.id)
+            const artistTickets = tickets.filter((ticket: Ticket) => 
+              ticket.artist_id === artist.id
             );
             
             if (artistTickets.length === 0) return null;
@@ -685,7 +665,7 @@ export default function ClaimSuccess() {
                   marginBottom: '0.5rem',
                   justifyContent: 'center'
                 }}>
-                  {artistTickets.map((ticket) => (
+                  {artistTickets.map((ticket: Ticket) => (
                     <span key={ticket.id} style={{
                       background: '#4CAF50',
                       color: 'white',
@@ -721,7 +701,7 @@ export default function ClaimSuccess() {
                     gap: '0.5rem',
                     justifyContent: 'center'
                   }}>
-                    {unassignedTickets.map((ticket) => (
+                    {unassignedTickets.map((ticket: Ticket) => (
                       <span key={ticket.id} style={{
                         background: '#f0f0f0',
                         color: '#666',
