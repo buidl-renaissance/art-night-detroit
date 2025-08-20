@@ -89,12 +89,15 @@ export default async function handler(
       const emailResult = await resend.emails.send({
         from: 'Art Night Detroit <noreply@artnightdetroit.com>',
         to: email,
-        subject: 'Welcome to the Art Bank Vision! 🏗️✨',
+        subject: 'Welcome to the Art Bank Vision! ✨',
         html: `
           <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #121212; color: #ffffff; padding: 40px 20px;">
             <div style="text-align: center; margin-bottom: 40px;">
+              <img src="${process.env.NEXT_PUBLIC_BASE_URL || 'https://artnightdetroit.com'}/images/art-bank.png" 
+                   alt="Art Bank Logo" 
+                   style="width: 120px; height: auto; margin-bottom: 20px; border-radius: 12px;" />
               <h1 style="color: #6c63ff; font-size: 2.5rem; margin-bottom: 10px; font-family: 'Baloo 2', cursive;">
-                Welcome to the Art Bank Vision! 🏗️
+                Welcome to the Art Bank Vision!
               </h1>
               <p style="color: #a0a0a0; font-size: 1.3rem; line-height: 1.6; font-weight: 600;">
                 You're now part of the community building the future of cultural banking.
@@ -163,9 +166,9 @@ export default async function handler(
     } catch (emailError) {
       console.error('Error sending welcome email:', emailError);
       console.error('Email error details:', {
-        message: emailError.message,
-        name: emailError.name,
-        stack: emailError.stack
+        message: (emailError as Error)?.message || 'No message',
+        name: (emailError as Error)?.name || 'No name',
+        stack: (emailError as Error)?.stack || 'No stack'
       });
       // Don't fail the API call if email fails - subscription was still created
     }
