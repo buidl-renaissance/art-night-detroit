@@ -143,7 +143,54 @@ export default function ClaimTickets() {
     if (id && sessionCode) {
       fetchSessionData();
     }
+    
+    // Load saved form data from localStorage
+    loadFormDataFromStorage();
   }, [id, sessionCode]);
+
+  const getStorageKey = () => {
+    return `raffle-claim-form-${id}-${sessionCode}`;
+  };
+
+  const loadFormDataFromStorage = () => {
+    try {
+      // Only load if we have both id and sessionCode
+      if (!id || !sessionCode) return;
+      
+      const storageKey = getStorageKey();
+      const savedData = localStorage.getItem(storageKey);
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        setFormData(parsedData);
+      }
+    } catch (error) {
+      console.error('Error loading form data from localStorage:', error);
+    }
+  };
+
+  const saveFormDataToStorage = (data: ParticipantFormData) => {
+    try {
+      // Only save if we have both id and sessionCode
+      if (!id || !sessionCode) return;
+      
+      const storageKey = getStorageKey();
+      localStorage.setItem(storageKey, JSON.stringify(data));
+    } catch (error) {
+      console.error('Error saving form data to localStorage:', error);
+    }
+  };
+
+  const clearFormDataFromStorage = () => {
+    try {
+      // Only clear if we have both id and sessionCode
+      if (!id || !sessionCode) return;
+      
+      const storageKey = getStorageKey();
+      localStorage.removeItem(storageKey);
+    } catch (error) {
+      console.error('Error clearing form data from localStorage:', error);
+    }
+  };
 
   const fetchSessionData = async () => {
     try {
@@ -176,10 +223,12 @@ export default function ClaimTickets() {
   };
 
   const handleInputChange = (field: keyof ParticipantFormData, value: string) => {
-    setFormData(prev => ({
-      ...prev,
+    const updatedData = {
+      ...formData,
       [field]: value
-    }));
+    };
+    setFormData(updatedData);
+    saveFormDataToStorage(updatedData);
   };
 
   const formatPhoneNumber = (value: string) => {
@@ -198,10 +247,12 @@ export default function ClaimTickets() {
 
   const handlePhoneChange = (value: string) => {
     const formatted = formatPhoneNumber(value);
-    setFormData(prev => ({
-      ...prev,
+    const updatedData = {
+      ...formData,
       phone: formatted
-    }));
+    };
+    setFormData(updatedData);
+    saveFormDataToStorage(updatedData);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -235,6 +286,9 @@ export default function ClaimTickets() {
         throw new Error(result.error || 'Failed to claim tickets');
       }
 
+      // Clear form data from localStorage on successful submission
+      clearFormDataFromStorage();
+      
       // Redirect to success page immediately
       router.push(`/raffles/${id}/claim/${sessionCode}/success`);
     } catch (err) {
