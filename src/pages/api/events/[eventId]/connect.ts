@@ -76,7 +76,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .eq('handle', handle)
       .single();
 
+    // Also check if a user already exists with this email
+    const { data: usersList, error: getUserError } = await supabase.auth.admin.listUsers();
+    
+    if (getUserError) {
+      console.error('Error fetching users:', getUserError);
+      // Continue without existing user check - we'll handle duplicate creation error later
+    }
+    
+    const existingAuthUser = usersList?.users?.find(user => user.email === email);
+
     let profileId: string;
+    let authUserId: string;
 
     if (existingProfile) {
       // Update existing profile
@@ -98,28 +109,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       profileId = existingProfile.id;
     } else {
-      // Create a temporary auth user for anonymous profile
-      const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
-        email: email,
-        password: crypto.randomUUID(), // Random password they'll never use
-        email_confirm: true,
-        user_metadata: {
-          full_name: name,
-          handle: handle,
-          is_anonymous: true
-        }
-      });
+      // Check if we need to create a new auth user or use existing one
+      if (existingAuthUser) {
+        // Use existing auth user
+        authUserId = existingAuthUser.id;
+      } else {
+        // Create a temporary auth user for anonymous profile
+        const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+          email: email,
+          password: crypto.randomUUID(), // Random password they'll never use
+          email_confirm: true,
+          user_metadata: {
+            full_name: name,
+            handle: handle,
+            is_anonymous: true
+          }
+        });
 
-      if (authError) {
-        console.error('Error creating auth user:', authError);
-        return res.status(500).json({ error: 'Failed to create user account' });
+        if (authError) {
+          console.error('Error creating auth user:', authError);
+          return res.status(500).json({ error: 'Failed to create user account' });
+        }
+
+        authUserId = authUser.user.id;
       }
 
       // Now create the profile with the auth user ID
       const { data: newProfile, error: createProfileError } = await supabase
         .from('profiles')
         .insert({
-          id: authUser.user.id,
+          id: authUserId,
           handle,
           full_name: name,
           email,
