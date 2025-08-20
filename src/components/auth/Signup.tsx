@@ -4,27 +4,47 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 
-const Login = () => {
+const Signup = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
   const router = useRouter();
   const supabase = createClientComponentClient();
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
+    // Validate passwords match
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      setLoading(false);
+      return;
+    }
+
+    // Basic password validation
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
       });
 
       if (error) throw error;
-      router.push('/dashboard');
+      
+      setSuccess(true);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'An error occurred');
     } finally {
@@ -32,7 +52,7 @@ const Login = () => {
     }
   };
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleSignup = async () => {
     setLoading(true);
     setError(null);
 
@@ -54,10 +74,28 @@ const Login = () => {
     }
   };
 
+  if (success) {
+    return (
+      <Container>
+        <SuccessCard>
+          <SuccessTitle>Check Your Email!</SuccessTitle>
+          <SuccessMessage>
+            We've sent you a confirmation link at <strong>{email}</strong>. 
+            Please check your email and click the link to complete your registration.
+          </SuccessMessage>
+          <LoginLink>
+            Already confirmed? <Link href="/login">Sign in here</Link>
+          </LoginLink>
+        </SuccessCard>
+      </Container>
+    );
+  }
+
   return (
     <Container>
-      <Form onSubmit={handleEmailLogin}>
-        <Title>Welcome Back</Title>
+      <Form onSubmit={handleEmailSignup}>
+        <Title>Join Art Night Detroit</Title>
+        <Subtitle>Create your account to participate in raffles and events</Subtitle>
         
         {error && <ErrorMessage>{error}</ErrorMessage>}
         
@@ -80,24 +118,38 @@ const Login = () => {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter your password"
+            placeholder="Create a password (min. 6 characters)"
             required
+            minLength={6}
+          />
+        </InputGroup>
+
+        <InputGroup>
+          <Label htmlFor="confirmPassword">Confirm Password</Label>
+          <Input
+            id="confirmPassword"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Confirm your password"
+            required
+            minLength={6}
           />
         </InputGroup>
 
         <Button type="submit" disabled={loading}>
-          {loading ? 'Signing in...' : 'Sign In'}
+          {loading ? 'Creating account...' : 'Create Account'}
         </Button>
+
+        <LoginLink>
+          Already have an account? <Link href="/login">Sign in here</Link>
+        </LoginLink>
 
         <Divider>
           <span>or</span>
         </Divider>
 
-        <SignupLink>
-          Don't have an account? <Link href="/signup">Create one here</Link>
-        </SignupLink>
-
-        <GoogleButton type="button" onClick={handleGoogleLogin} disabled={loading}>
+        <GoogleButton type="button" onClick={handleGoogleSignup} disabled={loading}>
           <GoogleIcon>
             <svg viewBox="0 0 24 24" width="24" height="24">
               <path
@@ -137,12 +189,45 @@ const Form = styled.form`
   gap: 20px;
 `;
 
+const SuccessCard = styled.div`
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 12px;
+  padding: 30px;
+  text-align: center;
+`;
+
 const Title = styled.h1`
   font-size: 2rem;
   color: #ffd700;
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 8px;
   font-family: var(--font-decorative);
+`;
+
+const Subtitle = styled.p`
+  color: #e0e0e0;
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+  opacity: 0.8;
+`;
+
+const SuccessTitle = styled.h2`
+  font-size: 1.5rem;
+  color: #ffd700;
+  margin-bottom: 16px;
+  font-family: var(--font-decorative);
+`;
+
+const SuccessMessage = styled.p`
+  color: #e0e0e0;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  
+  strong {
+    color: #ffd700;
+  }
 `;
 
 const InputGroup = styled.div`
@@ -195,6 +280,22 @@ const Button = styled.button`
   }
 `;
 
+const LoginLink = styled.p`
+  text-align: center;
+  color: #e0e0e0;
+  margin: 0;
+  
+  a {
+    color: #ffd700;
+    text-decoration: none;
+    font-weight: 600;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+`;
+
 const Divider = styled.div`
   display: flex;
   align-items: center;
@@ -237,20 +338,4 @@ const ErrorMessage = styled.div`
   text-align: center;
 `;
 
-const SignupLink = styled.p`
-  text-align: center;
-  color: #e0e0e0;
-  margin: 0;
-  
-  a {
-    color: #ffd700;
-    text-decoration: none;
-    font-weight: 600;
-    
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-`;
-
-export default Login; 
+export default Signup;

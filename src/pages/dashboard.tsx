@@ -352,7 +352,7 @@ export default function Dashboard() {
           status
         `)
         .eq('status', 'active')
-        .order('start_date', { ascending: true });
+        .order('start_date', { ascending: false });
 
       if (rafflesError) {
         console.error('Error fetching raffles:', rafflesError);
