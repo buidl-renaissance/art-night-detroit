@@ -244,7 +244,7 @@ const UploadStatus = styled.div<{ status: 'idle' | 'uploading' | 'success' | 'er
   font-size: 0.9rem;
   text-align: center;
   margin-top: 0.5rem;
-  background: ${({ theme, status }) => {
+  background: ${({ status }) => {
     switch (status) {
       case 'uploading':
         return 'rgba(59, 130, 246, 0.1)';
@@ -256,14 +256,14 @@ const UploadStatus = styled.div<{ status: 'idle' | 'uploading' | 'success' | 'er
         return 'transparent';
     }
   }};
-  color: ${({ theme, status }) => {
+  color: ${({ status }) => {
     switch (status) {
       case 'success':
         return '#22c55e';
       case 'error':
         return '#ef4444';
       default:
-        return theme.colors.text.primary;
+        return 'black';
     }
   }};
 `;
@@ -276,7 +276,6 @@ const ErrorMessage = styled.p`
 export default function NewArtist() {
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
@@ -386,7 +385,7 @@ export default function NewArtist() {
     }
 
     try {
-      const { data, error: insertError } = await supabase
+      const { error: insertError } = await supabase
         .from('artists')
         .insert({
           name: artistData.name.trim(),
