@@ -679,19 +679,6 @@ export default function ClaimSuccess() {
   );
 }
 
-const UnassignedTicketsInfo = styled.p`
-  text-align: center;
-  margin-bottom: 2rem;
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-size: 1rem;
-  font-weight: 500;
-  
-  @media (max-width: 768px) {
-    margin-bottom: 1.5rem;
-    font-size: 0.9rem;
-  }
-`;
-
 const BottomBar = styled.div`
   position: fixed;
   bottom: 0;
