@@ -5,6 +5,7 @@ import styled from 'styled-components';
 import PageContainer from '@/components/PageContainer';
 import RaffleCountdown from '@/components/RaffleCountdown';
 import FullScreenLoader from '@/components/FullScreenLoader';
+import { getLoginUrlWithRedirect } from '@/lib/redirects';
 
 interface RaffleTicket {
   id: string;
@@ -292,7 +293,7 @@ export default function Dashboard() {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        router.push('/login');
+        router.push(getLoginUrlWithRedirect());
         return;
       }
 

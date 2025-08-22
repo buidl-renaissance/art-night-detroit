@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import { getRedirectUrl, getAuthRedirectUrl } from '@/lib/redirects';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -25,18 +26,16 @@ const Login = () => {
 
       if (error) throw error;
 
-      // Check if user is admin and redirect accordingly
+      // Get redirect URL and check admin status
+      const redirectTo = getRedirectUrl(router);
       const { data: profile } = await supabase
         .from('profiles')
         .select('is_admin')
         .eq('id', data.user.id)
         .single();
 
-      if (profile?.is_admin) {
-        router.push('/admin');
-      } else {
-        router.push('/dashboard');
-      }
+      const finalRedirectUrl = getAuthRedirectUrl(redirectTo, profile?.is_admin || false);
+      router.push(finalRedirectUrl);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'An error occurred');
     } finally {

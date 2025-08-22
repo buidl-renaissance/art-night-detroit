@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import styled from 'styled-components';
 import PageContainer from '@/components/PageContainer';
+import { useRequireAdmin } from '@/hooks/useAdminAuth';
 
 interface Raffle {
   id: string;
@@ -17,33 +18,23 @@ interface Raffle {
 
 export default function RafflesAdmin() {
   const [raffles, setRaffles] = useState<Raffle[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [rafflesLoading, setRafflesLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activatingRaffle, setActivatingRaffle] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClientComponentClient();
+  
+  // Use the admin authentication hook
+  const { loading: authLoading, hasAccess } = useRequireAdmin();
 
   useEffect(() => {
     const fetchRaffles = async () => {
+      // Wait for auth check to complete before fetching data
+      if (authLoading || !hasAccess) {
+        return;
+      }
+
       try {
-        // Check if user is admin
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          router.push('/login');
-          return;
-        }
-
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', session.user.id)
-          .single();
-
-        if (!profile?.is_admin) {
-          router.push('/');
-          return;
-        }
-
         // Fetch raffles
         const { data, error: fetchError } = await supabase
           .from('raffles')
@@ -51,16 +42,16 @@ export default function RafflesAdmin() {
           .order('created_at', { ascending: false });
 
         if (fetchError) throw fetchError;
-        setRaffles(data);
+        setRaffles(data || []);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
-        setLoading(false);
+        setRafflesLoading(false);
       }
     };
 
     fetchRaffles();
-  }, [router, supabase]);
+  }, [authLoading, hasAccess, supabase]);
 
   const getStatusColor = (status: Raffle['status']) => {
     switch (status) {
@@ -111,7 +102,7 @@ export default function RafflesAdmin() {
     }
   };
 
-  if (loading) {
+  if (authLoading || rafflesLoading) {
     return (
       <PageContainer theme="dark" width="medium">
         <LoadingMessage>Loading raffles...</LoadingMessage>

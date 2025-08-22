@@ -9,6 +9,7 @@ interface Artist {
   name: string;
   bio: string;
   image_url: string;
+  instagram_handle?: string;
 }
 
 const FormContainer = styled.div`
@@ -366,6 +367,7 @@ export default function EditArtist() {
         name: formData.get('name'),
         bio: formData.get('bio'),
         image_url: selectedImage || formData.get('image_url'),
+        instagram_handle: formData.get('instagram_handle'),
       };
 
       if (id === 'new') {
@@ -472,6 +474,16 @@ export default function EditArtist() {
                 name="bio"
                 defaultValue={artist?.bio}
                 required
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <Label htmlFor="instagram_handle">Instagram Handle</Label>
+              <Input
+                type="text"
+                id="instagram_handle"
+                name="instagram_handle"
+                defaultValue={artist?.instagram_handle}
               />
             </FormGroup>
 

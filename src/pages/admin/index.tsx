@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+
 import styled from 'styled-components';
 import PageContainer from '@/components/PageContainer';
 import { useRouter } from 'next/router';
+import { useRequireAdmin } from '@/hooks/useAdminAuth';
 
 const AdminContainer = styled.div`
   max-width: 1200px;
@@ -74,36 +74,10 @@ const LoadingContainer = styled.div`
 `;
 
 export default function AdminDashboard() {
-  const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const supabase = createClientComponentClient();
-
-  useEffect(() => {
-    const checkAdmin = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        router.push('/login');
-        return;
-      }
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', session.user.id)
-        .single();
-
-      console.log(profile);
-
-      if (!profile?.is_admin) {
-        router.push('/');
-        return;
-      }
-
-      setLoading(false);
-    };
-
-    checkAdmin();
-  }, []);
+  
+  // Use the admin authentication hook
+  const { loading } = useRequireAdmin();
 
   const adminSections = [
     {

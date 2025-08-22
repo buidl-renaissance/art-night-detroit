@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { getRedirectUrl, getAuthRedirectUrl } from '@/lib/redirects';
 
 export default function AuthCallback() {
   const router = useRouter();
@@ -13,28 +14,21 @@ export default function AuthCallback() {
         console.error('Error during auth callback:', error);
         router.push('/login?error=Authentication failed');
       } else if (session) {
-        // Get the redirect path from the URL hash
+        // Get the redirect path from URL hash or query params
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const redirectTo = hashParams.get('redirect_to') || router.query.redirect_to as string;
+        const hashRedirect = hashParams.get('redirect_to');
+        const queryRedirect = getRedirectUrl(router);
+        const redirectTo = hashRedirect ? decodeURIComponent(hashRedirect) : queryRedirect;
         
-        // If there's a specific redirect path, use it
-        if (redirectTo) {
-          router.push(decodeURIComponent(redirectTo));
-          return;
-        }
-
-        // Check if user is admin and redirect accordingly
+        // Check if user is admin and determine final redirect
         const { data: profile } = await supabase
           .from('profiles')
           .select('is_admin')
           .eq('id', session.user.id)
           .single();
 
-        if (profile?.is_admin) {
-          router.push('/admin');
-        } else {
-          router.push('/dashboard');
-        }
+        const finalRedirectUrl = getAuthRedirectUrl(redirectTo, profile?.is_admin || false);
+        router.push(finalRedirectUrl);
       }
     };
 

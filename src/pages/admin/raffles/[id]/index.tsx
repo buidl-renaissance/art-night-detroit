@@ -542,6 +542,9 @@ export default function RaffleAdmin() {
             <ActionButton onClick={() => router.push(`/admin/raffles/${id}/participants`)}>
               Participants
             </ActionButton>
+            <ActionButton onClick={() => router.push(`/admin/raffles/${id}/migrate-manual`)}>
+              Migrate Manual Entries
+            </ActionButton>
           </ActionButtonsContainer>
         </Header>
 

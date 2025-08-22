@@ -4,7 +4,6 @@ import { useRouter } from 'next/router';
 import { useRaffleData } from '@/hooks/useRaffleData';
 
 const MarketingContainer = styled.div`
-  max-width: 900px;
   margin: 0 auto;
   padding-bottom: 2rem;
   display: flex;
@@ -19,14 +18,14 @@ const Header = styled.div`
 `;
 
 const Title = styled.h1`
-  font-size: 2.7rem;
+  font-size: 5rem;
   color: ${({ theme }) => theme.colors.primary};
   margin-bottom: 0.5rem;
   line-height: 1.2;
 `;
 
 const Description = styled.p`
-  font-size: 1.1rem;
+  font-size: 2rem;
   color: ${({ theme }) => theme.colors.text.light};
   margin-bottom: 1rem;
   line-height: 1.4;
@@ -42,9 +41,10 @@ const Section = styled.section`
 `;
 
 const SectionHeader = styled.h2`
-  font-size: 1.3rem;
+  font-size: 3rem;
   color: ${({ theme }) => theme.colors.primary};
   margin-bottom: 0.5rem;
+  margin-top: 5rem;
 `;
 
 const QRGrid = styled.div`
@@ -76,6 +76,25 @@ const QRLabel = styled.div`
   font-weight: 600;
 `;
 
+const CashIcon = styled.div`
+  font-size: 8rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 200px;
+  height: 200px;
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  border-radius: 8px;
+  margin: 0 auto 0.5rem auto;
+`;
+
+// const CashDescription = styled.div`
+//   font-size: 0.9rem;
+//   color: ${({ theme }) => theme.colors.text.light};
+//   margin-top: 0.25rem;
+// `;
+
 const PriceBadge = styled.div`
   display: inline-block;
   background: ${({ theme }) => theme.colors.primary};
@@ -100,8 +119,8 @@ const PriceBadge = styled.div`
 
 const ArtistsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.7rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
   margin: 0 auto;
   justify-items: center;
   width: 100%;
@@ -127,7 +146,7 @@ const ArtistCard = styled.div`
   display: flex;
   flex-direction: column;
   box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-  width: 220px;
+  width: 300px;
   @media print {
     width: 220px !important;
     margin: 0 !important;
@@ -137,7 +156,7 @@ const ArtistCard = styled.div`
 
 const ArtistImage = styled.img`
   width: 100%;
-  height: 220px;
+  height: 320px;
   object-fit: cover;
   @media print {
     height: 220px !important;
@@ -152,7 +171,8 @@ const ArtistInfo = styled.div`
 `;
 
 const ArtistName = styled.h3`
-  font-size: 1.1rem;
+  font-size: 1.8rem;
+  line-height: 1.2;
   color: ${({ theme }) => theme.colors.text.primary};
   margin: 0;
 `;
@@ -166,9 +186,9 @@ const ArtistBio = styled.p`
 
 const InstagramLink = styled.a`
   color: ${({ theme }) => theme.colors.primary};
-  font-size: 0.95rem;
+  font-size: 1.25rem;
   text-decoration: none;
-  margin-top: 0.2rem;
+  margin-top: 0rem;
   &:hover { text-decoration: underline; }
 `;
 
@@ -187,11 +207,24 @@ const Error = styled.div`
 `;
 
 const EndDate = styled.div`
-  font-size: 1.1rem;
+  font-size: 2rem;
   color: ${({ theme }) => theme.colors.primary};
   font-weight: 600;
   margin-bottom: 0.7rem;
   text-align: center;
+`;
+
+const LogoContainer = styled.div`
+  margin-top: 5rem;
+  margin-bottom: 1.5rem;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+`;
+
+const Logo = styled.img`
+  max-width: 500px;
+  height: auto;
 `;
 
 function formatDateTime(dateStr: string | undefined) {
@@ -223,8 +256,12 @@ export default function RaffleMarketingById() {
   }
 
   return (
-    <PageContainer theme="dark" width="medium">
+    <PageContainer theme="dark" width="full">
       <MarketingContainer>
+        <LogoContainer>
+          <Logo src="/images/art-night-detroit-logo.png" alt="Art Night Detroit" />
+        </LogoContainer>
+        
         <Header>
           <Title>{raffle.name}</Title>
           <Description>{raffle.description}</Description>
@@ -245,6 +282,14 @@ export default function RaffleMarketingById() {
               <QRImage src="/images/jg-cash-app.jpg" alt="Cash App QR" />
               <QRLabel>Cash App: $JohnGulbronson</QRLabel>
             </QRCard>
+            <QRCard>
+              <QRImage src="/images/base-chain.jpg" alt="Base App QR" />
+              <QRLabel>Base App: wiredinsamurai</QRLabel>
+            </QRCard>
+            <QRCard>
+              <CashIcon>💵</CashIcon>
+              <QRLabel>Cash</QRLabel>
+            </QRCard>
           </QRGrid>
           {/* <Description>
             Scan a QR code above to pay for your tickets.
@@ -259,7 +304,6 @@ export default function RaffleMarketingById() {
                 <ArtistImage src={artist.image_url} alt={artist.name} />
                 <ArtistInfo>
                   <ArtistName>{artist.name}</ArtistName>
-                  <ArtistBio>{artist.bio}</ArtistBio>
                   {artist.instagram_handle && (
                     <InstagramLink
                       href={`https://instagram.com/${artist.instagram_handle}`}
@@ -269,6 +313,7 @@ export default function RaffleMarketingById() {
                       @{artist.instagram_handle}
                     </InstagramLink>
                   )}
+                  <ArtistBio>{artist.bio}</ArtistBio>
                 </ArtistInfo>
               </ArtistCard>
             ))}

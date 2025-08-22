@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import PageContainer from '@/components/PageContainer';
 import ProcessedEventDescription from '@/components/EventDescription';
 import { useRouter } from 'next/router';
+import { getLoginUrlWithRedirect } from '@/lib/redirects';
 
 interface Event {
   id: string;
@@ -272,7 +273,7 @@ export default function Events() {
     const checkAdmin = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        router.push('/login');
+        router.push(getLoginUrlWithRedirect());
         return;
       }
 

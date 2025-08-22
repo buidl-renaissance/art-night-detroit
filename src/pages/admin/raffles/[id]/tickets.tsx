@@ -13,8 +13,6 @@ interface Ticket {
   full_name: string | null;
   artist_name?: string | null;
   artist_id?: string | null;
-  submission_date?: string | null;
-  source: string;
 }
 
 
@@ -68,136 +66,61 @@ export default function RaffleTickets() {
         if (raffleError) throw raffleError;
         setRaffle(raffleData);
 
-        // Fetch tickets directly from the tickets table, using participant or user relationships
-        // We need to handle both old ticket_orders system and new QR claim system
-        
-        // Method 1: Get tickets from ticket_orders (for purchased tickets)
-        const { data: ticketOrdersData } = await supabase
-          .from('ticket_orders')
+        // Fetch tickets directly from the tickets table using raffle_id
+        const { data: ticketsData, error: ticketsError } = await supabase
+          .from('tickets')
           .select(`
-            user_id,
-            issued_tickets,
-            profiles!inner(email, full_name)
+            id,
+            ticket_number,
+            created_at,
+            artist_id,
+            participant_id,
+            participants(name, email, phone)
           `)
           .eq('raffle_id', id)
-          .eq('status', 'completed');
+          .order('ticket_number');
 
-        const purchasedTicketIds = ticketOrdersData?.flatMap(order => order.issued_tickets || []) || [];
-        
-        // Method 2: Get tickets with participant_id (for QR claimed tickets) 
-        // We need to filter by raffle_id, but tickets table doesn't have raffle_id anymore
-        // Let's get QR sessions for this raffle and then find tickets created for those sessions
-        const { data: qrSessions } = await supabase
-          .from('qr_code_sessions')
-          .select('participant_id')
-          .eq('raffle_id', id)
-          .not('participant_id', 'is', null);
-
-        const participantIds = qrSessions?.map(session => session.participant_id).filter(Boolean) || [];
-
-        const claimedTicketsData = [];
-        if (participantIds.length > 0) {
-          const { data: claimedData } = await supabase
-            .from('tickets')
-            .select(`
-              id,
-              ticket_number,
-              created_at,
-              artist_id,
-              participant_id,
-              participants(name, email, phone)
-            `)
-            .in('participant_id', participantIds);
-          claimedTicketsData.push(...(claimedData || []));
-          console.log('Claimed tickets data with participants:', claimedData);
+        if (ticketsError) {
+          console.error('Error fetching tickets:', ticketsError);
+          throw ticketsError;
         }
 
-        // Method 3: Get purchased tickets with full details
-        const purchasedTickets = [];
-        if (purchasedTicketIds.length > 0) {
-          const { data: purchasedTicketsData } = await supabase
-            .from('tickets')
-            .select('id, ticket_number, created_at, artist_id')
-            .in('id', purchasedTicketIds)
-            .order('ticket_number');
-          purchasedTickets.push(...(purchasedTicketsData || []));
-        }
-
-        // Create maps for user info
-        const ticketToUserMap = new Map();
-        ticketOrdersData?.forEach(order => {
-          order.issued_tickets?.forEach((ticketId: string) => {
-            ticketToUserMap.set(ticketId, {
-              user_id: order.user_id,
-              email: order.profiles?.[0]?.email,
-              full_name: order.profiles?.[0]?.full_name,
-              source: 'purchased'
-            });
-          });
-        });
+        console.log('Tickets data:', ticketsData);
 
         // Get artist names for assigned tickets
-        const artistIds = [
-          ...new Set([
-            ...purchasedTickets.filter(t => t.artist_id).map(t => t.artist_id),
-            ...claimedTicketsData.filter(t => t.artist_id).map(t => t.artist_id)
-          ])
-        ];
+        const artistIds = ticketsData?.filter(t => t.artist_id).map(t => t.artist_id) || [];
+        const uniqueArtistIds = [...new Set(artistIds)];
 
         const artistsMap = new Map();
-        if (artistIds.length > 0) {
+        if (uniqueArtistIds.length > 0) {
           const { data: artistsData } = await supabase
             .from('artists')
             .select('id, name')
-            .in('id', artistIds);
+            .in('id', uniqueArtistIds);
           
           artistsData?.forEach(artist => {
             artistsMap.set(artist.id, artist.name);
           });
         }
 
-        // Combine all tickets
-        const allTickets = [
-          // Purchased tickets
-          ...purchasedTickets.map(ticket => {
-            const userInfo = ticketToUserMap.get(ticket.id);
-            return {
-              id: ticket.id,
-              ticket_number: ticket.ticket_number,
-              user_id: userInfo?.user_id || '',
-              created_at: ticket.created_at,
-              email: userInfo?.email || '',
-              full_name: userInfo?.full_name || null,
-              artist_name: ticket.artist_id ? artistsMap.get(ticket.artist_id) : null,
-              artist_id: ticket.artist_id || null,
-              submission_date: ticket.artist_id ? ticket.created_at : null, // Use ticket creation as assignment date for purchased tickets
-              source: 'purchased'
-            };
-          }),
-          // Claimed tickets
-          ...claimedTicketsData.map(ticket => {
-            // Handle both array and object forms of participants data
-            const participant = Array.isArray(ticket.participants) 
-              ? ticket.participants[0] 
-              : ticket.participants;
-            
-            return {
-              id: ticket.id,
-              ticket_number: ticket.ticket_number,
-              user_id: '', // No user_id for claimed tickets
-              created_at: ticket.created_at,
-              email: participant?.email || '',
-              full_name: participant?.name || null,
-              artist_name: ticket.artist_id ? artistsMap.get(ticket.artist_id) : null,
-              artist_id: ticket.artist_id || null,
-              submission_date: ticket.artist_id ? ticket.created_at : null,
-              source: 'claimed'
-            };
-          })
-        ];
-
-        // Sort by ticket number
-        allTickets.sort((a, b) => a.ticket_number - b.ticket_number);
+        // Transform tickets data to match the expected format
+        const allTickets = ticketsData?.map(ticket => {
+          // Handle both array and object forms of participants data
+          const participant = Array.isArray(ticket.participants) 
+            ? ticket.participants[0] 
+            : ticket.participants;
+          
+          return {
+            id: ticket.id,
+            ticket_number: ticket.ticket_number,
+            user_id: '', // No user_id for these tickets
+            created_at: ticket.created_at,
+            email: participant?.email || '',
+            full_name: participant?.name || null,
+            artist_name: ticket.artist_id ? artistsMap.get(ticket.artist_id) : null,
+            artist_id: ticket.artist_id || null
+          };
+        }) || [];
 
         console.log('All tickets:', allTickets);
         setTickets(allTickets);
@@ -289,16 +212,24 @@ export default function RaffleTickets() {
               <Th>#</Th>
               <Th>Owner</Th>
               <Th>Assigned To</Th>
-              <Th>Source</Th>
               <Th>Created Date</Th>
-              <Th>Assignment Date</Th>
             </tr>
           </thead>
           <tbody>
             {tickets.map((ticket) => (
               <tr key={ticket.id}>
                 <Td>#{ticket.ticket_number}</Td>
-                <Td>{ticket.full_name || 'Anonymous'}</Td>
+                <Td>
+                  {ticket.full_name ? (() => {
+                    const nameParts = ticket.full_name.trim().split(' ');
+                    if (nameParts.length === 1) {
+                      return nameParts[0];
+                    }
+                    const firstName = nameParts[0];
+                    const lastInitial = nameParts[nameParts.length - 1].charAt(0).toUpperCase();
+                    return `${firstName} ${lastInitial}.`;
+                  })() : 'Anonymous'}
+                </Td>
                 <Td>
                   {ticket.artist_name ? (
                     <AssignedArtist>{ticket.artist_name}</AssignedArtist>
@@ -307,27 +238,14 @@ export default function RaffleTickets() {
                   )}
                 </Td>
                 <Td>
-                  <SourceBadge source={ticket.source}>
-                    {ticket.source === 'purchased' ? 'Purchased' : 'QR Claimed'}
-                  </SourceBadge>
-                </Td>
-                <Td>
-                  {new Date(ticket.created_at).toLocaleDateString('en-US', {
+                  {new Date(ticket.created_at).toLocaleString('en-US', {
                     year: 'numeric',
                     month: 'long',
-                    day: 'numeric'
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
                   })}
-                </Td>
-                <Td>
-                  {ticket.submission_date ? (
-                    new Date(ticket.submission_date).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })
-                  ) : (
-                    <UnassignedText>-</UnassignedText>
-                  )}
                 </Td>
               </tr>
             ))}
@@ -545,23 +463,7 @@ const UnassignedText = styled.span`
   font-style: italic;
 `;
 
-const SourceBadge = styled.span<{ source: string }>`
-  display: inline-block;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  background: ${({ source }) => source === 'purchased' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(59, 130, 246, 0.2)'};
-  color: ${({ source }) => source === 'purchased' ? '#22c55e' : '#3b82f6'};
-  border: 1px solid ${({ source }) => source === 'purchased' ? 'rgba(34, 197, 94, 0.3)' : 'rgba(59, 130, 246, 0.3)'};
 
-  @media (max-width: 768px) {
-    padding: 0.2rem 0.4rem;
-    font-size: 0.65rem;
-    border-radius: 3px;
-  }
-`;
 
 const ArtistSummary = styled.div`
   background: ${({ theme }) => theme.colors.background.secondary};

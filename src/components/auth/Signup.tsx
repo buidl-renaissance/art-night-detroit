@@ -34,11 +34,16 @@ const Signup = () => {
     }
 
     try {
+      const redirectTo = router.query.redirect_to as string;
+      const callbackUrl = redirectTo 
+        ? `${window.location.origin}/auth/callback?redirect_to=${encodeURIComponent(redirectTo)}`
+        : `${window.location.origin}/auth/callback`;
+
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: callbackUrl,
         },
       });
 

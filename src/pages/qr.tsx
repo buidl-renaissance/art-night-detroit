@@ -1,7 +1,7 @@
 import React from "react";
 import Head from "next/head";
 import styled from "styled-components";
-import QRCode from "react-qr-code";
+// import QRCode from "react-qr-code";
 
 const QRPage: React.FC = () => {
   return (
@@ -54,7 +54,7 @@ const QRPage: React.FC = () => {
             <ArtRaffleImage src="/images/art-raffle.png" alt="Art Raffle" />
           </ArtRaffleLogoContainer>
         </ArtRaffleContainer>
-          <QRContainer>
+          {/* <QRContainer>
             <QRCode
               value="https://artnightdetroit.com/raffle"
               size={256}
@@ -62,7 +62,7 @@ const QRPage: React.FC = () => {
               bgColor="#ffffff"
               fgColor="#000000"
             />
-          </QRContainer>
+          </QRContainer> */}
       </MainSection>
     </PageContainer>
   );
@@ -96,7 +96,7 @@ const MainSection = styled.section`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
+  /* min-height: 100vh; */
 `;
 
 const LogoContainer = styled.div`
@@ -104,7 +104,7 @@ const LogoContainer = styled.div`
 `;
 
 const Logo = styled.img`
-  width: 00px;
+  width: 700px;
   height: auto;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
   margin-bottom: 2rem;
@@ -151,18 +151,18 @@ const ArtRaffleHatImage = styled.img`
   }
 `;
 
-const QRContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  width: 256px;
-  height: 256px;
-  padding: 16px;
-  margin-bottom: 4rem;
-`;
+// const QRContainer = styled.div`
+//   display: flex;
+//   justify-content: center;
+//   align-items: center;
+//   background: white;
+//   border-radius: 12px;
+//   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+//   width: 256px;
+//   height: 256px;
+//   padding: 16px;
+//   margin-bottom: 4rem;
+// `;
 
 const PaymentSection = styled.div`
   margin: 3rem 0;
