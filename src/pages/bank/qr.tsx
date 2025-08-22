@@ -4,7 +4,6 @@ import styled from 'styled-components';
 import QRCode from 'react-qr-code';
 
 const MoneyPrinterPage: React.FC = () => {
-  const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
 
   return (
     <>
@@ -16,8 +15,8 @@ const MoneyPrinterPage: React.FC = () => {
         <Title>MONEY PRINTER</Title>
         <QRCodeContainer>
           <QRCode
-            value={currentUrl}
-            size={700}
+            value={"https://artnightdetroit.com/bank"}
+            size={600}
             level="Q"
             fgColor="#000000"
             bgColor="#FFFFFF"

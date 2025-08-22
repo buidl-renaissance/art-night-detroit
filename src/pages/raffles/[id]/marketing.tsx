@@ -219,12 +219,31 @@ const LogoContainer = styled.div`
   margin-bottom: 1.5rem;
   width: 100%;
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
 `;
 
-const Logo = styled.img`
-  max-width: 500px;
+const ArtRaffleLogo = styled.img`
+  width: 400px;
   height: auto;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+  margin-bottom: 1rem;
+
+  @media (max-width: 768px) {
+    width: 300px;
+  }
+`;
+
+const ArtRaffleHat = styled.img`
+  width: 300px;
+  height: auto;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+  margin-bottom: 1rem;
+
+  @media (max-width: 768px) {
+    width: 200px;
+  }
 `;
 
 function formatDateTime(dateStr: string | undefined) {
@@ -259,7 +278,8 @@ export default function RaffleMarketingById() {
     <PageContainer theme="dark" width="full">
       <MarketingContainer>
         <LogoContainer>
-          <Logo src="/images/art-night-detroit-logo.png" alt="Art Night Detroit" />
+          <ArtRaffleHat src="/images/art-raffle-hat.png" alt="Art Raffle Hat" />
+          <ArtRaffleLogo src="/images/art-raffle.png" alt="Art Raffle" />
         </LogoContainer>
         
         <Header>
