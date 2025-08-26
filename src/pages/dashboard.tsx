@@ -5,6 +5,7 @@ import styled from 'styled-components';
 import PageContainer from '@/components/PageContainer';
 import RaffleCountdown from '@/components/RaffleCountdown';
 import FullScreenLoader from '@/components/FullScreenLoader';
+import CopyButton from '@/components/CopyButton';
 import { getLoginUrlWithRedirect } from '@/lib/redirects';
 
 interface RaffleTicket {
@@ -205,14 +206,26 @@ const ModalContent = styled.div`
 
 const ModalHeader = styled.div`
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 1rem;
   margin-bottom: 1.5rem;
 `;
 
 const ModalTitle = styled.h2`
   color: ${({ theme }) => theme.colors.primary};
   margin: 0;
+`;
+
+const ModalActions = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  
+  & > div:first-child {
+    display: flex;
+    gap: 0.5rem;
+  }
 `;
 
 const CloseButton = styled.button`
@@ -394,7 +407,25 @@ export default function Dashboard() {
           <ModalContent onClick={e => e.stopPropagation()}>
             <ModalHeader>
               <ModalTitle>Your Ticket Numbers</ModalTitle>
-              <CloseButton onClick={() => setShowModal(false)}>&times;</CloseButton>
+              <ModalActions>
+                {unusedTickets.length > 0 && (
+                  <>
+                    <CopyButton 
+                      textToCopy={unusedTickets.map(t => `#${t.ticket_number}`).join(', ')}
+                      label="Copy All"
+                      variant="secondary"
+                      size="small"
+                    />
+                    <CopyButton 
+                      textToCopy={unusedTickets.map(t => t.ticket_number).join('\n')}
+                      label="Copy List"
+                      variant="secondary"
+                      size="small"
+                    />
+                  </>
+                )}
+                <CloseButton onClick={() => setShowModal(false)}>&times;</CloseButton>
+              </ModalActions>
             </ModalHeader>
             <TicketList>
               {unusedTickets.map((ticket) => (
