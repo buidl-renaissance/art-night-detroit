@@ -24,6 +24,11 @@ interface ArtistWinner {
   winnerSelectedAt: string | null;
 }
 
+interface WinnerTicketData {
+  ticket_number: number;
+  participants: { name: string }[];
+}
+
 
 
 interface Raffle {
@@ -169,16 +174,16 @@ export default function RaffleTickets() {
           winnersData?.forEach(winnerData => {
             // Only add to winners map if there's actually a winning ticket selected
             if (winnerData.winner_ticket_id && winnerData.winner_ticket) {
-              const participant = Array.isArray(winnerData.winner_ticket.participants)
-                ? winnerData.winner_ticket.participants[0]
-                : winnerData.winner_ticket.participants;
+              const winnerTickets = winnerData.winner_ticket as WinnerTicketData[];
+              const winnerTicket = winnerTickets[0]; // Get the first (and should be only) ticket
+              const participant = winnerTicket?.participants?.[0];
 
               const formattedName = participant?.name ? formatName(participant.name) : null;
 
               winnersMap.set(winnerData.artist_id, {
                 artistId: winnerData.artist_id,
                 winnerTicketId: winnerData.winner_ticket_id,
-                winnerTicketNumber: winnerData.winner_ticket.ticket_number,
+                winnerTicketNumber: winnerTicket?.ticket_number || null,
                 winnerParticipantName: formattedName,
                 winnerSelectedAt: winnerData.winner_selected_at
               });
@@ -262,7 +267,7 @@ export default function RaffleTickets() {
         setError(data.error || 'Failed to select winner');
         setAnimatingTicket(null);
       }
-    } catch (err) {
+    } catch {
       setError('Failed to select winner');
       setAnimatingTicket(null);
     } finally {

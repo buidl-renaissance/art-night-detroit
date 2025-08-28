@@ -80,7 +80,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return `${firstName} ${lastInitial}.`;
       };
 
-      const participant = winningTicket.participants;
+      const participants = winningTicket.participants as { name: string; email: string }[];
+      const participant = participants?.[0];
       const formattedName = participant?.name ? formatName(participant.name) : null;
 
       return res.status(200).json({
