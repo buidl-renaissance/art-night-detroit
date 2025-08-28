@@ -821,10 +821,10 @@ const ArtistCardHeader = styled.div`
   gap: 0.5rem;
 `;
 
-const ArtistCopyActions = styled.div`
-  display: flex;
-  gap: 0.5rem;
-`;
+// const ArtistCopyActions = styled.div`
+//   display: flex;
+//   gap: 0.5rem;
+// `;
 
 const TicketNumbersList = styled.div`
   display: flex;
@@ -915,10 +915,10 @@ const WinnerTicket = styled.div`
   margin-bottom: 0.25rem;
 `;
 
-const WinnerName = styled.div`
-  font-size: 0.875rem;
-  opacity: 0.8;
-`;
+// const WinnerName = styled.div`
+//   font-size: 0.875rem;
+//   opacity: 0.8;
+// `;
 
 const WinnerActions = styled.div`
   margin-top: 1rem;
