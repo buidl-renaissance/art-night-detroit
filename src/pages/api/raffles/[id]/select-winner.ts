@@ -36,7 +36,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Get all tickets for this artist in this raffle
       const { data: tickets, error: ticketsError } = await supabase
         .from('tickets')
-        .select('id, ticket_number, participant_id, participants(name, email)')
+        .select('id, ticket_number, participant_id, participant:profiles!participant_id(full_name, email)')
         .eq('raffle_id', raffleId)
         .eq('artist_id', artistId);
 
@@ -80,9 +80,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return `${firstName} ${lastInitial}.`;
       };
 
-      const participants = winningTicket.participants as { name: string; email: string }[];
-      const participant = participants?.[0];
-      const formattedName = participant?.name ? formatName(participant.name) : null;
+      const participant = winningTicket.participant as { full_name: string; email: string } | null;
+      const formattedName = participant?.full_name ? formatName(participant.full_name) : null;
 
       return res.status(200).json({
         success: true,

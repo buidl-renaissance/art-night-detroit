@@ -26,7 +26,7 @@ interface ArtistWinner {
 
 interface WinnerTicketData {
   ticket_number: number;
-  participants: { name: string }[];
+  participants: { name: string };
 }
 
 
@@ -174,10 +174,13 @@ export default function RaffleTickets() {
           winnersData?.forEach(winnerData => {
             // Only add to winners map if there's actually a winning ticket selected
             if (winnerData.winner_ticket_id && winnerData.winner_ticket) {
-              const winnerTickets = winnerData.winner_ticket as WinnerTicketData[];
-              const winnerTicket = winnerTickets[0]; // Get the first (and should be only) ticket
-              const participant = winnerTicket?.participants?.[0];
-
+              // Handle both array and object formats of winner_ticket data
+              const winnerTicketRaw = winnerData.winner_ticket as unknown;
+              const winnerTicket = Array.isArray(winnerTicketRaw) 
+                ? winnerTicketRaw[0] as WinnerTicketData
+                : winnerTicketRaw as WinnerTicketData;
+              
+              const participant = winnerTicket?.participants;
               const formattedName = participant?.name ? formatName(participant.name) : null;
 
               winnersMap.set(winnerData.artist_id, {
@@ -390,14 +393,14 @@ export default function RaffleTickets() {
                           <ArtistAllocationName>{artistName}</ArtistAllocationName>
                           <ArtistAllocationCount>{ticketNumbers.length} ticket{ticketNumbers.length !== 1 ? 's' : ''}</ArtistAllocationCount>
                         </div>
-                        <ArtistCopyActions>
+                        {/* <ArtistCopyActions>
                           <CopyButton 
                             textToCopy={ticketNumbers.map(num => `#${num}`).join(', ')}
                             label="Copy"
                             variant="secondary"
                             size="small"
                           />
-                        </ArtistCopyActions>
+                        </ArtistCopyActions> */}
                       </ArtistCardHeader>
 
                       {winner && (
@@ -405,9 +408,8 @@ export default function RaffleTickets() {
                           <WinnerIcon>🏆</WinnerIcon>
                           <WinnerInfo>
                             <WinnerLabel>Winner</WinnerLabel>
-                            <WinnerTicket>Ticket #{winner.winnerTicketNumber}</WinnerTicket>
                             {winner.winnerParticipantName && (
-                              <WinnerName>{winner.winnerParticipantName}</WinnerName>
+                              <WinnerTicket>#{winner.winnerTicketNumber} - {winner.winnerParticipantName}</WinnerTicket>
                             )}
                           </WinnerInfo>
                         </WinnerDisplay>
