@@ -33,7 +33,7 @@ const SubmissionsPage = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-  const [uploadedFiles, setUploadedFiles] = useState<{file: File, url: string, uploading: boolean, error?: string}[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<{file: File, url: string, uploading: boolean, error?: string, processing?: boolean}[]>([]);
   const [isUploading, setIsUploading] = useState<boolean>(false);
 
   const validatePhoneNumber = (phone: string): string => {
@@ -90,9 +90,76 @@ const SubmissionsPage = () => {
     }
   };
 
+  const convertImageToJpeg = (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      // If it's not an image, return as-is
+      if (!file.type.startsWith('image/')) {
+        resolve(file);
+        return;
+      }
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+
+      img.onload = () => {
+        // Calculate optimal dimensions (max 2048px on longest side)
+        const maxDimension = 2048;
+        let { width, height } = img;
+        
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = (height * maxDimension) / width;
+            width = maxDimension;
+          } else {
+            width = (width * maxDimension) / height;
+            height = maxDimension;
+          }
+        }
+
+        // Set canvas dimensions to optimized size
+        canvas.width = width;
+        canvas.height = height;
+
+        // Draw image to canvas with resizing
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        // Convert to JPEG blob with good quality
+        canvas.toBlob((blob) => {
+          if (blob) {
+            // Create new file with .jpg extension
+            const fileName = file.name.replace(/\.[^/.]+$/, '.jpg');
+            const convertedFile = new File([blob], fileName, {
+              type: 'image/jpeg',
+              lastModified: Date.now()
+            });
+            
+            console.log(`Image converted: ${file.name} (${file.size} bytes) -> ${fileName} (${convertedFile.size} bytes)`);
+            resolve(convertedFile);
+          } else {
+            // If conversion fails, return original file
+            resolve(file);
+          }
+        }, 'image/jpeg', 0.85); // 85% quality for good balance of size/quality
+      };
+
+      img.onerror = () => {
+        // If image loading fails, return original file
+        console.warn(`Failed to load image for conversion: ${file.name}`);
+        resolve(file);
+      };
+
+      // Load the image
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const uploadFile = async (file: File): Promise<string> => {
+    // Convert images to JPEG first
+    const processedFile = await convertImageToJpeg(file);
+    
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', processedFile);
 
     const response = await fetch('/api/upload-portfolio-file', {
       method: 'POST',
@@ -129,21 +196,28 @@ const SubmissionsPage = () => {
       // Start uploading new files immediately
       setIsUploading(true);
       
-      // Add new files to uploaded files state with uploading status
+      // Add new files to uploaded files state with processing status
       const newUploadedFiles = fileArray.map(file => ({
         file,
         url: '',
-        uploading: true,
+        uploading: false,
+        processing: true,
         error: ''
       }));
       setUploadedFiles(prev => [...prev, ...newUploadedFiles]);
 
-      // Upload each new file
+      // Process and upload each new file
       try {
         const uploadPromises = fileArray.map(async (file, index) => {
           const actualIndex = uploadedFiles.length + index;
           try {
+            // First mark as uploading (after processing)
+            setUploadedFiles(prev => prev.map((item, i) => 
+              i === actualIndex ? { ...item, processing: false, uploading: true } : item
+            ));
+            
             const url = await uploadFile(file);
+            
             // Update the specific file's status
             setUploadedFiles(prev => prev.map((item, i) => 
               i === actualIndex ? { ...item, url, uploading: false } : item
@@ -154,7 +228,7 @@ const SubmissionsPage = () => {
             const errorMessage = error instanceof Error ? error.message : 'Upload failed';
             // Mark this file as failed with error message
             setUploadedFiles(prev => prev.map((item, i) => 
-              i === actualIndex ? { ...item, uploading: false, url: 'ERROR', error: errorMessage } : item
+              i === actualIndex ? { ...item, processing: false, uploading: false, url: 'ERROR', error: errorMessage } : item
             ));
             throw error;
           }
@@ -242,9 +316,9 @@ const SubmissionsPage = () => {
       return;
     }
 
-    // Check if any files are still uploading
-    if (uploadedFiles.some(file => file.uploading)) {
-      setSubmitMessage({ type: 'error', text: 'Please wait for all files to finish uploading' });
+    // Check if any files are still processing or uploading
+    if (uploadedFiles.some(file => file.uploading || file.processing)) {
+      setSubmitMessage({ type: 'error', text: 'Please wait for all files to finish processing and uploading' });
       return;
     }
 
@@ -324,11 +398,12 @@ const SubmissionsPage = () => {
   const MediaThumbnailWithStatus: React.FC<{
     file: File;
     uploading: boolean;
+    processing?: boolean;
     uploadError: boolean;
     errorMessage?: string;
     onRemove: () => void;
     onClick?: (src: string) => void;
-  }> = ({ file, uploading, uploadError, errorMessage, onRemove, onClick }) => {
+  }> = ({ file, uploading, processing, uploadError, errorMessage, onRemove, onClick }) => {
     const [thumbnailSrc, setThumbnailSrc] = useState<string>("");
 
     React.useEffect(() => {
@@ -336,27 +411,35 @@ const SubmissionsPage = () => {
     }, [file]);
 
     const handleClick = () => {
-      if (onClick && file.type.startsWith("image/") && !uploading && !uploadError) {
+      if (onClick && file.type.startsWith("image/") && !uploading && !processing && !uploadError) {
         const reader = new FileReader();
         reader.onload = (e) => onClick(e.target?.result as string);
         reader.readAsDataURL(file);
       }
     };
 
+    const isProcessing = processing || uploading;
+
     return (
       <ThumbnailContainer onClick={handleClick} style={{
-        opacity: uploading ? 0.7 : 1,
+        opacity: isProcessing ? 0.7 : 1,
         border: uploadError ? '2px solid #ff4444' : undefined,
-        cursor: (onClick && !uploading && !uploadError) ? 'pointer' : 'default'
+        cursor: (onClick && !isProcessing && !uploadError) ? 'pointer' : 'default'
       }}>
         <RemoveButton onClick={(e) => { e.stopPropagation(); onRemove(); }} title="Remove file">
           ×
         </RemoveButton>
         <ThumbnailImage src={thumbnailSrc} alt={file.name} />
         <ThumbnailLabel>{file.name}</ThumbnailLabel>
-        {file.type.startsWith("video/") && !uploading && !uploadError && <VideoIcon>▶</VideoIcon>}
-        {!file.type.startsWith("image/") && !file.type.startsWith("video/") && !uploading && !uploadError && (
+        {file.type.startsWith("video/") && !isProcessing && !uploadError && <VideoIcon>▶</VideoIcon>}
+        {!file.type.startsWith("image/") && !file.type.startsWith("video/") && !isProcessing && !uploadError && (
           <FileIcon>📄</FileIcon>
+        )}
+        {processing && (
+          <UploadingOverlay>
+            <UploadingSpinner />
+            <div style={{marginTop: '0.5rem', fontSize: '0.75rem'}}>Processing...</div>
+          </UploadingOverlay>
         )}
         {uploading && (
           <UploadingOverlay>
@@ -407,44 +490,44 @@ const SubmissionsPage = () => {
             </p>
             <FormGroup>
               <Label>Name</Label>
-              <Input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                required
+              <Input 
+                type="text" 
+                name="name" 
+                value={formData.name} 
+                onChange={handleInputChange} 
+                required 
               />
             </FormGroup>
 
             <FormGroup>
               <Label>Artist Alias (if any)</Label>
-              <Input
-                type="text"
-                name="artistAlias"
-                value={formData.artistAlias}
-                onChange={handleInputChange}
+              <Input 
+                type="text" 
+                name="artistAlias" 
+                value={formData.artistAlias} 
+                onChange={handleInputChange} 
               />
             </FormGroup>
 
             <FormGroup>
               <Label>Email</Label>
-              <Input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                required
+              <Input 
+                type="email" 
+                name="email" 
+                value={formData.email} 
+                onChange={handleInputChange} 
+                required 
               />
             </FormGroup>
 
             <FormGroup>
               <Label>Phone Number</Label>
-              <Input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleInputChange}
-                required
+              <Input 
+                type="tel" 
+                name="phone" 
+                value={formData.phone} 
+                onChange={handleInputChange} 
+                required 
                 placeholder="(555) 123-4567"
                 style={{ borderColor: phoneError ? "#ff4444" : undefined }}
               />
@@ -459,26 +542,26 @@ const SubmissionsPage = () => {
                  value={formData.instagramLink}
                  onChange={handleInputChange}
                  placeholder="@yourusername or instagram.com/yourusername"
-                 required
-               />
-             </FormGroup>
+                required 
+              />
+            </FormGroup>
 
             <FormGroup>
               <Label>Website / Portfolio Link</Label>
-              <Input
-                type="url"
+              <Input 
+                type="url" 
                 name="portfolioLink"
                 value={formData.portfolioLink}
-                onChange={handleInputChange}
+                onChange={handleInputChange} 
                 placeholder="https://yourportfolio.com"
               />
             </FormGroup>
           </FormSection>
 
-          <FormSection>
+                    <FormSection>
             <SectionTitle>Portfolio & Examples</SectionTitle>
-
-                         <FormGroup>
+            
+            <FormGroup>
                <Label>Upload Your Portfolio *</Label>
                <p
                  style={{
@@ -489,14 +572,14 @@ const SubmissionsPage = () => {
                >
                  Upload at least two examples of your artwork (images, videos, or other media files). You can
                  select multiple files at once or add them one by one. Click the × button to remove any file.
-               </p>
-              <FileInput
-                type="file"
-                name="multimediaFiles"
-                onChange={handleFileChange}
-                accept="image/*,video/*,.pdf,.doc,.docx"
+              </p>
+                <FileInput 
+                  type="file" 
+                name="multimediaFiles" 
+                  onChange={handleFileChange} 
+                accept="image/*,video/*,.pdf,.doc,.docx" 
                 multiple
-                required
+                required 
               />
               {uploadedFiles.length > 0 && (
                 <MediaPreviewContainer>
@@ -508,14 +591,16 @@ const SubmissionsPage = () => {
                     }}
                   >
                     {uploadedFiles.length} file(s) selected {uploadedFiles.length < 2 ? '(minimum 2 required)' : ''}
+                    {uploadedFiles.some(f => f.processing) && <span style={{color: "#007bff"}}> - Processing images...</span>}
                     {isUploading && <span style={{color: "#007bff"}}> - Uploading...</span>}
-                  </div>
+                </div>
                   <ThumbnailGrid>
                     {uploadedFiles.map((uploadedFile, index) => (
                       <MediaThumbnailWithStatus
                         key={index}
                         file={uploadedFile.file}
                         uploading={uploadedFile.uploading}
+                        processing={uploadedFile.processing}
                         uploadError={uploadedFile.url === 'ERROR'}
                         errorMessage={uploadedFile.error}
                         onRemove={() => removeFile(index)}
@@ -525,49 +610,49 @@ const SubmissionsPage = () => {
                   </ThumbnailGrid>
                 </MediaPreviewContainer>
               )}
-            </FormGroup>
-          </FormSection>
+              </FormGroup>
+            </FormSection>
 
-          <FormSection>
-            <SectionTitle>Additional Questions</SectionTitle>
-
-            <FormGroup>
+            <FormSection>
+              <SectionTitle>Additional Questions</SectionTitle>
+              
+                          <FormGroup>
               <CheckboxLabel>
-                <input
-                  type="checkbox"
-                  name="willingToVolunteer"
-                  checked={formData.willingToVolunteer}
-                  onChange={handleInputChange}
+                <input 
+                  type="checkbox" 
+                  name="willingToVolunteer" 
+                  checked={formData.willingToVolunteer} 
+                  onChange={handleInputChange} 
                 />
                 Would you like to volunteer or help promote the event?
               </CheckboxLabel>
             </FormGroup>
-
+            
             <FormGroup>
               <CheckboxLabel>
-                <input
-                  type="checkbox"
-                  name="interestedInFutureEvents"
-                  checked={formData.interestedInFutureEvents}
-                  onChange={handleInputChange}
+                <input 
+                  type="checkbox" 
+                  name="interestedInFutureEvents" 
+                  checked={formData.interestedInFutureEvents} 
+                  onChange={handleInputChange} 
                 />
                 Would you be interested in future Art Night opportunities?
               </CheckboxLabel>
             </FormGroup>
-
+            
             <FormGroup>
               <Label>Artist Statement & Vision</Label>
-              <TextArea
-                name="additionalNotes"
-                value={formData.additionalNotes}
-                onChange={handleInputChange}
-                rows={4}
+              <TextArea 
+                name="additionalNotes" 
+                value={formData.additionalNotes} 
+                onChange={handleInputChange} 
+                rows={4} 
                 placeholder="Tell us about your artistic vision and why you'd like to be part of this event..."
               />
             </FormGroup>
-          </FormSection>
+            </FormSection>
 
-                     <SubmitButtonContainer>
+                      <SubmitButtonContainer>
              <SubmitButton type="submit" disabled={isSubmitting}>
                {isSubmitting ? 'Submitting...' : 'Submit Artist Application'}
              </SubmitButton>
@@ -576,7 +661,7 @@ const SubmissionsPage = () => {
                  {submitMessage.text}
                </SubmitMessage>
              )}
-           </SubmitButtonContainer>
+          </SubmitButtonContainer>
         </form>
       </FormContainer>
 
@@ -598,7 +683,7 @@ const PageContainer = styled.div`
   margin: 0 auto;
   padding: 1rem;
   font-family: "Inter", sans-serif;
-
+  
   @media (min-width: 768px) {
     padding: 2rem;
   }
@@ -610,7 +695,7 @@ const HeroSection = styled.div`
   padding: 2rem 1rem;
   margin-bottom: 1.5rem;
   overflow: hidden;
-
+  
   @media (min-width: 768px) {
     padding: 4rem 1rem;
     margin-bottom: 2rem;
@@ -623,7 +708,7 @@ const HeroTitle = styled.h1`
   color: ${(props) => props.theme.colors.text};
   margin-bottom: 0.5rem;
   line-height: 1.2;
-
+  
   @media (min-width: 768px) {
     font-size: 3rem;
     margin-bottom: 1rem;
@@ -636,7 +721,7 @@ const HeroSubtitle = styled.p`
   max-width: 600px;
   margin: 0 auto;
   line-height: 1.4;
-
+  
   @media (min-width: 768px) {
     font-size: 1.2rem;
   }
@@ -648,7 +733,7 @@ const FormContainer = styled.div`
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   padding: 1rem;
   margin-bottom: 2rem;
-
+  
   @media (min-width: 768px) {
     padding: 2rem;
     margin-bottom: 3rem;
@@ -659,12 +744,12 @@ const FormSection = styled.div`
   margin-bottom: 1.5rem;
   padding-bottom: 1.5rem;
   border-bottom: 1px solid #eee;
-
+  
   @media (min-width: 768px) {
     margin-bottom: 2rem;
     padding-bottom: 2rem;
   }
-
+  
   &:last-child {
     border-bottom: none;
   }
@@ -675,7 +760,7 @@ const SectionTitle = styled.h2`
   font-size: 1.25rem;
   color: ${(props) => props.theme.colors.text};
   margin-bottom: 0.25rem;
-
+  
   @media (min-width: 768px) {
     font-size: 1.5rem;
     margin-bottom: 1.5rem;
@@ -684,7 +769,7 @@ const SectionTitle = styled.h2`
 
 const FormGroup = styled.div`
   margin-bottom: 1rem;
-
+  
   @media (min-width: 768px) {
     margin-bottom: 1.5rem;
   }
@@ -705,7 +790,7 @@ const Input = styled.input`
   font-size: 1rem;
   transition: border-color 0.3s;
   box-sizing: border-box;
-
+  
   &:focus {
     border-color: ${(props) => props.theme.colors.primary};
     outline: none;
@@ -721,7 +806,7 @@ const TextArea = styled.textarea`
   resize: vertical;
   min-height: 100px;
   box-sizing: border-box;
-
+  
   &:focus {
     border-color: ${(props) => props.theme.colors.primary};
     outline: none;
@@ -738,7 +823,7 @@ const CheckboxLabel = styled.label`
   display: flex;
   align-items: center;
   cursor: pointer;
-
+  
   input {
     margin-right: 0.5rem;
   }
@@ -760,7 +845,7 @@ const SubmitButton = styled.button`
   cursor: pointer;
   transition: background-color 0.3s;
   width: 100%;
-
+  
   @media (min-width: 768px) {
     width: auto;
     padding: 0.75rem 2rem;
@@ -940,7 +1025,7 @@ const CloseButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-
+  
   &:hover {
     background: rgba(0, 0, 0, 0.7);
   }
