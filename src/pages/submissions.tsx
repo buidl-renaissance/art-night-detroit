@@ -33,7 +33,7 @@ const SubmissionsPage = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-  const [uploadedFiles, setUploadedFiles] = useState<{file: File, url: string, uploading: boolean, error?: string, processing?: boolean}[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<{id: string, file: File, url: string, uploading: boolean, error?: string, processing?: boolean}[]>([]);
   const [isUploading, setIsUploading] = useState<boolean>(false);
 
   const validatePhoneNumber = (phone: string): string => {
@@ -196,8 +196,9 @@ const SubmissionsPage = () => {
       // Start uploading new files immediately
       setIsUploading(true);
       
-      // Add new files to uploaded files state with processing status
+      // Add new files to uploaded files state with processing status and unique IDs
       const newUploadedFiles = fileArray.map(file => ({
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         file,
         url: '',
         uploading: false,
@@ -208,27 +209,26 @@ const SubmissionsPage = () => {
 
       // Process and upload each new file
       try {
-        const uploadPromises = fileArray.map(async (file, index) => {
-          const actualIndex = uploadedFiles.length + index;
+        const uploadPromises = newUploadedFiles.map(async (uploadedFile) => {
           try {
             // First mark as uploading (after processing)
-            setUploadedFiles(prev => prev.map((item, i) => 
-              i === actualIndex ? { ...item, processing: false, uploading: true } : item
+            setUploadedFiles(prev => prev.map(item => 
+              item.id === uploadedFile.id ? { ...item, processing: false, uploading: true } : item
             ));
             
-            const url = await uploadFile(file);
+            const url = await uploadFile(uploadedFile.file);
             
             // Update the specific file's status
-            setUploadedFiles(prev => prev.map((item, i) => 
-              i === actualIndex ? { ...item, url, uploading: false } : item
+            setUploadedFiles(prev => prev.map(item => 
+              item.id === uploadedFile.id ? { ...item, url, uploading: false } : item
             ));
             return url;
           } catch (error) {
-            console.error(`Failed to upload ${file.name}:`, error);
+            console.error(`Failed to upload ${uploadedFile.file.name}:`, error);
             const errorMessage = error instanceof Error ? error.message : 'Upload failed';
             // Mark this file as failed with error message
-            setUploadedFiles(prev => prev.map((item, i) => 
-              i === actualIndex ? { ...item, processing: false, uploading: false, url: 'ERROR', error: errorMessage } : item
+            setUploadedFiles(prev => prev.map(item => 
+              item.id === uploadedFile.id ? { ...item, processing: false, uploading: false, url: 'ERROR', error: errorMessage } : item
             ));
             throw error;
           }
@@ -250,12 +250,18 @@ const SubmissionsPage = () => {
     e.target.value = '';
   };
 
-  const removeFile = (index: number) => {
-    // Remove from both arrays
-    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  const removeFile = (fileId: string) => {
+    // Find the file to remove
+    const fileToRemove = uploadedFiles.find(f => f.id === fileId);
+    if (!fileToRemove) return;
+    
+    // Remove from uploaded files
+    setUploadedFiles(prev => prev.filter(f => f.id !== fileId));
+    
+    // Remove from form data
     setFormData(prev => ({
       ...prev,
-      multimediaFiles: prev.multimediaFiles.filter((_, i) => i !== index)
+      multimediaFiles: prev.multimediaFiles.filter(f => f !== fileToRemove.file)
     }));
     
     // Clear any submit messages when user removes files
@@ -306,8 +312,8 @@ const SubmissionsPage = () => {
     setSubmitMessage(null);
 
     // Validate required fields
-    if (!formData.name || !formData.email || !formData.phone || !formData.instagramLink) {
-      setSubmitMessage({ type: 'error', text: 'Please fill in all required fields: name, email, phone, and Instagram' });
+    if (!formData.name || !formData.email || !formData.phone) {
+      setSubmitMessage({ type: 'error', text: 'Please fill in all required fields: name, email, and phone' });
       return;
     }
 
@@ -534,17 +540,16 @@ const SubmissionsPage = () => {
               {phoneError && <ErrorMessage>{phoneError}</ErrorMessage>}
             </FormGroup>
 
-                         <FormGroup>
-               <Label>Instagram Handle *</Label>
+                                      <FormGroup>
+               <Label>Instagram Handle</Label>
                <Input
                  type="text"
                  name="instagramLink"
                  value={formData.instagramLink}
                  onChange={handleInputChange}
                  placeholder="@yourusername or instagram.com/yourusername"
-                required 
-              />
-            </FormGroup>
+               />
+             </FormGroup>
 
             <FormGroup>
               <Label>Website / Portfolio Link</Label>
@@ -595,15 +600,15 @@ const SubmissionsPage = () => {
                     {isUploading && <span style={{color: "#007bff"}}> - Uploading...</span>}
                 </div>
                   <ThumbnailGrid>
-                    {uploadedFiles.map((uploadedFile, index) => (
+                    {uploadedFiles.map((uploadedFile) => (
                       <MediaThumbnailWithStatus
-                        key={index}
+                        key={uploadedFile.id}
                         file={uploadedFile.file}
                         uploading={uploadedFile.uploading}
                         processing={uploadedFile.processing}
                         uploadError={uploadedFile.url === 'ERROR'}
                         errorMessage={uploadedFile.error}
-                        onRemove={() => removeFile(index)}
+                        onRemove={() => removeFile(uploadedFile.id)}
                         onClick={uploadedFile.url && uploadedFile.url !== 'ERROR' ? setSelectedImage : undefined}
                       />
                     ))}
