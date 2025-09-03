@@ -1,13 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
-import formidable from 'formidable';
-import { promises as fs } from 'fs';
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
 
 interface ArtistSubmissionData {
   name: string;
@@ -19,6 +11,7 @@ interface ArtistSubmissionData {
   willingToVolunteer: boolean;
   interestedInFutureEvents: boolean;
   additionalNotes?: string;
+  portfolioFileUrls: string[];
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -32,40 +25,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   );
 
   try {
-    // Parse form data
-    const form = formidable({
-      maxFileSize: 50 * 1024 * 1024, // 50MB limit
-      keepExtensions: true,
-      multiples: true, // Allow multiple files
-    });
-
-    const [fields, files] = await new Promise<[formidable.Fields, formidable.Files]>((resolve, reject) => {
-      form.parse(req, (err, fields, files) => {
-        if (err) {
-          console.error('Formidable parse error:', err);
-          reject(err);
-        } else {
-          resolve([fields, files]);
-        }
-      });
-    });
-
-    // Extract form data
-    const submissionData: ArtistSubmissionData = {
-      name: Array.isArray(fields.name) ? fields.name[0] : fields.name || '',
-      artistAlias: Array.isArray(fields.artistAlias) ? fields.artistAlias[0] : fields.artistAlias || '',
-      email: Array.isArray(fields.email) ? fields.email[0] : fields.email || '',
-      phone: Array.isArray(fields.phone) ? fields.phone[0] : fields.phone || '',
-      instagramLink: Array.isArray(fields.instagramLink) ? fields.instagramLink[0] : fields.instagramLink || '',
-      portfolioLink: Array.isArray(fields.portfolioLink) ? fields.portfolioLink[0] : fields.portfolioLink || '',
-      willingToVolunteer: (Array.isArray(fields.willingToVolunteer) ? fields.willingToVolunteer[0] : fields.willingToVolunteer) === 'true',
-      interestedInFutureEvents: (Array.isArray(fields.interestedInFutureEvents) ? fields.interestedInFutureEvents[0] : fields.interestedInFutureEvents) === 'true',
-      additionalNotes: Array.isArray(fields.additionalNotes) ? fields.additionalNotes[0] : fields.additionalNotes || '',
-    };
+    // Parse JSON body
+    const submissionData: ArtistSubmissionData = req.body;
 
     // Validate required fields
-    if (!submissionData.name || !submissionData.email || !submissionData.phone || !submissionData.instagramLink) {
-      return res.status(400).json({ error: 'Name, email, phone, and Instagram handle are required' });
+    if (!submissionData.name || !submissionData.email || !submissionData.phone) {
+      return res.status(400).json({ error: 'Name, email, and phone are required' });
     }
 
     // Validate email format
@@ -80,74 +45,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Invalid phone format' });
     }
 
-    // Validate minimum portfolio files
-    if (!files.multimediaFiles) {
+    // Validate portfolio files
+    if (!submissionData.portfolioFileUrls || submissionData.portfolioFileUrls.length < 2) {
       return res.status(400).json({ error: 'At least two portfolio files are required' });
-    }
-
-    const fileList = Array.isArray(files.multimediaFiles) ? files.multimediaFiles : [files.multimediaFiles];
-    if (fileList.length < 2) {
-      return res.status(400).json({ error: 'At least two portfolio files are required' });
-    }
-
-    // Handle portfolio file uploads
-    const portfolioFiles: string[] = [];
-    
-    if (files.multimediaFiles) {
-      const fileList = Array.isArray(files.multimediaFiles) ? files.multimediaFiles : [files.multimediaFiles];
-      
-      for (const file of fileList) {
-        if (!file || !file.originalFilename) continue;
-
-        // Validate file type
-        const allowedTypes = [
-          'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-          'video/mp4', 'video/quicktime', 'video/webm',
-          'application/pdf',
-          'application/msword',
-          'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        ];
-
-        if (file.mimetype && !allowedTypes.includes(file.mimetype)) {
-          return res.status(400).json({ 
-            error: `Unsupported file type: ${file.mimetype}. Please upload images, videos, or documents only.` 
-          });
-        }
-
-        // Generate unique filename
-        const timestamp = Date.now();
-        const fileExtension = file.originalFilename.split('.').pop();
-        const fileName = `portfolio-${timestamp}-${Math.random().toString(36).substr(2, 9)}.${fileExtension}`;
-        const filePath = `artist-submissions/${fileName}`;
-
-        try {
-          // Read file buffer
-          const fileBuffer = await fs.readFile(file.filepath);
-          
-          // Upload to Supabase Storage
-          const { error: uploadError } = await supabase.storage
-            .from('artist-portfolios')
-            .upload(filePath, fileBuffer, {
-              contentType: file.mimetype || 'application/octet-stream',
-            });
-
-          if (uploadError) {
-            console.error('Error uploading file:', uploadError);
-            return res.status(500).json({ error: 'Failed to upload portfolio file' });
-          }
-
-          // Get public URL
-          const { data: urlData } = supabase.storage
-            .from('git')
-            .getPublicUrl(filePath);
-
-          portfolioFiles.push(urlData.publicUrl);
-
-        } catch (fileError) {
-          console.error('Error processing file:', fileError);
-          return res.status(500).json({ error: 'Failed to process portfolio file' });
-        }
-      }
     }
 
     // Prepare data for database insertion
@@ -158,7 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       phone: submissionData.phone,
       instagram_link: submissionData.instagramLink || null,
       portfolio_link: submissionData.portfolioLink || null,
-      portfolio_files: portfolioFiles,
+      portfolio_files: submissionData.portfolioFileUrls,
       willing_to_volunteer: submissionData.willingToVolunteer,
       interested_in_future_events: submissionData.interestedInFutureEvents,
       additional_notes: submissionData.additionalNotes || null,

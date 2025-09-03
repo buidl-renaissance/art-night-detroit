@@ -33,6 +33,8 @@ const SubmissionsPage = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<{file: File, url: string, uploading: boolean}[]>([]);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
 
   const validatePhoneNumber = (phone: string): string => {
     // Remove all non-digit characters
@@ -88,7 +90,25 @@ const SubmissionsPage = () => {
     }
   };
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const uploadFile = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch('/api/upload-portfolio-file', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to upload file');
+    }
+
+    const result = await response.json();
+    return result.url;
+  };
+
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const { name, files } = e.target;
     
     // Clear submit message when user changes files
@@ -98,10 +118,54 @@ const SubmissionsPage = () => {
     
     if (files && name === "multimediaFiles") {
       const fileArray = Array.from(files);
+      
+      // Update form data immediately
       setFormData((prev) => ({
         ...prev,
         multimediaFiles: fileArray,
       }));
+
+      // Start uploading files immediately
+      setIsUploading(true);
+      
+      // Initialize uploaded files state with uploading status
+      const initialUploadedFiles = fileArray.map(file => ({
+        file,
+        url: '',
+        uploading: true
+      }));
+      setUploadedFiles(initialUploadedFiles);
+
+      // Upload each file
+      try {
+        const uploadPromises = fileArray.map(async (file, index) => {
+          try {
+            const url = await uploadFile(file);
+            // Update the specific file's status
+            setUploadedFiles(prev => prev.map((item, i) => 
+              i === index ? { ...item, url, uploading: false } : item
+            ));
+            return url;
+          } catch (error) {
+            console.error(`Failed to upload ${file.name}:`, error);
+            // Mark this file as failed
+            setUploadedFiles(prev => prev.map((item, i) => 
+              i === index ? { ...item, uploading: false, url: 'ERROR' } : item
+            ));
+            throw error;
+          }
+        });
+
+        await Promise.all(uploadPromises);
+      } catch (error) {
+        console.error('File upload error:', error);
+        setSubmitMessage({ 
+          type: 'error', 
+          text: 'Some files failed to upload. Please try again.' 
+        });
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -152,37 +216,47 @@ const SubmissionsPage = () => {
       return;
     }
 
-    if (formData.multimediaFiles.length < 2) {
+    if (uploadedFiles.length < 2) {
       setSubmitMessage({ type: 'error', text: 'Please upload at least two examples of your artwork' });
+      return;
+    }
+
+    // Check if any files are still uploading
+    if (uploadedFiles.some(file => file.uploading)) {
+      setSubmitMessage({ type: 'error', text: 'Please wait for all files to finish uploading' });
+      return;
+    }
+
+    // Check if any files failed to upload
+    if (uploadedFiles.some(file => file.url === 'ERROR')) {
+      setSubmitMessage({ type: 'error', text: 'Some files failed to upload. Please try uploading them again.' });
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // Create FormData object for file upload
-      const submitFormData = new FormData();
-      
-      // Add form fields
-      submitFormData.append('name', formData.name);
-      submitFormData.append('artistAlias', formData.artistAlias);
-      submitFormData.append('email', formData.email);
-      submitFormData.append('phone', formData.phone);
-      submitFormData.append('instagramLink', formData.instagramLink);
-      submitFormData.append('portfolioLink', formData.portfolioLink);
-      submitFormData.append('willingToVolunteer', formData.willingToVolunteer.toString());
-      submitFormData.append('interestedInFutureEvents', formData.interestedInFutureEvents.toString());
-      submitFormData.append('additionalNotes', formData.additionalNotes);
-
-      // Add portfolio files
-      formData.multimediaFiles.forEach((file) => {
-        submitFormData.append('multimediaFiles', file);
-      });
+      // Create submission data object with already uploaded file URLs
+      const submissionData = {
+        name: formData.name,
+        artistAlias: formData.artistAlias,
+        email: formData.email,
+        phone: formData.phone,
+        instagramLink: formData.instagramLink,
+        portfolioLink: formData.portfolioLink,
+        willingToVolunteer: formData.willingToVolunteer,
+        interestedInFutureEvents: formData.interestedInFutureEvents,
+        additionalNotes: formData.additionalNotes,
+        portfolioFileUrls: uploadedFiles.map(file => file.url)
+      };
 
       // Submit to API
       const response = await fetch('/api/submit-artist-application', {
         method: 'POST',
-        body: submitFormData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(submissionData),
       });
 
       const result = await response.json();
@@ -207,6 +281,7 @@ const SubmissionsPage = () => {
           additionalNotes: "",
         });
         setPhoneError("");
+        setUploadedFiles([]);
       } else {
         console.error('Submission error:', result);
         setSubmitMessage({ 
@@ -225,10 +300,12 @@ const SubmissionsPage = () => {
     }
   };
 
-  const MediaThumbnail: React.FC<{
+  const MediaThumbnailWithStatus: React.FC<{
     file: File;
-    onClick: (src: string) => void;
-  }> = ({ file, onClick }) => {
+    uploading: boolean;
+    uploadError: boolean;
+    onClick?: (src: string) => void;
+  }> = ({ file, uploading, uploadError, onClick }) => {
     const [thumbnailSrc, setThumbnailSrc] = useState<string>("");
 
     React.useEffect(() => {
@@ -236,7 +313,7 @@ const SubmissionsPage = () => {
     }, [file]);
 
     const handleClick = () => {
-      if (file.type.startsWith("image/")) {
+      if (onClick && file.type.startsWith("image/") && !uploading && !uploadError) {
         const reader = new FileReader();
         reader.onload = (e) => onClick(e.target?.result as string);
         reader.readAsDataURL(file);
@@ -244,12 +321,28 @@ const SubmissionsPage = () => {
     };
 
     return (
-      <ThumbnailContainer onClick={handleClick}>
+      <ThumbnailContainer onClick={handleClick} style={{
+        opacity: uploading ? 0.7 : 1,
+        border: uploadError ? '2px solid #ff4444' : undefined,
+        cursor: (onClick && !uploading && !uploadError) ? 'pointer' : 'default'
+      }}>
         <ThumbnailImage src={thumbnailSrc} alt={file.name} />
         <ThumbnailLabel>{file.name}</ThumbnailLabel>
-        {file.type.startsWith("video/") && <VideoIcon>▶</VideoIcon>}
-        {!file.type.startsWith("image/") && !file.type.startsWith("video/") && (
+        {file.type.startsWith("video/") && !uploading && !uploadError && <VideoIcon>▶</VideoIcon>}
+        {!file.type.startsWith("image/") && !file.type.startsWith("video/") && !uploading && !uploadError && (
           <FileIcon>📄</FileIcon>
+        )}
+        {uploading && (
+          <UploadingOverlay>
+            <UploadingSpinner />
+            <div style={{marginTop: '0.5rem', fontSize: '0.75rem'}}>Uploading...</div>
+          </UploadingOverlay>
+        )}
+        {uploadError && (
+          <ErrorOverlay>
+            <div style={{fontSize: '1.5rem'}}>⚠️</div>
+            <div style={{marginTop: '0.5rem', fontSize: '0.75rem'}}>Upload Failed</div>
+          </ErrorOverlay>
         )}
       </ThumbnailContainer>
     );
@@ -377,23 +470,26 @@ const SubmissionsPage = () => {
                 multiple
                 required
               />
-              {formData.multimediaFiles.length > 0 && (
+              {uploadedFiles.length > 0 && (
                 <MediaPreviewContainer>
-                                     <div
-                     style={{
-                       marginBottom: "1rem",
-                       fontSize: "0.9rem",
-                       color: formData.multimediaFiles.length < 2 ? "#ff4444" : "#666",
-                     }}
-                   >
-                     {formData.multimediaFiles.length} file(s) selected {formData.multimediaFiles.length < 2 ? '(minimum 2 required)' : ''}
-                   </div>
+                  <div
+                    style={{
+                      marginBottom: "1rem",
+                      fontSize: "0.9rem",
+                      color: uploadedFiles.length < 2 ? "#ff4444" : "#666",
+                    }}
+                  >
+                    {uploadedFiles.length} file(s) selected {uploadedFiles.length < 2 ? '(minimum 2 required)' : ''}
+                    {isUploading && <span style={{color: "#007bff"}}> - Uploading...</span>}
+                  </div>
                   <ThumbnailGrid>
-                    {formData.multimediaFiles.map((file, index) => (
-                      <MediaThumbnail
+                    {uploadedFiles.map((uploadedFile, index) => (
+                      <MediaThumbnailWithStatus
                         key={index}
-                        file={file}
-                        onClick={setSelectedImage}
+                        file={uploadedFile.file}
+                        uploading={uploadedFile.uploading}
+                        uploadError={uploadedFile.url === 'ERROR'}
+                        onClick={uploadedFile.url && uploadedFile.url !== 'ERROR' ? setSelectedImage : undefined}
                       />
                     ))}
                   </ThumbnailGrid>
@@ -795,6 +891,49 @@ const ModalImage = styled.img`
   max-width: 100%;
   max-height: 90vh;
   object-fit: contain;
+`;
+
+const UploadingOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+`;
+
+const UploadingSpinner = styled.div`
+  width: 20px;
+  height: 20px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
+const ErrorOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: #ff4444;
 `;
 
 export default SubmissionsPage;
