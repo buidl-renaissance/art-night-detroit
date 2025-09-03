@@ -121,6 +121,12 @@ export default function AdminDashboard() {
       description: 'Review and approve community event flyers',
       icon: '📄',
       path: '/admin/flyer-submissions'
+    },
+    {
+      title: 'Artist Submissions',
+      description: 'Review and manage artist applications',
+      icon: '🎭',
+      path: '/admin/artist-submissions'
     }
   ];
 
