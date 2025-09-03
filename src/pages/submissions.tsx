@@ -664,6 +664,9 @@ const SubmissionsPage = () => {
 
             <FormGroup>
               <Label>Preferred Canvas Size</Label>
+              <CanvasSubtitle>
+                We will provide one 18&quot;x18&quot; or 18&quot;x24&quot; canvas at no cost. You are welcome to bring your own canvas of any size of your choosing.
+              </CanvasSubtitle>
               <RadioGroup>
                 <RadioLabel>
                   <input
@@ -952,6 +955,13 @@ const Label = styled.label`
   color: #888;
 `;
 
+const CanvasSubtitle = styled.p`
+  font-size: 0.9rem;
+  color: #666;
+  margin: -0.25rem 0 1rem 0;
+  line-height: 1.4;
+`;
+
 const Input = styled.input`
   width: 100%;
   padding: 0.75rem;
@@ -995,7 +1005,11 @@ const CheckboxLabel = styled.label`
   cursor: pointer;
 
   input {
-    margin-right: 0.5rem;
+    margin-right: 0.75rem;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    transform: scale(1.4);
   }
 `;
 
