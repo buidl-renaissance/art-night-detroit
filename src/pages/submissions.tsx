@@ -32,6 +32,7 @@ const SubmissionsPage = () => {
   const [phoneError, setPhoneError] = useState<string>("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   const validatePhoneNumber = (phone: string): string => {
     // Remove all non-digit characters
@@ -62,6 +63,11 @@ const SubmissionsPage = () => {
     const { name, value, type } = target;
     const checked = type === "checkbox" ? target.checked : undefined;
 
+    // Clear submit message when user starts typing
+    if (submitMessage) {
+      setSubmitMessage(null);
+    }
+
     if (name === "phone") {
       const formattedPhone = formatPhoneNumber(value);
       const error = validatePhoneNumber(value);
@@ -84,6 +90,12 @@ const SubmissionsPage = () => {
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, files } = e.target;
+    
+    // Clear submit message when user changes files
+    if (submitMessage) {
+      setSubmitMessage(null);
+    }
+    
     if (files && name === "multimediaFiles") {
       const fileArray = Array.from(files);
       setFormData((prev) => ({
@@ -131,14 +143,17 @@ const SubmissionsPage = () => {
       return;
     }
 
+    // Clear previous messages
+    setSubmitMessage(null);
+
     // Validate required fields
-    if (!formData.name || !formData.email || !formData.phone) {
-      alert("Please fill in all required fields");
+    if (!formData.name || !formData.email || !formData.phone || !formData.instagramLink) {
+      setSubmitMessage({ type: 'error', text: 'Please fill in all required fields: name, email, phone, and Instagram' });
       return;
     }
 
-    if (formData.multimediaFiles.length === 0) {
-      alert("Please upload at least one portfolio file");
+    if (formData.multimediaFiles.length < 2) {
+      setSubmitMessage({ type: 'error', text: 'Please upload at least two examples of your artwork' });
       return;
     }
 
@@ -173,7 +188,10 @@ const SubmissionsPage = () => {
       const result = await response.json();
 
       if (response.ok) {
-        alert("Thank you for your submission! We'll review your application and get back to you soon.");
+        setSubmitMessage({ 
+          type: 'success', 
+          text: "Thank you for your submission! We'll review your application and get back to you soon." 
+        });
         
         // Reset form
         setFormData({
@@ -191,11 +209,17 @@ const SubmissionsPage = () => {
         setPhoneError("");
       } else {
         console.error('Submission error:', result);
-        alert(`Error submitting application: ${result.error || 'Unknown error'}`);
+        setSubmitMessage({ 
+          type: 'error', 
+          text: `Error submitting application: ${result.error || 'Unknown error'}` 
+        });
       }
     } catch (error) {
       console.error('Error submitting form:', error);
-      alert('Error submitting application. Please try again.');
+      setSubmitMessage({ 
+        type: 'error', 
+        text: 'Error submitting application. Please try again.' 
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -305,16 +329,17 @@ const SubmissionsPage = () => {
               {phoneError && <ErrorMessage>{phoneError}</ErrorMessage>}
             </FormGroup>
 
-            <FormGroup>
-              <Label>Instagram Handle</Label>
-              <Input
-                type="text"
-                name="instagramLink"
-                value={formData.instagramLink}
-                onChange={handleInputChange}
-                placeholder="@yourusername or instagram.com/yourusername"
-              />
-            </FormGroup>
+                         <FormGroup>
+               <Label>Instagram Handle *</Label>
+               <Input
+                 type="text"
+                 name="instagramLink"
+                 value={formData.instagramLink}
+                 onChange={handleInputChange}
+                 placeholder="@yourusername or instagram.com/yourusername"
+                 required
+               />
+             </FormGroup>
 
             <FormGroup>
               <Label>Website / Portfolio Link</Label>
@@ -331,20 +356,19 @@ const SubmissionsPage = () => {
           <FormSection>
             <SectionTitle>Portfolio & Examples</SectionTitle>
 
-            <FormGroup>
-              <Label>Upload Your Portfolio</Label>
-              <p
-                style={{
-                  fontSize: "0.9rem",
-                  color: "#666",
-                  marginBottom: "0.5rem",
-                }}
-              >
-                Upload images, videos, or other media files showcasing your
-                previous work, artistic style, and creative vision. This helps
-                us understand your artistic approach and capabilities. You can
-                select multiple files.
-              </p>
+                         <FormGroup>
+               <Label>Upload Your Portfolio *</Label>
+               <p
+                 style={{
+                   fontSize: "0.9rem",
+                   color: "#666",
+                   marginBottom: "0.5rem",
+                 }}
+               >
+                 Upload at least two examples of your artwork (images, videos, or other media files). This helps
+                 us understand your artistic style and capabilities. You can
+                 select multiple files.
+               </p>
               <FileInput
                 type="file"
                 name="multimediaFiles"
@@ -355,15 +379,15 @@ const SubmissionsPage = () => {
               />
               {formData.multimediaFiles.length > 0 && (
                 <MediaPreviewContainer>
-                  <div
-                    style={{
-                      marginBottom: "1rem",
-                      fontSize: "0.9rem",
-                      color: "#666",
-                    }}
-                  >
-                    {formData.multimediaFiles.length} file(s) selected
-                  </div>
+                                     <div
+                     style={{
+                       marginBottom: "1rem",
+                       fontSize: "0.9rem",
+                       color: formData.multimediaFiles.length < 2 ? "#ff4444" : "#666",
+                     }}
+                   >
+                     {formData.multimediaFiles.length} file(s) selected {formData.multimediaFiles.length < 2 ? '(minimum 2 required)' : ''}
+                   </div>
                   <ThumbnailGrid>
                     {formData.multimediaFiles.map((file, index) => (
                       <MediaThumbnail
@@ -421,6 +445,11 @@ const SubmissionsPage = () => {
              <SubmitButton type="submit" disabled={isSubmitting}>
                {isSubmitting ? 'Submitting...' : 'Submit Artist Application'}
              </SubmitButton>
+             {submitMessage && (
+               <SubmitMessage type={submitMessage.type}>
+                 {submitMessage.text}
+               </SubmitMessage>
+             )}
            </SubmitButtonContainer>
         </form>
       </FormContainer>
@@ -621,6 +650,27 @@ const SubmitButton = styled.button`
     cursor: not-allowed;
     opacity: 0.7;
   }
+`;
+
+const SubmitMessage = styled.div<{ type: 'success' | 'error' }>`
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 500;
+  
+  ${props => props.type === 'success' && `
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+  `}
+  
+  ${props => props.type === 'error' && `
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+  `}
 `;
 
 const ErrorMessage = styled.div`

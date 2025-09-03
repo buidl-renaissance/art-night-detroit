@@ -64,8 +64,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
 
     // Validate required fields
-    if (!submissionData.name || !submissionData.email || !submissionData.phone) {
-      return res.status(400).json({ error: 'Name, email, and phone are required' });
+    if (!submissionData.name || !submissionData.email || !submissionData.phone || !submissionData.instagramLink) {
+      return res.status(400).json({ error: 'Name, email, phone, and Instagram handle are required' });
     }
 
     // Validate email format
@@ -78,6 +78,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const phoneRegex = /^\(\d{3}\) \d{3}-\d{4}$/;
     if (!phoneRegex.test(submissionData.phone)) {
       return res.status(400).json({ error: 'Invalid phone format' });
+    }
+
+    // Validate minimum portfolio files
+    if (!files.multimediaFiles) {
+      return res.status(400).json({ error: 'At least two portfolio files are required' });
+    }
+
+    const fileList = Array.isArray(files.multimediaFiles) ? files.multimediaFiles : [files.multimediaFiles];
+    if (fileList.length < 2) {
+      return res.status(400).json({ error: 'At least two portfolio files are required' });
     }
 
     // Handle portfolio file uploads
@@ -128,7 +138,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
           // Get public URL
           const { data: urlData } = supabase.storage
-            .from('artist-portfolios')
+            .from('git')
             .getPublicUrl(filePath);
 
           portfolioFiles.push(urlData.publicUrl);
