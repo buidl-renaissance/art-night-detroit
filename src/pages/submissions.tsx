@@ -9,6 +9,7 @@ interface FormData {
   phone: string;
   instagramLink: string;
   portfolioLink: string;
+  preferredCanvasSize: string;
   multimediaFiles: File[];
   willingToVolunteer: boolean;
   interestedInFutureEvents: boolean;
@@ -23,6 +24,7 @@ const SubmissionsPage = () => {
     phone: "",
     instagramLink: "",
     portfolioLink: "",
+    preferredCanvasSize: "",
     multimediaFiles: [],
     willingToVolunteer: false,
     interestedInFutureEvents: false,
@@ -351,10 +353,10 @@ const SubmissionsPage = () => {
     setSubmitMessage(null);
 
     // Validate required fields
-    if (!formData.name || !formData.email || !formData.phone) {
+    if (!formData.name || !formData.email || !formData.phone || !formData.preferredCanvasSize) {
       setSubmitMessage({
         type: "error",
-        text: "Please fill in all required fields: name, email, and phone",
+        text: "Please fill in all required fields: name, email, phone, and preferred canvas size",
       });
       return;
     }
@@ -400,6 +402,7 @@ const SubmissionsPage = () => {
         phone: formData.phone,
         instagramLink: formData.instagramLink,
         portfolioLink: formData.portfolioLink,
+        preferredCanvasSize: formData.preferredCanvasSize,
         willingToVolunteer: formData.willingToVolunteer,
         interestedInFutureEvents: formData.interestedInFutureEvents,
         additionalNotes: formData.additionalNotes,
@@ -431,6 +434,7 @@ const SubmissionsPage = () => {
           phone: "",
           instagramLink: "",
           portfolioLink: "",
+          preferredCanvasSize: "",
           multimediaFiles: [],
           willingToVolunteer: false,
           interestedInFutureEvents: false,
@@ -643,7 +647,7 @@ const SubmissionsPage = () => {
                 name="instagramLink"
                 value={formData.instagramLink}
                 onChange={handleInputChange}
-                placeholder="@yourusername or instagram.com/yourusername"
+                placeholder="@yourusername"
               />
             </FormGroup>
 
@@ -656,6 +660,45 @@ const SubmissionsPage = () => {
                 onChange={handleInputChange}
                 placeholder="https://yourportfolio.com"
               />
+            </FormGroup>
+
+            <FormGroup>
+              <Label>Preferred Canvas Size</Label>
+              <RadioGroup>
+                <RadioLabel>
+                  <input
+                    type="radio"
+                    name="preferredCanvasSize"
+                    value="18x18"
+                    checked={formData.preferredCanvasSize === "18x18"}
+                    onChange={handleInputChange}
+                    required
+                  />
+                  18&quot; x 18&quot;
+                </RadioLabel>
+                <RadioLabel>
+                  <input
+                    type="radio"
+                    name="preferredCanvasSize"
+                    value="18x24"
+                    checked={formData.preferredCanvasSize === "18x24"}
+                    onChange={handleInputChange}
+                    required
+                  />
+                  18&quot; x 24&quot;
+                </RadioLabel>
+                <RadioLabel>
+                  <input
+                    type="radio"
+                    name="preferredCanvasSize"
+                    value="own-canvas"
+                    checked={formData.preferredCanvasSize === "own-canvas"}
+                    onChange={handleInputChange}
+                    required
+                  />
+                  I&apos;ll provide my own canvas
+                </RadioLabel>
+              </RadioGroup>
             </FormGroup>
           </FormSection>
 
@@ -804,10 +847,10 @@ const SubmissionsPage = () => {
 
 // Styled Components
 const PageContainer = styled.div`
-  max-width: 1200px;
   margin: 0 auto;
   padding: 1rem;
   font-family: "Inter", sans-serif;
+  background-color: #333;
 
   @media (min-width: 768px) {
     padding: 2rem;
@@ -856,12 +899,15 @@ const FormContainer = styled.div`
   background-color: ${(props) => props.theme.colors.background};
   border-radius: 10px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  padding: 1rem;
-  margin-bottom: 2rem;
+  padding: 2rem;
+  margin: 0 auto 2rem;
+  max-width: 100%;
+  background-color: #222;
 
   @media (min-width: 768px) {
     padding: 2rem;
-    margin-bottom: 3rem;
+    margin: 0 auto 3rem;
+    max-width: 600px;
   }
 `;
 
@@ -888,7 +934,6 @@ const SectionTitle = styled.h2`
 
   @media (min-width: 768px) {
     font-size: 1.5rem;
-    margin-bottom: 1.5rem;
   }
 `;
 
@@ -904,7 +949,7 @@ const Label = styled.label`
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
-  color: #444;
+  color: #888;
 `;
 
 const Input = styled.input`
@@ -951,6 +996,31 @@ const CheckboxLabel = styled.label`
 
   input {
     margin-right: 0.5rem;
+  }
+`;
+
+const RadioGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+`;
+
+const RadioLabel = styled.label`
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 400;
+  color: #aaa;
+  margin-left: 1rem;
+  font-size: 1.1rem;
+
+  input {
+    margin-right: 0.75rem;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    transform: scale(1);
   }
 `;
 

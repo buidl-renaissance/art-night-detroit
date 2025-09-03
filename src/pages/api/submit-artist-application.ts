@@ -8,6 +8,7 @@ interface ArtistSubmissionData {
   phone: string;
   instagramLink?: string;
   portfolioLink?: string;
+  preferredCanvasSize: string;
   willingToVolunteer: boolean;
   interestedInFutureEvents: boolean;
   additionalNotes?: string;
@@ -29,8 +30,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const submissionData: ArtistSubmissionData = req.body;
 
     // Validate required fields
-    if (!submissionData.name || !submissionData.email || !submissionData.phone) {
-      return res.status(400).json({ error: 'Name, email, and phone are required' });
+    if (!submissionData.name || !submissionData.email || !submissionData.phone || !submissionData.preferredCanvasSize) {
+      return res.status(400).json({ error: 'Name, email, phone, and preferred canvas size are required' });
     }
 
     // Validate email format
@@ -58,6 +59,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       phone: submissionData.phone,
       instagram_link: submissionData.instagramLink || null,
       portfolio_link: submissionData.portfolioLink || null,
+      preferred_canvas_size: submissionData.preferredCanvasSize,
       portfolio_files: submissionData.portfolioFileUrls,
       willing_to_volunteer: submissionData.willingToVolunteer,
       interested_in_future_events: submissionData.interestedInFutureEvents,

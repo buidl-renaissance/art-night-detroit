@@ -15,6 +15,7 @@ interface ArtistSubmission {
   phone: string;
   instagram_link?: string;
   portfolio_link?: string;
+  preferred_canvas_size?: string;
   portfolio_files: string[];
   willing_to_volunteer: boolean;
   interested_in_future_events: boolean;
@@ -343,6 +344,16 @@ const ArtistSubmissionsAdmin = () => {
                         <a href={selectedSubmission.portfolio_link} target="_blank" rel="noopener noreferrer">
                           {selectedSubmission.portfolio_link}
                         </a>
+                      </DetailValue>
+                    </DetailItem>
+                  )}
+                  {selectedSubmission.preferred_canvas_size && (
+                    <DetailItem>
+                      <DetailLabel>Preferred Canvas Size:</DetailLabel>
+                      <DetailValue>
+                        {selectedSubmission.preferred_canvas_size === '18x18' && '18" x 18"'}
+                        {selectedSubmission.preferred_canvas_size === '18x24' && '18" x 24"'}
+                        {selectedSubmission.preferred_canvas_size === 'own-canvas' && "I'll provide my own canvas"}
                       </DetailValue>
                     </DetailItem>
                   )}
