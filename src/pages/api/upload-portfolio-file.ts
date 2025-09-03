@@ -92,7 +92,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('Attempting to upload file:', { fileName, filePath, contentType: file.mimetype });
     
     // Try artist-portfolios bucket first, fallback to flyers bucket if it doesn't exist
-    let uploadError: any = null;
+    let uploadError = null;
     let bucketUsed = 'artist-portfolios';
     
     const uploadResult = await supabase.storage
