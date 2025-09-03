@@ -83,6 +83,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const participant = winningTicket.participant as { full_name: string; email: string } | null;
       const formattedName = participant?.full_name ? formatName(participant.full_name) : null;
 
+      // Optionally send notification emails if requested
+      const { sendEmails = false } = req.body;
+      if (sendEmails) {
+        try {
+          // Make internal API call to send winner emails
+          const emailResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/raffles/${raffleId}/send-winner-emails`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': req.headers.authorization || '',
+              'Cookie': req.headers.cookie || ''
+            },
+            body: JSON.stringify({ emailType: 'all' })
+          });
+
+          if (!emailResponse.ok) {
+            console.error('Failed to send winner notification emails');
+          }
+        } catch (emailError) {
+          console.error('Error triggering winner emails:', emailError);
+          // Don't fail the winner selection if email fails
+        }
+      }
+
       return res.status(200).json({
         success: true,
         winner: {

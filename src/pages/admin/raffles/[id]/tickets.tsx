@@ -46,6 +46,7 @@ export default function RaffleTickets() {
   const [error, setError] = useState<string | null>(null);
   const [selectingWinner, setSelectingWinner] = useState<string | null>(null);
   const [animatingTicket, setAnimatingTicket] = useState<{artistId: string, ticketNumber: number} | null>(null);
+  const [sendEmailsOnSelection, setSendEmailsOnSelection] = useState(false);
   const router = useRouter();
   const { id } = router.query;
   const supabase = createClientComponentClient();
@@ -244,7 +245,8 @@ export default function RaffleTickets() {
         },
         body: JSON.stringify({
           artistId,
-          action: 'select'
+          action: 'select',
+          sendEmails: sendEmailsOnSelection
         }),
       });
 
@@ -277,6 +279,8 @@ export default function RaffleTickets() {
       setSelectingWinner(null);
     }
   };
+
+
 
 
 
@@ -315,6 +319,20 @@ export default function RaffleTickets() {
               <StatValue>{tickets.filter(t => !t.artist_name).length}</StatValue>
             </Stat>
           </Stats>
+          
+          <EmailCheckboxContainer>
+            <EmailCheckbox>
+              <input
+                type="checkbox"
+                id="send-emails"
+                checked={sendEmailsOnSelection}
+                onChange={(e) => setSendEmailsOnSelection(e.target.checked)}
+              />
+              <label htmlFor="send-emails">
+                Send winner emails automatically
+              </label>
+            </EmailCheckbox>
+          </EmailCheckboxContainer>
           
           {tickets.length > 0 && (
             <CopyActionsGroup>
@@ -551,6 +569,33 @@ const HeaderRow = styled.div`
     gap: 1rem;
   }
 `;
+
+const EmailCheckboxContainer = styled.div`
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+`;
+
+const EmailCheckbox = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #6c63ff;
+  }
+  
+  label {
+    color: ${({ theme }) => theme.colors.text.primary};
+    font-size: 0.9rem;
+    cursor: pointer;
+    user-select: none;
+  }
+`;
+
+
 
 const Stats = styled.div`
   display: grid;

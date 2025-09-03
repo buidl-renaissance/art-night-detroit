@@ -115,6 +115,12 @@ export default function AdminDashboard() {
       description: 'Manage merchandise and other items',
       icon: '🛍️',
       path: '/admin/items'
+    },
+    {
+      title: 'Flyer Submissions',
+      description: 'Review and approve community event flyers',
+      icon: '📄',
+      path: '/admin/flyer-submissions'
     }
   ];
 

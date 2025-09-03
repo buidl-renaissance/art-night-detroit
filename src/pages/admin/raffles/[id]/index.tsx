@@ -371,6 +371,12 @@ const ErrorMessage = styled.p`
   margin: 0;
 `;
 
+const SuccessMessage = styled.p`
+  color: #16a34a;
+  font-size: 0.9rem;
+  margin: 0;
+`;
+
 export default function RaffleAdmin() {
   const [raffle, setRaffle] = useState<Raffle | null>(null);
   const [artists, setArtists] = useState<Artist[]>([]);
@@ -382,6 +388,8 @@ export default function RaffleAdmin() {
   const [editStatus, setEditStatus] = useState('');
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailSuccess, setEmailSuccess] = useState<string | null>(null);
   const router = useRouter();
   const { id } = router.query;
   const supabase = createClientComponentClient();
@@ -511,6 +519,36 @@ export default function RaffleAdmin() {
     }
   };
 
+  const handleSendWinnerEmails = async () => {
+    if (!id) return;
+    
+    setEmailLoading(true);
+    setEmailSuccess(null);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/raffles/${id}/send-winner-emails`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ emailType: 'all' }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setEmailSuccess(`Successfully sent emails to ${data.winnersSent} winners and ${data.participantsSent} participants!`);
+      } else {
+        throw new Error(data.error || 'Failed to send emails');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send emails');
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <PageContainer theme="dark">
@@ -544,6 +582,9 @@ export default function RaffleAdmin() {
             </ActionButton>
             <ActionButton onClick={() => router.push(`/admin/raffles/${id}/migrate-manual`)}>
               Migrate Manual Entries
+            </ActionButton>
+            <ActionButton onClick={() => handleSendWinnerEmails()} disabled={emailLoading}>
+              {emailLoading ? 'Sending...' : 'Send Winner Emails'}
             </ActionButton>
           </ActionButtonsContainer>
         </Header>
@@ -588,6 +629,9 @@ export default function RaffleAdmin() {
 
         {error && (
           <ErrorMessage>{error}</ErrorMessage>
+        )}
+        {emailSuccess && (
+          <SuccessMessage>{emailSuccess}</SuccessMessage>
         )}
 
         {raffle && (

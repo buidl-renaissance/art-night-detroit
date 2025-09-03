@@ -68,9 +68,17 @@ const HomePage: React.FC<HomePageProps> = ({ events }) => {
         <CTADescription>
           Connect with artists, attend events, and stay updated on the latest happenings in Detroit&apos;s art scene.
         </CTADescription>
-        <CTAButton href="https://instagram.com/artnightdetroit" target="_blank">
-          Follow on Instagram
-        </CTAButton>
+        <CTAButtonContainer>
+          <CTAButton href="/flyers" style={{ backgroundColor: '#45B7D1', marginRight: '0.5rem' }}>
+            Community Events
+          </CTAButton>
+          <CTAButton href="https://instagram.com/artnightdetroit" target="_blank">
+            Follow on Instagram
+          </CTAButton>
+          <CTAButton href="/submit-flyer" style={{ backgroundColor: '#4ECDC4', marginLeft: '0.5rem' }}>
+            Submit Your Event
+          </CTAButton>
+        </CTAButtonContainer>
       </CTASection>
 
       <Footer />
@@ -261,6 +269,18 @@ const CTADescription = styled.p`
   }
 `;
 
+const CTAButtonContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
+`;
+
 const CTAButton = styled.a`
   display: inline-block;
   padding: 1.2rem 2.5rem;
@@ -277,6 +297,10 @@ const CTAButton = styled.a`
     background-color: #C0392B;
     transform: translateY(-5px);
     box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  }
+  
+  @media (max-width: 768px) {
+    margin: 0 !important;
   }
 `;
 
