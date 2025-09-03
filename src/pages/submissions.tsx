@@ -681,7 +681,6 @@ const SubmissionsPage = () => {
                 onChange={handleFileChange}
                 accept="image/*,video/*,.pdf,.doc,.docx"
                 multiple
-                required
               />
               {uploadedFiles.length > 0 && (
                 <MediaPreviewContainer>
