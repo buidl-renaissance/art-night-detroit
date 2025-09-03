@@ -10,11 +10,16 @@ interface WinnerData {
 
 interface RawWinnerData {
   winner_selected_at: string;
-  artists: { name: string };
+  artists: { name: string }[];
   tickets: {
     ticket_number: number;
-    profiles: { name: string } | null;
-  } | null;
+    participants: { name: string }[];
+  }[];
+  raffles: {
+    id: string;
+    name: string;
+    status: string;
+  }[];
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -68,11 +73,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return `${firstName} ${lastInitial}.`;
       };
 
-      const participant = winner.tickets?.participants?.[0];
+      // Get the first ticket and first participant (there should only be one of each for a winner)
+      const firstTicket = winner.tickets?.[0];
+      const participant = firstTicket?.participants?.[0];
       
       return {
-        artistName: winner.artists?.name || 'Unknown Artist',
-        ticketNumber: winner.tickets?.ticket_number || 0,
+        artistName: winner.artists?.[0]?.name || 'Unknown Artist',
+        ticketNumber: firstTicket?.ticket_number || 0,
         participantName: participant?.name ? formatName(participant.name) : undefined,
         selectedAt: winner.winner_selected_at
       };
