@@ -32,8 +32,20 @@ const SubmissionsPage = () => {
   const [phoneError, setPhoneError] = useState<string>("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-  const [uploadedFiles, setUploadedFiles] = useState<{id: string, file: File, url: string, uploading: boolean, error?: string, processing?: boolean}[]>([]);
+  const [submitMessage, setSubmitMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<
+    {
+      id: string;
+      file: File;
+      url: string;
+      uploading: boolean;
+      error?: string;
+      processing?: boolean;
+    }[]
+  >([]);
   const [isUploading, setIsUploading] = useState<boolean>(false);
 
   const validatePhoneNumber = (phone: string): string => {
@@ -93,20 +105,20 @@ const SubmissionsPage = () => {
   const convertImageToJpeg = (file: File): Promise<File> => {
     return new Promise((resolve) => {
       // If it's not an image, return as-is
-      if (!file.type.startsWith('image/')) {
+      if (!file.type.startsWith("image/")) {
         resolve(file);
         return;
       }
 
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
       const img = new Image();
 
       img.onload = () => {
         // Calculate optimal dimensions (max 2048px on longest side)
         const maxDimension = 2048;
         let { width, height } = img;
-        
+
         if (width > maxDimension || height > maxDimension) {
           if (width > height) {
             height = (height * maxDimension) / width;
@@ -125,22 +137,28 @@ const SubmissionsPage = () => {
         ctx?.drawImage(img, 0, 0, width, height);
 
         // Convert to JPEG blob with good quality
-        canvas.toBlob((blob) => {
-          if (blob) {
-            // Create new file with .jpg extension
-            const fileName = file.name.replace(/\.[^/.]+$/, '.jpg');
-            const convertedFile = new File([blob], fileName, {
-              type: 'image/jpeg',
-              lastModified: Date.now()
-            });
-            
-            console.log(`Image converted: ${file.name} (${file.size} bytes) -> ${fileName} (${convertedFile.size} bytes)`);
-            resolve(convertedFile);
-          } else {
-            // If conversion fails, return original file
-            resolve(file);
-          }
-        }, 'image/jpeg', 0.85); // 85% quality for good balance of size/quality
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              // Create new file with .jpg extension
+              const fileName = file.name.replace(/\.[^/.]+$/, ".jpg");
+              const convertedFile = new File([blob], fileName, {
+                type: "image/jpeg",
+                lastModified: Date.now(),
+              });
+
+              console.log(
+                `Image converted: ${file.name} (${file.size} bytes) -> ${fileName} (${convertedFile.size} bytes)`
+              );
+              resolve(convertedFile);
+            } else {
+              // If conversion fails, return original file
+              resolve(file);
+            }
+          },
+          "image/jpeg",
+          0.85
+        ); // 85% quality for good balance of size/quality
       };
 
       img.onerror = () => {
@@ -157,18 +175,18 @@ const SubmissionsPage = () => {
   const uploadFile = async (file: File): Promise<string> => {
     // Convert images to JPEG first
     const processedFile = await convertImageToJpeg(file);
-    
-    const formData = new FormData();
-    formData.append('file', processedFile);
 
-    const response = await fetch('/api/upload-portfolio-file', {
-      method: 'POST',
+    const formData = new FormData();
+    formData.append("file", processedFile);
+
+    const response = await fetch("/api/upload-portfolio-file", {
+      method: "POST",
       body: formData,
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error || 'Failed to upload file');
+      throw new Error(error.error || "Failed to upload file");
     }
 
     const result = await response.json();
@@ -177,15 +195,15 @@ const SubmissionsPage = () => {
 
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const { name, files } = e.target;
-    
+
     // Clear submit message when user changes files
     if (submitMessage) {
       setSubmitMessage(null);
     }
-    
+
     if (files && name === "multimediaFiles") {
       const fileArray = Array.from(files);
-      
+
       // Add to existing files instead of replacing
       const allFiles = [...formData.multimediaFiles, ...fileArray];
       setFormData((prev) => ({
@@ -195,75 +213,96 @@ const SubmissionsPage = () => {
 
       // Start uploading new files immediately
       setIsUploading(true);
-      
+
       // Add new files to uploaded files state with processing status and unique IDs
-      const newUploadedFiles = fileArray.map(file => ({
+      const newUploadedFiles = fileArray.map((file) => ({
         id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         file,
-        url: '',
+        url: "",
         uploading: false,
         processing: true,
-        error: ''
+        error: "",
       }));
-      setUploadedFiles(prev => [...prev, ...newUploadedFiles]);
+      setUploadedFiles((prev) => [...prev, ...newUploadedFiles]);
 
       // Process and upload each new file
       try {
         const uploadPromises = newUploadedFiles.map(async (uploadedFile) => {
           try {
             // First mark as uploading (after processing)
-            setUploadedFiles(prev => prev.map(item => 
-              item.id === uploadedFile.id ? { ...item, processing: false, uploading: true } : item
-            ));
-            
+            setUploadedFiles((prev) =>
+              prev.map((item) =>
+                item.id === uploadedFile.id
+                  ? { ...item, processing: false, uploading: true }
+                  : item
+              )
+            );
+
             const url = await uploadFile(uploadedFile.file);
-            
+
             // Update the specific file's status
-            setUploadedFiles(prev => prev.map(item => 
-              item.id === uploadedFile.id ? { ...item, url, uploading: false } : item
-            ));
+            setUploadedFiles((prev) =>
+              prev.map((item) =>
+                item.id === uploadedFile.id
+                  ? { ...item, url, uploading: false }
+                  : item
+              )
+            );
             return url;
           } catch (error) {
             console.error(`Failed to upload ${uploadedFile.file.name}:`, error);
-            const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+            const errorMessage =
+              error instanceof Error ? error.message : "Upload failed";
             // Mark this file as failed with error message
-            setUploadedFiles(prev => prev.map(item => 
-              item.id === uploadedFile.id ? { ...item, processing: false, uploading: false, url: 'ERROR', error: errorMessage } : item
-            ));
+            setUploadedFiles((prev) =>
+              prev.map((item) =>
+                item.id === uploadedFile.id
+                  ? {
+                      ...item,
+                      processing: false,
+                      uploading: false,
+                      url: "ERROR",
+                      error: errorMessage,
+                    }
+                  : item
+              )
+            );
             throw error;
           }
         });
 
         await Promise.all(uploadPromises);
       } catch (error) {
-        console.error('File upload error:', error);
-        setSubmitMessage({ 
-          type: 'error', 
-          text: 'Some files failed to upload. You can try again or remove the failed files.' 
+        console.error("File upload error:", error);
+        setSubmitMessage({
+          type: "error",
+          text: "Some files failed to upload. You can try again or remove the failed files.",
         });
       } finally {
         setIsUploading(false);
       }
     }
-    
+
     // Clear the input so the same files can be selected again if needed
-    e.target.value = '';
+    e.target.value = "";
   };
 
   const removeFile = (fileId: string) => {
     // Find the file to remove
-    const fileToRemove = uploadedFiles.find(f => f.id === fileId);
+    const fileToRemove = uploadedFiles.find((f) => f.id === fileId);
     if (!fileToRemove) return;
-    
+
     // Remove from uploaded files
-    setUploadedFiles(prev => prev.filter(f => f.id !== fileId));
-    
+    setUploadedFiles((prev) => prev.filter((f) => f.id !== fileId));
+
     // Remove from form data
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      multimediaFiles: prev.multimediaFiles.filter(f => f !== fileToRemove.file)
+      multimediaFiles: prev.multimediaFiles.filter(
+        (f) => f !== fileToRemove.file
+      ),
     }));
-    
+
     // Clear any submit messages when user removes files
     if (submitMessage) {
       setSubmitMessage(null);
@@ -313,24 +352,40 @@ const SubmissionsPage = () => {
 
     // Validate required fields
     if (!formData.name || !formData.email || !formData.phone) {
-      setSubmitMessage({ type: 'error', text: 'Please fill in all required fields: name, email, and phone' });
-      return;
-    }
-
-    if (uploadedFiles.length < 2) {
-      setSubmitMessage({ type: 'error', text: 'Please upload at least two examples of your artwork' });
+      setSubmitMessage({
+        type: "error",
+        text: "Please fill in all required fields: name, email, and phone",
+      });
       return;
     }
 
     // Check if any files are still processing or uploading
-    if (uploadedFiles.some(file => file.uploading || file.processing)) {
-      setSubmitMessage({ type: 'error', text: 'Please wait for all files to finish processing and uploading' });
+    if (uploadedFiles.some((file) => file.uploading || file.processing)) {
+      setSubmitMessage({
+        type: "error",
+        text: "Please wait for all files to finish processing and uploading",
+      });
       return;
     }
 
     // Check if any files failed to upload
-    if (uploadedFiles.some(file => file.url === 'ERROR')) {
-      setSubmitMessage({ type: 'error', text: 'Some files failed to upload. Please try uploading them again.' });
+    if (uploadedFiles.some((file) => file.url === "ERROR")) {
+      setSubmitMessage({
+        type: "error",
+        text: "Some files failed to upload. Please try uploading them again.",
+      });
+      return;
+    }
+
+    // Count only successfully uploaded files (not failed ones)
+    const successfullyUploadedFiles = uploadedFiles.filter(
+      (file) => file.url && file.url !== "ERROR"
+    );
+    if (successfullyUploadedFiles.length < 2) {
+      setSubmitMessage({
+        type: "error",
+        text: "Please upload at least two examples of your artwork",
+      });
       return;
     }
 
@@ -348,14 +403,14 @@ const SubmissionsPage = () => {
         willingToVolunteer: formData.willingToVolunteer,
         interestedInFutureEvents: formData.interestedInFutureEvents,
         additionalNotes: formData.additionalNotes,
-        portfolioFileUrls: uploadedFiles.map(file => file.url)
+        portfolioFileUrls: successfullyUploadedFiles.map((file) => file.url),
       };
 
       // Submit to API
-      const response = await fetch('/api/submit-artist-application', {
-        method: 'POST',
+      const response = await fetch("/api/submit-artist-application", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(submissionData),
       });
@@ -363,11 +418,11 @@ const SubmissionsPage = () => {
       const result = await response.json();
 
       if (response.ok) {
-        setSubmitMessage({ 
-          type: 'success', 
-          text: "Thank you for your submission! We'll review your application and get back to you soon." 
+        setSubmitMessage({
+          type: "success",
+          text: "Thank you for your submission! We'll review your application and get back to you soon.",
         });
-        
+
         // Reset form
         setFormData({
           name: "",
@@ -384,17 +439,17 @@ const SubmissionsPage = () => {
         setPhoneError("");
         setUploadedFiles([]);
       } else {
-        console.error('Submission error:', result);
-        setSubmitMessage({ 
-          type: 'error', 
-          text: `Error submitting application: ${result.error || 'Unknown error'}` 
+        console.error("Submission error:", result);
+        setSubmitMessage({
+          type: "error",
+          text: `Error submitting application: ${result.error || "Unknown error"}`,
         });
       }
     } catch (error) {
-      console.error('Error submitting form:', error);
-      setSubmitMessage({ 
-        type: 'error', 
-        text: 'Error submitting application. Please try again.' 
+      console.error("Error submitting form:", error);
+      setSubmitMessage({
+        type: "error",
+        text: "Error submitting application. Please try again.",
       });
     } finally {
       setIsSubmitting(false);
@@ -409,7 +464,15 @@ const SubmissionsPage = () => {
     errorMessage?: string;
     onRemove: () => void;
     onClick?: (src: string) => void;
-  }> = ({ file, uploading, processing, uploadError, errorMessage, onRemove, onClick }) => {
+  }> = ({
+    file,
+    uploading,
+    processing,
+    uploadError,
+    errorMessage,
+    onRemove,
+    onClick,
+  }) => {
     const [thumbnailSrc, setThumbnailSrc] = useState<string>("");
 
     React.useEffect(() => {
@@ -417,7 +480,13 @@ const SubmissionsPage = () => {
     }, [file]);
 
     const handleClick = () => {
-      if (onClick && file.type.startsWith("image/") && !uploading && !processing && !uploadError) {
+      if (
+        onClick &&
+        file.type.startsWith("image/") &&
+        !uploading &&
+        !processing &&
+        !uploadError
+      ) {
         const reader = new FileReader();
         reader.onload = (e) => onClick(e.target?.result as string);
         reader.readAsDataURL(file);
@@ -427,38 +496,65 @@ const SubmissionsPage = () => {
     const isProcessing = processing || uploading;
 
     return (
-      <ThumbnailContainer onClick={handleClick} style={{
-        opacity: isProcessing ? 0.7 : 1,
-        border: uploadError ? '2px solid #ff4444' : undefined,
-        cursor: (onClick && !isProcessing && !uploadError) ? 'pointer' : 'default'
-      }}>
-        <RemoveButton onClick={(e) => { e.stopPropagation(); onRemove(); }} title="Remove file">
+      <ThumbnailContainer
+        onClick={handleClick}
+        style={{
+          opacity: isProcessing ? 0.7 : 1,
+          border: uploadError ? "2px solid #ff4444" : undefined,
+          cursor:
+            onClick && !isProcessing && !uploadError ? "pointer" : "default",
+        }}
+      >
+        <RemoveButton
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove();
+          }}
+          title="Remove file"
+        >
           ×
         </RemoveButton>
         <ThumbnailImage src={thumbnailSrc} alt={file.name} />
         <ThumbnailLabel>{file.name}</ThumbnailLabel>
-        {file.type.startsWith("video/") && !isProcessing && !uploadError && <VideoIcon>▶</VideoIcon>}
-        {!file.type.startsWith("image/") && !file.type.startsWith("video/") && !isProcessing && !uploadError && (
-          <FileIcon>📄</FileIcon>
+        {file.type.startsWith("video/") && !isProcessing && !uploadError && (
+          <VideoIcon>▶</VideoIcon>
         )}
+        {!file.type.startsWith("image/") &&
+          !file.type.startsWith("video/") &&
+          !isProcessing &&
+          !uploadError && <FileIcon>📄</FileIcon>}
         {processing && (
           <UploadingOverlay>
             <UploadingSpinner />
-            <div style={{marginTop: '0.5rem', fontSize: '0.75rem'}}>Processing...</div>
+            <div style={{ marginTop: "0.5rem", fontSize: "0.75rem" }}>
+              Processing...
+            </div>
           </UploadingOverlay>
         )}
         {uploading && (
           <UploadingOverlay>
             <UploadingSpinner />
-            <div style={{marginTop: '0.5rem', fontSize: '0.75rem'}}>Uploading...</div>
+            <div style={{ marginTop: "0.5rem", fontSize: "0.75rem" }}>
+              Uploading...
+            </div>
           </UploadingOverlay>
         )}
         {uploadError && (
           <ErrorOverlay>
-            <div style={{fontSize: '1.5rem'}}>⚠️</div>
-            <div style={{marginTop: '0.5rem', fontSize: '0.75rem', textAlign: 'center'}}>
+            <div style={{ fontSize: "1.5rem" }}>⚠️</div>
+            <div
+              style={{
+                marginTop: "0.5rem",
+                fontSize: "0.75rem",
+                textAlign: "center",
+              }}
+            >
               Upload Failed
-              {errorMessage && <div style={{fontSize: '0.65rem', marginTop: '0.25rem'}}>{errorMessage}</div>}
+              {errorMessage && (
+                <div style={{ fontSize: "0.65rem", marginTop: "0.25rem" }}>
+                  {errorMessage}
+                </div>
+              )}
             </div>
           </ErrorOverlay>
         )}
@@ -496,95 +592,96 @@ const SubmissionsPage = () => {
             </p>
             <FormGroup>
               <Label>Name</Label>
-              <Input 
-                type="text" 
-                name="name" 
-                value={formData.name} 
-                onChange={handleInputChange} 
-                required 
+              <Input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                required
               />
             </FormGroup>
 
             <FormGroup>
               <Label>Artist Alias (if any)</Label>
-              <Input 
-                type="text" 
-                name="artistAlias" 
-                value={formData.artistAlias} 
-                onChange={handleInputChange} 
+              <Input
+                type="text"
+                name="artistAlias"
+                value={formData.artistAlias}
+                onChange={handleInputChange}
               />
             </FormGroup>
 
             <FormGroup>
               <Label>Email</Label>
-              <Input 
-                type="email" 
-                name="email" 
-                value={formData.email} 
-                onChange={handleInputChange} 
-                required 
+              <Input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                required
               />
             </FormGroup>
 
             <FormGroup>
               <Label>Phone Number</Label>
-              <Input 
-                type="tel" 
-                name="phone" 
-                value={formData.phone} 
-                onChange={handleInputChange} 
-                required 
+              <Input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                required
                 placeholder="(555) 123-4567"
                 style={{ borderColor: phoneError ? "#ff4444" : undefined }}
               />
               {phoneError && <ErrorMessage>{phoneError}</ErrorMessage>}
             </FormGroup>
 
-                                      <FormGroup>
-               <Label>Instagram Handle</Label>
-               <Input
-                 type="text"
-                 name="instagramLink"
-                 value={formData.instagramLink}
-                 onChange={handleInputChange}
-                 placeholder="@yourusername or instagram.com/yourusername"
-               />
-             </FormGroup>
+            <FormGroup>
+              <Label>Instagram Handle</Label>
+              <Input
+                type="text"
+                name="instagramLink"
+                value={formData.instagramLink}
+                onChange={handleInputChange}
+                placeholder="@yourusername or instagram.com/yourusername"
+              />
+            </FormGroup>
 
             <FormGroup>
               <Label>Website / Portfolio Link</Label>
-              <Input 
-                type="url" 
+              <Input
+                type="url"
                 name="portfolioLink"
                 value={formData.portfolioLink}
-                onChange={handleInputChange} 
+                onChange={handleInputChange}
                 placeholder="https://yourportfolio.com"
               />
             </FormGroup>
           </FormSection>
 
-                    <FormSection>
+          <FormSection>
             <SectionTitle>Portfolio & Examples</SectionTitle>
-            
+
             <FormGroup>
-               <Label>Upload Your Portfolio *</Label>
-               <p
-                 style={{
-                   fontSize: "0.9rem",
-                   color: "#666",
-                   marginBottom: "0.5rem",
-                 }}
-               >
-                 Upload at least two examples of your artwork (images, videos, or other media files). You can
-                 select multiple files at once or add them one by one. Click the × button to remove any file.
+              <Label>Upload Your Portfolio *</Label>
+              <p
+                style={{
+                  fontSize: "0.9rem",
+                  color: "#666",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                Upload at least two examples of your artwork (images, videos, or
+                other media files). You can select multiple files at once or add
+                them one by one. Click the × button to remove any file.
               </p>
-                <FileInput 
-                  type="file" 
-                name="multimediaFiles" 
-                  onChange={handleFileChange} 
-                accept="image/*,video/*,.pdf,.doc,.docx" 
+              <FileInput
+                type="file"
+                name="multimediaFiles"
+                onChange={handleFileChange}
+                accept="image/*,video/*,.pdf,.doc,.docx"
                 multiple
-                required 
+                required
               />
               {uploadedFiles.length > 0 && (
                 <MediaPreviewContainer>
@@ -592,13 +689,33 @@ const SubmissionsPage = () => {
                     style={{
                       marginBottom: "1rem",
                       fontSize: "0.9rem",
-                      color: uploadedFiles.length < 2 ? "#ff4444" : "#666",
+                      color:
+                        uploadedFiles.filter((f) => f.url && f.url !== "ERROR")
+                          .length < 2
+                          ? "#ff4444"
+                          : "#666",
                     }}
                   >
-                    {uploadedFiles.length} file(s) selected {uploadedFiles.length < 2 ? '(minimum 2 required)' : ''}
-                    {uploadedFiles.some(f => f.processing) && <span style={{color: "#007bff"}}> - Processing images...</span>}
-                    {isUploading && <span style={{color: "#007bff"}}> - Uploading...</span>}
-                </div>
+                    {uploadedFiles.length} file(s) selected (
+                    {
+                      uploadedFiles.filter((f) => f.url && f.url !== "ERROR")
+                        .length
+                    }{" "}
+                    successfully uploaded){" "}
+                    {uploadedFiles.filter((f) => f.url && f.url !== "ERROR")
+                      .length < 2
+                      ? "(minimum 2 required)"
+                      : ""}
+                    {uploadedFiles.some((f) => f.processing) && (
+                      <span style={{ color: "#007bff" }}>
+                        {" "}
+                        - Processing images...
+                      </span>
+                    )}
+                    {isUploading && (
+                      <span style={{ color: "#007bff" }}> - Uploading...</span>
+                    )}
+                  </div>
                   <ThumbnailGrid>
                     {uploadedFiles.map((uploadedFile) => (
                       <MediaThumbnailWithStatus
@@ -606,66 +723,70 @@ const SubmissionsPage = () => {
                         file={uploadedFile.file}
                         uploading={uploadedFile.uploading}
                         processing={uploadedFile.processing}
-                        uploadError={uploadedFile.url === 'ERROR'}
+                        uploadError={uploadedFile.url === "ERROR"}
                         errorMessage={uploadedFile.error}
                         onRemove={() => removeFile(uploadedFile.id)}
-                        onClick={uploadedFile.url && uploadedFile.url !== 'ERROR' ? setSelectedImage : undefined}
+                        onClick={
+                          uploadedFile.url && uploadedFile.url !== "ERROR"
+                            ? setSelectedImage
+                            : undefined
+                        }
                       />
                     ))}
                   </ThumbnailGrid>
                 </MediaPreviewContainer>
               )}
-              </FormGroup>
-            </FormSection>
+            </FormGroup>
+          </FormSection>
 
-            <FormSection>
-              <SectionTitle>Additional Questions</SectionTitle>
-              
-                          <FormGroup>
+          <FormSection>
+            <SectionTitle>Additional Questions</SectionTitle>
+
+            <FormGroup>
               <CheckboxLabel>
-                <input 
-                  type="checkbox" 
-                  name="willingToVolunteer" 
-                  checked={formData.willingToVolunteer} 
-                  onChange={handleInputChange} 
+                <input
+                  type="checkbox"
+                  name="willingToVolunteer"
+                  checked={formData.willingToVolunteer}
+                  onChange={handleInputChange}
                 />
                 Would you like to volunteer or help promote the event?
               </CheckboxLabel>
             </FormGroup>
-            
+
             <FormGroup>
               <CheckboxLabel>
-                <input 
-                  type="checkbox" 
-                  name="interestedInFutureEvents" 
-                  checked={formData.interestedInFutureEvents} 
-                  onChange={handleInputChange} 
+                <input
+                  type="checkbox"
+                  name="interestedInFutureEvents"
+                  checked={formData.interestedInFutureEvents}
+                  onChange={handleInputChange}
                 />
                 Would you be interested in future Art Night opportunities?
               </CheckboxLabel>
             </FormGroup>
-            
+
             <FormGroup>
               <Label>Artist Statement & Vision</Label>
-              <TextArea 
-                name="additionalNotes" 
-                value={formData.additionalNotes} 
-                onChange={handleInputChange} 
-                rows={4} 
+              <TextArea
+                name="additionalNotes"
+                value={formData.additionalNotes}
+                onChange={handleInputChange}
+                rows={4}
                 placeholder="Tell us about your artistic vision and why you'd like to be part of this event..."
               />
             </FormGroup>
-            </FormSection>
+          </FormSection>
 
-                      <SubmitButtonContainer>
-             <SubmitButton type="submit" disabled={isSubmitting}>
-               {isSubmitting ? 'Submitting...' : 'Submit Artist Application'}
-             </SubmitButton>
-             {submitMessage && (
-               <SubmitMessage type={submitMessage.type}>
-                 {submitMessage.text}
-               </SubmitMessage>
-             )}
+          <SubmitButtonContainer>
+            <SubmitButton type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Submitting..." : "Submit Artist Application"}
+            </SubmitButton>
+            {submitMessage && (
+              <SubmitMessage type={submitMessage.type}>
+                {submitMessage.text}
+              </SubmitMessage>
+            )}
           </SubmitButtonContainer>
         </form>
       </FormContainer>
@@ -688,7 +809,7 @@ const PageContainer = styled.div`
   margin: 0 auto;
   padding: 1rem;
   font-family: "Inter", sans-serif;
-  
+
   @media (min-width: 768px) {
     padding: 2rem;
   }
@@ -700,7 +821,7 @@ const HeroSection = styled.div`
   padding: 2rem 1rem;
   margin-bottom: 1.5rem;
   overflow: hidden;
-  
+
   @media (min-width: 768px) {
     padding: 4rem 1rem;
     margin-bottom: 2rem;
@@ -713,7 +834,7 @@ const HeroTitle = styled.h1`
   color: ${(props) => props.theme.colors.text};
   margin-bottom: 0.5rem;
   line-height: 1.2;
-  
+
   @media (min-width: 768px) {
     font-size: 3rem;
     margin-bottom: 1rem;
@@ -726,7 +847,7 @@ const HeroSubtitle = styled.p`
   max-width: 600px;
   margin: 0 auto;
   line-height: 1.4;
-  
+
   @media (min-width: 768px) {
     font-size: 1.2rem;
   }
@@ -738,7 +859,7 @@ const FormContainer = styled.div`
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   padding: 1rem;
   margin-bottom: 2rem;
-  
+
   @media (min-width: 768px) {
     padding: 2rem;
     margin-bottom: 3rem;
@@ -749,12 +870,12 @@ const FormSection = styled.div`
   margin-bottom: 1.5rem;
   padding-bottom: 1.5rem;
   border-bottom: 1px solid #eee;
-  
+
   @media (min-width: 768px) {
     margin-bottom: 2rem;
     padding-bottom: 2rem;
   }
-  
+
   &:last-child {
     border-bottom: none;
   }
@@ -765,7 +886,7 @@ const SectionTitle = styled.h2`
   font-size: 1.25rem;
   color: ${(props) => props.theme.colors.text};
   margin-bottom: 0.25rem;
-  
+
   @media (min-width: 768px) {
     font-size: 1.5rem;
     margin-bottom: 1.5rem;
@@ -774,7 +895,7 @@ const SectionTitle = styled.h2`
 
 const FormGroup = styled.div`
   margin-bottom: 1rem;
-  
+
   @media (min-width: 768px) {
     margin-bottom: 1.5rem;
   }
@@ -795,7 +916,7 @@ const Input = styled.input`
   font-size: 1rem;
   transition: border-color 0.3s;
   box-sizing: border-box;
-  
+
   &:focus {
     border-color: ${(props) => props.theme.colors.primary};
     outline: none;
@@ -811,7 +932,7 @@ const TextArea = styled.textarea`
   resize: vertical;
   min-height: 100px;
   box-sizing: border-box;
-  
+
   &:focus {
     border-color: ${(props) => props.theme.colors.primary};
     outline: none;
@@ -828,7 +949,7 @@ const CheckboxLabel = styled.label`
   display: flex;
   align-items: center;
   cursor: pointer;
-  
+
   input {
     margin-right: 0.5rem;
   }
@@ -850,7 +971,7 @@ const SubmitButton = styled.button`
   cursor: pointer;
   transition: background-color 0.3s;
   width: 100%;
-  
+
   @media (min-width: 768px) {
     width: auto;
     padding: 0.75rem 2rem;
@@ -868,21 +989,25 @@ const SubmitButton = styled.button`
   }
 `;
 
-const SubmitMessage = styled.div<{ type: 'success' | 'error' }>`
+const SubmitMessage = styled.div<{ type: "success" | "error" }>`
   margin-top: 1rem;
   padding: 0.75rem 1rem;
   border-radius: 4px;
   text-align: center;
   font-size: 0.9rem;
   font-weight: 500;
-  
-  ${props => props.type === 'success' && `
+
+  ${(props) =>
+    props.type === "success" &&
+    `
     background-color: #d4edda;
     color: #155724;
     border: 1px solid #c3e6cb;
   `}
-  
-  ${props => props.type === 'error' && `
+
+  ${(props) =>
+    props.type === "error" &&
+    `
     background-color: #f8d7da;
     color: #721c24;
     border: 1px solid #f5c6cb;
@@ -1030,7 +1155,7 @@ const CloseButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  
+
   &:hover {
     background: rgba(0, 0, 0, 0.7);
   }
@@ -1063,10 +1188,14 @@ const UploadingSpinner = styled.div`
   border-top: 2px solid #007bff;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  
+
   @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
   }
 `;
 
