@@ -49,7 +49,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       uploadDir: tmpDir,
       keepExtensions: true,
       maxFileSize: 10 * 1024 * 1024, // 10MB limit
-      filename: (name, ext, part) => {
+      filename: (name, ext) => {
         // Generate a unique filename
         return `flyer-${Date.now()}-${Math.random().toString(36).substring(7)}${ext}`;
       }
@@ -58,8 +58,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const [fields, files] = await form.parse(req);
 
     // Extract form fields
-    const getFieldValue = (field: any): string => {
-      return Array.isArray(field) ? field[0] : field || '';
+    const getFieldValue = (field: string | string[] | undefined): string => {
+      if (!field) return '';
+      return Array.isArray(field) ? field[0] : field;
     };
 
     const isQuickSubmission = getFieldValue(fields.isQuickSubmission) === 'true';
@@ -165,7 +166,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           const fileName = `flyer-submission-${uuidv4()}${fileExtension}`;
           
           // Upload to Supabase Storage
-          const { data: uploadData, error: uploadError } = await supabase.storage
+          const { error: uploadError } = await supabase.storage
             .from('flyers')
             .upload(fileName, fileBuffer, {
               contentType: file.mimetype || 'image/jpeg',

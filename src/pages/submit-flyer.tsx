@@ -1,7 +1,7 @@
 import React, { useState, ChangeEvent } from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCalendarAlt, faMapMarkerAlt, faUpload, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
+import { faMapMarkerAlt, faUpload, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import PageContainer from '../components/PageContainer';
 import { Button } from '../components/ui/Button';
 
@@ -357,7 +357,7 @@ const SubmitFlyerPage = () => {
 
             {submitStatus === 'success' && (
               <SuccessMessage>
-                🎉 Thank you for your submission! We'll review your event and get back to you within 2-3 business days.
+                🎉 Thank you for your submission! We&apos;ll review your event and get back to you within 2-3 business days.
               </SuccessMessage>
             )}
 

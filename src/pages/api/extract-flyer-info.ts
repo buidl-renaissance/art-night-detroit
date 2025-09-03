@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import formidable from 'formidable';
 import { promises as fs } from 'fs';
-import path from 'path';
+
 import os from 'os';
 import OpenAI from 'openai';
 
@@ -48,7 +48,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       uploadDir: tmpDir,
       keepExtensions: true,
       maxFileSize: 10 * 1024 * 1024, // 10MB limit
-      filename: (name, ext, part) => {
+      filename: (name, ext) => {
         // Generate a unique filename
         return `flyer-${Date.now()}-${Math.random().toString(36).substring(7)}${ext}`;
       }

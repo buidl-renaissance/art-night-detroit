@@ -8,6 +8,15 @@ interface WinnerData {
   selectedAt: string;
 }
 
+interface RawWinnerData {
+  winner_selected_at: string;
+  artists: { name: string };
+  tickets: {
+    ticket_number: number;
+    profiles: { name: string } | null;
+  } | null;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -46,7 +55,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Format the response
-    const formattedWinners: WinnerData[] = (winners || []).map((winner: any) => {
+    const formattedWinners: WinnerData[] = (winners || []).map((winner: RawWinnerData) => {
       // Format participant name to show first name and last initial only
       const formatName = (fullName: string | null) => {
         if (!fullName) return undefined;

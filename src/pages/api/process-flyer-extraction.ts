@@ -152,7 +152,7 @@ Analyze this flyer:`
     }
 
     // Prepare update data with extracted information
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       status: 'pending_review',
       updated_at: new Date().toISOString(),
     };

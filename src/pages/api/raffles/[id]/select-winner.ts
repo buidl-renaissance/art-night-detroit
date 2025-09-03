@@ -80,7 +80,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return `${firstName} ${lastInitial}.`;
       };
 
-      const participant = winningTicket.participant as { full_name: string; email: string } | null;
+      // Handle participant data - it might be an array or single object depending on the query
+      const participantData = winningTicket.participant;
+      const participant = Array.isArray(participantData) 
+        ? participantData[0] as { full_name: string; email: string } | undefined
+        : participantData as { full_name: string; email: string } | null;
       const formattedName = participant?.full_name ? formatName(participant.full_name) : null;
 
       // Optionally send notification emails if requested
