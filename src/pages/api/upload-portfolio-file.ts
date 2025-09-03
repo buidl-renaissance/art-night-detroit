@@ -77,7 +77,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (uploadError) {
       console.error('Error uploading file:', uploadError);
-      return res.status(500).json({ error: 'Failed to upload file' });
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to upload file';
+      if (uploadError.message.includes('file size')) {
+        errorMessage = 'File is too large. Maximum size is 50MB.';
+      } else if (uploadError.message.includes('storage')) {
+        errorMessage = 'Storage service is temporarily unavailable. Please try again.';
+      } else if (uploadError.message.includes('permission')) {
+        errorMessage = 'Permission denied. Please try again.';
+      } else if (uploadError.message.includes('network')) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      }
+      
+      return res.status(500).json({ 
+        error: errorMessage,
+        details: uploadError.message 
+      });
     }
 
     // Get public URL

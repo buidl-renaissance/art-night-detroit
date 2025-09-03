@@ -33,7 +33,7 @@ const SubmissionsPage = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-  const [uploadedFiles, setUploadedFiles] = useState<{file: File, url: string, uploading: boolean}[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<{file: File, url: string, uploading: boolean, error?: string}[]>([]);
   const [isUploading, setIsUploading] = useState<boolean>(false);
 
   const validatePhoneNumber = (phone: string): string => {
@@ -119,38 +119,42 @@ const SubmissionsPage = () => {
     if (files && name === "multimediaFiles") {
       const fileArray = Array.from(files);
       
-      // Update form data immediately
+      // Add to existing files instead of replacing
+      const allFiles = [...formData.multimediaFiles, ...fileArray];
       setFormData((prev) => ({
         ...prev,
-        multimediaFiles: fileArray,
+        multimediaFiles: allFiles,
       }));
 
-      // Start uploading files immediately
+      // Start uploading new files immediately
       setIsUploading(true);
       
-      // Initialize uploaded files state with uploading status
-      const initialUploadedFiles = fileArray.map(file => ({
+      // Add new files to uploaded files state with uploading status
+      const newUploadedFiles = fileArray.map(file => ({
         file,
         url: '',
-        uploading: true
+        uploading: true,
+        error: ''
       }));
-      setUploadedFiles(initialUploadedFiles);
+      setUploadedFiles(prev => [...prev, ...newUploadedFiles]);
 
-      // Upload each file
+      // Upload each new file
       try {
         const uploadPromises = fileArray.map(async (file, index) => {
+          const actualIndex = uploadedFiles.length + index;
           try {
             const url = await uploadFile(file);
             // Update the specific file's status
             setUploadedFiles(prev => prev.map((item, i) => 
-              i === index ? { ...item, url, uploading: false } : item
+              i === actualIndex ? { ...item, url, uploading: false } : item
             ));
             return url;
           } catch (error) {
             console.error(`Failed to upload ${file.name}:`, error);
-            // Mark this file as failed
+            const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+            // Mark this file as failed with error message
             setUploadedFiles(prev => prev.map((item, i) => 
-              i === index ? { ...item, uploading: false, url: 'ERROR' } : item
+              i === actualIndex ? { ...item, uploading: false, url: 'ERROR', error: errorMessage } : item
             ));
             throw error;
           }
@@ -161,11 +165,28 @@ const SubmissionsPage = () => {
         console.error('File upload error:', error);
         setSubmitMessage({ 
           type: 'error', 
-          text: 'Some files failed to upload. Please try again.' 
+          text: 'Some files failed to upload. You can try again or remove the failed files.' 
         });
       } finally {
         setIsUploading(false);
       }
+    }
+    
+    // Clear the input so the same files can be selected again if needed
+    e.target.value = '';
+  };
+
+  const removeFile = (index: number) => {
+    // Remove from both arrays
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+    setFormData(prev => ({
+      ...prev,
+      multimediaFiles: prev.multimediaFiles.filter((_, i) => i !== index)
+    }));
+    
+    // Clear any submit messages when user removes files
+    if (submitMessage) {
+      setSubmitMessage(null);
     }
   };
 
@@ -304,8 +325,10 @@ const SubmissionsPage = () => {
     file: File;
     uploading: boolean;
     uploadError: boolean;
+    errorMessage?: string;
+    onRemove: () => void;
     onClick?: (src: string) => void;
-  }> = ({ file, uploading, uploadError, onClick }) => {
+  }> = ({ file, uploading, uploadError, errorMessage, onRemove, onClick }) => {
     const [thumbnailSrc, setThumbnailSrc] = useState<string>("");
 
     React.useEffect(() => {
@@ -326,6 +349,9 @@ const SubmissionsPage = () => {
         border: uploadError ? '2px solid #ff4444' : undefined,
         cursor: (onClick && !uploading && !uploadError) ? 'pointer' : 'default'
       }}>
+        <RemoveButton onClick={(e) => { e.stopPropagation(); onRemove(); }} title="Remove file">
+          ×
+        </RemoveButton>
         <ThumbnailImage src={thumbnailSrc} alt={file.name} />
         <ThumbnailLabel>{file.name}</ThumbnailLabel>
         {file.type.startsWith("video/") && !uploading && !uploadError && <VideoIcon>▶</VideoIcon>}
@@ -341,7 +367,10 @@ const SubmissionsPage = () => {
         {uploadError && (
           <ErrorOverlay>
             <div style={{fontSize: '1.5rem'}}>⚠️</div>
-            <div style={{marginTop: '0.5rem', fontSize: '0.75rem'}}>Upload Failed</div>
+            <div style={{marginTop: '0.5rem', fontSize: '0.75rem', textAlign: 'center'}}>
+              Upload Failed
+              {errorMessage && <div style={{fontSize: '0.65rem', marginTop: '0.25rem'}}>{errorMessage}</div>}
+            </div>
           </ErrorOverlay>
         )}
       </ThumbnailContainer>
@@ -458,9 +487,8 @@ const SubmissionsPage = () => {
                    marginBottom: "0.5rem",
                  }}
                >
-                 Upload at least two examples of your artwork (images, videos, or other media files). This helps
-                 us understand your artistic style and capabilities. You can
-                 select multiple files.
+                 Upload at least two examples of your artwork (images, videos, or other media files). You can
+                 select multiple files at once or add them one by one. Click the × button to remove any file.
                </p>
               <FileInput
                 type="file"
@@ -489,6 +517,8 @@ const SubmissionsPage = () => {
                         file={uploadedFile.file}
                         uploading={uploadedFile.uploading}
                         uploadError={uploadedFile.url === 'ERROR'}
+                        errorMessage={uploadedFile.error}
+                        onRemove={() => removeFile(index)}
                         onClick={uploadedFile.url && uploadedFile.url !== 'ERROR' ? setSelectedImage : undefined}
                       />
                     ))}
@@ -799,6 +829,35 @@ const ThumbnailContainer = styled.div`
   &:hover {
     border-color: ${(props) => props.theme.colors.primary};
     transform: translateY(-2px);
+  }
+`;
+
+const RemoveButton = styled.button`
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #ff4444;
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: bold;
+  z-index: 10;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #cc0000;
+  }
+
+  &:focus {
+    outline: 2px solid #ff4444;
+    outline-offset: 2px;
   }
 `;
 
