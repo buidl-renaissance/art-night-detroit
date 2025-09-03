@@ -59,24 +59,70 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // Generate unique filename
+    // Generate unique filename with safe characters only
     const timestamp = Date.now();
-    const fileExtension = file.originalFilename?.split('.').pop() || 'bin';
-    const fileName = `portfolio-${timestamp}-${Math.random().toString(36).substr(2, 9)}.${fileExtension}`;
-    const filePath = `artist-submissions/${fileName}`;
+    const fileExtension = file.originalFilename?.split('.').pop()?.toLowerCase() || 'bin';
+    
+    // Map common extensions to safe versions
+    const extensionMap: { [key: string]: string } = {
+      'jpg': 'jpg',
+      'jpeg': 'jpg', 
+      'png': 'png',
+      'gif': 'gif',
+      'webp': 'webp',
+      'mp4': 'mp4',
+      'mov': 'mov',
+      'webm': 'webm',
+      'pdf': 'pdf',
+      'doc': 'doc',
+      'docx': 'docx'
+    };
+    
+    const safeExtension = extensionMap[fileExtension] || 'bin';
+    const randomString = Math.random().toString(36).substring(2, 11);
+    
+    // Use only alphanumeric characters, hyphens, and underscores
+    const fileName = `portfolio_${timestamp}_${randomString}.${safeExtension}`;
+    const filePath = `${fileName}`; // Try without subdirectory first
 
     // Read file buffer
     const fileBuffer = await fs.readFile(file.filepath);
     
-    // Upload to Supabase Storage
-    const { error: uploadError } = await supabase.storage
+    // Try to upload to Supabase Storage
+    console.log('Attempting to upload file:', { fileName, filePath, contentType: file.mimetype });
+    
+    // Try artist-portfolios bucket first, fallback to flyers bucket if it doesn't exist
+    let uploadError: any = null;
+    let bucketUsed = 'artist-portfolios';
+    
+    const uploadResult = await supabase.storage
       .from('artist-portfolios')
       .upload(filePath, fileBuffer, {
         contentType: file.mimetype || 'application/octet-stream',
+        upsert: false
       });
+    
+    uploadError = uploadResult.error;
+    
+    // If artist-portfolios bucket doesn't exist, try flyers bucket as fallback
+    if (uploadError && (uploadError.message.includes('not found') || uploadError.message.includes('bucket'))) {
+      console.log('artist-portfolios bucket not found, trying flyers bucket as fallback');
+      bucketUsed = 'flyers';
+      
+      const fallbackResult = await supabase.storage
+        .from('flyers')
+        .upload(`artist-portfolios/${filePath}`, fileBuffer, {
+          contentType: file.mimetype || 'application/octet-stream',
+          upsert: false
+        });
+        
+      uploadError = fallbackResult.error;
+    }
 
     if (uploadError) {
       console.error('Error uploading file:', uploadError);
+      console.error('File path attempted:', filePath);
+      console.error('File name attempted:', fileName);
       
       // Provide more specific error messages
       let errorMessage = 'Failed to upload file';
@@ -88,22 +134,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         errorMessage = 'Permission denied. Please try again.';
       } else if (uploadError.message.includes('network')) {
         errorMessage = 'Network error. Please check your connection and try again.';
+      } else if (uploadError.message.includes('pattern') || uploadError.message.includes('invalid')) {
+        errorMessage = 'Invalid file name or format. Please try renaming your file.';
       }
       
       return res.status(500).json({ 
         error: errorMessage,
-        details: uploadError.message 
+        details: uploadError.message,
+        debugInfo: {
+          fileName,
+          filePath,
+          originalFilename: file.originalFilename
+        }
       });
     }
 
-    // Get public URL
+    // Get public URL from the bucket that was actually used
     const { data: urlData } = supabase.storage
-      .from('artist-portfolios')
-      .getPublicUrl(filePath);
+      .from(bucketUsed)
+      .getPublicUrl(bucketUsed === 'flyers' ? `artist-portfolios/${filePath}` : filePath);
+
+    console.log('File uploaded successfully:', { 
+      fileName, 
+      filePath, 
+      bucketUsed, 
+      url: urlData.publicUrl 
+    });
 
     return res.status(200).json({ 
       url: urlData.publicUrl,
-      message: 'File uploaded successfully'
+      message: 'File uploaded successfully',
+      debugInfo: {
+        fileName,
+        bucketUsed,
+        originalFilename: file.originalFilename
+      }
     });
 
   } catch (error) {
