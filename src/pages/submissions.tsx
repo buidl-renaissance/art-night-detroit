@@ -1007,9 +1007,9 @@ const CheckboxLabel = styled.label`
   input {
     margin-right: 0.75rem;
     cursor: pointer;
-    width: 18px;
+    min-width: 18px;
     height: 18px;
-    transform: scale(1.4);
+    transform: scale(1);
   }
 `;
 
