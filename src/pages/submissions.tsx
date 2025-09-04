@@ -874,19 +874,6 @@ const HeroSection = styled.div`
   }
 `;
 
-const HeroBanner = styled.img`
-  max-width: 100%;
-  height: auto;
-  margin-bottom: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-
-  @media (min-width: 768px) {
-    max-width: 600px;
-    margin-bottom: 3rem;
-  }
-`;
-
 const HeroTitle = styled.h1`
   font-family: ${(props) => props.theme.fonts.display};
   font-size: 2rem;
