@@ -570,12 +570,13 @@ const SubmissionsPage = () => {
     <PageContainer>
       <Head>
         <title>
-          Murals in the Market - Artist Application | Art Night Detroit
+          Art Night Detroit x Murals in the Market - Featured Artist Application
         </title>
         <meta
           name="description"
           content="Apply to be a featured artist for Detroit's Murals in the Market event"
         />
+        <meta name="og:image" content="/images/art-night-detroit-banner.png" />
         <link
           href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700&family=Inter:wght@400;500;600&display=swap"
           rel="stylesheet"
@@ -583,8 +584,8 @@ const SubmissionsPage = () => {
       </Head>
 
       <HeroSection>
-        <HeroTitle>Murals in the Market</HeroTitle>
-        <HeroSubtitle>Apply to be a featured artist</HeroSubtitle>
+        <HeroTitle>Art Night Detroit x Murals in the Market</HeroTitle>
+        <HeroSubtitle>Featured Artist Application</HeroSubtitle>
       </HeroSection>
 
       <FormContainer>
@@ -870,6 +871,19 @@ const HeroSection = styled.div`
   @media (min-width: 768px) {
     padding: 4rem 1rem;
     margin-bottom: 2rem;
+  }
+`;
+
+const HeroBanner = styled.img`
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+
+  @media (min-width: 768px) {
+    max-width: 600px;
+    margin-bottom: 3rem;
   }
 `;
 

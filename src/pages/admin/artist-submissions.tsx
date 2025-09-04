@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEnvelope, faPhone, faLink, faCheck, faTimes, faEye, faImage } from '@fortawesome/free-solid-svg-icons';
+import { faEnvelope, faPhone, faLink, faCheck, faTimes, faEye, faImage, faPalette, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { faInstagram } from '@fortawesome/free-brands-svg-icons';
 import PageContainer from '../../components/PageContainer';
 import { Button } from '../../components/ui/Button';
@@ -36,6 +36,8 @@ const ArtistSubmissionsAdmin = () => {
   const [adminNotes, setAdminNotes] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+  const [currentSubmissionImages, setCurrentSubmissionImages] = useState<string[]>([]);
 
   const fetchSubmissions = useCallback(async () => {
     try {
@@ -75,6 +77,50 @@ const ArtistSubmissionsAdmin = () => {
       fetchSubmissions();
     }
   }, [isAdmin, authLoading, fetchSubmissions]);
+
+  // Keyboard navigation for image modal
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!selectedImage || currentSubmissionImages.length <= 1) return;
+
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        navigateImage(-1);
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        navigateImage(1);
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        closeImageModal();
+      }
+    };
+
+    if (selectedImage) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [selectedImage, currentImageIndex, currentSubmissionImages]);
+
+  const openImageModal = (imageUrl: string, allImages: string[]) => {
+    const imageIndex = allImages.indexOf(imageUrl);
+    setCurrentSubmissionImages(allImages);
+    setCurrentImageIndex(imageIndex >= 0 ? imageIndex : 0);
+    setSelectedImage(imageUrl);
+  };
+
+  const closeImageModal = () => {
+    setSelectedImage(null);
+    setCurrentSubmissionImages([]);
+    setCurrentImageIndex(0);
+  };
+
+  const navigateImage = (direction: number) => {
+    if (currentSubmissionImages.length === 0) return;
+    
+    const newIndex = (currentImageIndex + direction + currentSubmissionImages.length) % currentSubmissionImages.length;
+    setCurrentImageIndex(newIndex);
+    setSelectedImage(currentSubmissionImages[newIndex]);
+  };
 
   const updateSubmissionStatus = async (submissionId: string, newStatus: string, notes?: string) => {
     try {
@@ -230,6 +276,16 @@ const ArtistSubmissionsAdmin = () => {
                       <span>{submission.portfolio_link}</span>
                     </DetailRow>
                   )}
+                  {submission.preferred_canvas_size && (
+                    <DetailRow>
+                      <FontAwesomeIcon icon={faPalette} />
+                      <span>
+                        Canvas: {submission.preferred_canvas_size === '18x18' && '18" x 18"'}
+                        {submission.preferred_canvas_size === '18x24' && '18" x 24"'}
+                        {submission.preferred_canvas_size === 'own-canvas' && 'Own canvas'}
+                      </span>
+                    </DetailRow>
+                  )}
                 </SubmissionDetails>
 
                 <PortfolioPreview>
@@ -238,17 +294,14 @@ const ArtistSubmissionsAdmin = () => {
                     Portfolio ({submission.portfolio_files.length} files)
                   </PortfolioLabel>
                   <PortfolioThumbnails>
-                    {submission.portfolio_files.slice(0, 3).map((fileUrl, index) => (
+                    {submission.portfolio_files.map((fileUrl, index) => (
                       <PortfolioThumbnail 
                         key={index} 
                         src={fileUrl} 
                         alt={`Portfolio ${index + 1}`}
-                        onClick={() => setSelectedImage(fileUrl)}
+                        onClick={() => openImageModal(fileUrl, submission.portfolio_files)}
                       />
                     ))}
-                    {submission.portfolio_files.length > 3 && (
-                      <MoreFiles>+{submission.portfolio_files.length - 3} more</MoreFiles>
-                    )}
                   </PortfolioThumbnails>
                 </PortfolioPreview>
 
@@ -368,7 +421,7 @@ const ArtistSubmissionsAdmin = () => {
                       key={index} 
                       src={fileUrl} 
                       alt={`Portfolio ${index + 1}`}
-                      onClick={() => setSelectedImage(fileUrl)}
+                      onClick={() => openImageModal(fileUrl, selectedSubmission.portfolio_files)}
                     />
                   ))}
                 </PortfolioGrid>
@@ -427,12 +480,44 @@ const ArtistSubmissionsAdmin = () => {
 
       {/* Image Preview Modal */}
       {selectedImage && (
-        <Modal onClick={() => setSelectedImage(null)}>
+        <ImageModal onClick={closeImageModal}>
           <ImageModalContent onClick={(e) => e.stopPropagation()}>
-            <CloseButton onClick={() => setSelectedImage(null)}>×</CloseButton>
+            <ImageCloseButton onClick={closeImageModal}>×</ImageCloseButton>
+            
+            {/* Navigation arrows */}
+            {currentSubmissionImages.length > 1 && (
+              <>
+                <NavButton 
+                  direction="left" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigateImage(-1);
+                  }}
+                >
+                  <FontAwesomeIcon icon={faChevronLeft} />
+                </NavButton>
+                <NavButton 
+                  direction="right" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigateImage(1);
+                  }}
+                >
+                  <FontAwesomeIcon icon={faChevronRight} />
+                </NavButton>
+              </>
+            )}
+            
             <FullImage src={selectedImage} alt="Portfolio preview" />
+            
+            {/* Image counter */}
+            {currentSubmissionImages.length > 1 && (
+              <ImageCounter>
+                {currentImageIndex + 1} of {currentSubmissionImages.length}
+              </ImageCounter>
+            )}
           </ImageModalContent>
-        </Modal>
+        </ImageModal>
       )}
     </PageContainer>
   );
@@ -610,6 +695,7 @@ const PortfolioThumbnails = styled.div`
   display: flex;
   gap: 0.5rem;
   align-items: center;
+  flex-wrap: wrap;
 `;
 
 const PortfolioThumbnail = styled.img`
@@ -886,19 +972,102 @@ const StatusButton = styled.button<{ color: string }>`
   }}
 `;
 
+// Image Modal Components
+const ImageModal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 2rem;
+`;
+
 const ImageModalContent = styled.div`
   position: relative;
   max-width: 90vw;
   max-height: 90vh;
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const ImageCloseButton = styled.button`
+  position: absolute;
+  top: -3rem;
+  right: -1rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  z-index: 2001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background: white;
+  }
+`;
+
+const NavButton = styled.button<{ direction: 'left' | 'right' }>`
+  position: absolute;
+  top: 50%;
+  ${props => props.direction}: -4rem;
+  transform: translateY(-50%);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  z-index: 2001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background: white;
+  }
+
+  @media (max-width: 768px) {
+    ${props => props.direction}: -2rem;
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
 `;
 
 const FullImage = styled.img`
   max-width: 100%;
-  max-height: 90vh;
+  max-height: 100%;
   object-fit: contain;
+  border-radius: 8px;
+`;
+
+const ImageCounter = styled.div`
+  position: absolute;
+  bottom: -3rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
 `;
 
 export default ArtistSubmissionsAdmin;
