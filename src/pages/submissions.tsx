@@ -311,7 +311,7 @@ const SubmissionsPage = () => {
     }
   };
 
-  const createThumbnail = (file: File): Promise<string> => {
+  const createThumbnail = React.useCallback((file: File): Promise<string> => {
     return new Promise((resolve) => {
       if (file.type.startsWith("image/")) {
         const reader = new FileReader();
@@ -337,7 +337,7 @@ const SubmissionsPage = () => {
         resolve("/file.svg");
       }
     });
-  };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -468,7 +468,7 @@ const SubmissionsPage = () => {
     errorMessage?: string;
     onRemove: () => void;
     onClick?: (src: string) => void;
-  }> = ({
+  }> = React.memo(function MediaThumbnailWithStatus({
     file,
     uploading,
     processing,
@@ -476,7 +476,7 @@ const SubmissionsPage = () => {
     errorMessage,
     onRemove,
     onClick,
-  }) => {
+  }) {
     const [thumbnailSrc, setThumbnailSrc] = useState<string>("");
 
     React.useEffect(() => {
@@ -564,7 +564,7 @@ const SubmissionsPage = () => {
         )}
       </ThumbnailContainer>
     );
-  };
+  });
 
   return (
     <PageContainer>
