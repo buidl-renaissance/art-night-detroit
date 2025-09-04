@@ -570,7 +570,7 @@ const SubmissionsPage = () => {
     <PageContainer>
       <Head>
         <title>
-          Art Night Detroit x Murals in the Market - Featured Artist Application
+          Art Night Detroit x Murals in the Market Opening Party - Featured Artist Application
         </title>
         <meta
           name="description"
@@ -584,7 +584,7 @@ const SubmissionsPage = () => {
       </Head>
 
       <HeroSection>
-        <HeroTitle>Art Night Detroit x Murals in the Market</HeroTitle>
+        <HeroTitle>Art Night Detroit <br />x<br />Murals in the Market <br />Opening Party</HeroTitle>
         <HeroSubtitle>Featured Artist Application</HeroSubtitle>
       </HeroSection>
 
