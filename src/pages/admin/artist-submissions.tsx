@@ -712,14 +712,6 @@ const PortfolioThumbnail = styled.img`
   }
 `;
 
-const MoreFiles = styled.div`
-  font-size: 0.8rem;
-  color: #666;
-  padding: 0.25rem 0.5rem;
-  background: #f8f9fa;
-  border-radius: 4px;
-`;
-
 const SubmissionMeta = styled.div`
   display: flex;
   flex-wrap: wrap;
