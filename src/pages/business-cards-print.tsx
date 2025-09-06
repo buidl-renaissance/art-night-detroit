@@ -67,6 +67,8 @@ const PrintSheet = styled.div`
   position: relative;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   margin-bottom: 2rem;
+  align-items: center;
+  justify-items: center;
   
   @media print {
     box-shadow: none;
@@ -87,6 +89,8 @@ const CardGrid = styled.div`
   padding: 0.5in;
   height: 100%;
   box-sizing: border-box;
+  place-items: center;
+  padding-left: 1.5in;
 `;
 
 const BusinessCard = styled.div`
@@ -227,6 +231,21 @@ const BackPunchCardText = styled.p`
   font-weight: 500;
 `;
 
+const CardNumber = styled.div`
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  font-size: 10px;
+  color: #666;
+  font-weight: 500;
+  
+  @media print {
+    bottom: 6px;
+    right: 6px;
+    font-size: 9px;
+  }
+`;
+
 const SheetLabel = styled.div`
   position: absolute;
   top: 0.25in;
@@ -281,7 +300,7 @@ const BusinessCardsPrintPage: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
               <QRContainer>
                 <StyledQRCode
-                  value="https://artnightdetroit.com/"
+                  value={`https://artnightdetroit.com/rewards?card=${index+1}`}
                   size={96}
                   fgColor="#2c3e50"
                   bgColor="#ffffff"
@@ -297,9 +316,38 @@ const BusinessCardsPrintPage: React.FC = () => {
                 ))}
               </StarsRow>
             </PunchCardContainer>
+            
+            <CardNumber>#{String(index + 1).padStart(3, '0')}</CardNumber>
           </CardBack>
         </BusinessCard>
       );
+    }
+  };
+
+  const renderSheets = () => {
+    if (viewMode === 'front') {
+      // Only one sheet for front side
+      return (
+        <PrintSheet>
+          <SheetLabel>Front Side</SheetLabel>
+          <CardGrid>
+            {Array.from({ length: 10 }).map((_, index) => renderCard(index))}
+          </CardGrid>
+        </PrintSheet>
+      );
+    } else {
+      // Multiple sheets for back side (10 sheets for 100 cards total)
+      return Array.from({ length: 10 }).map((_, sheetIndex) => (
+        <PrintSheet key={`sheet-${sheetIndex}`}>
+          <SheetLabel>Back Side - Sheet {sheetIndex + 1}/10</SheetLabel>
+          <CardGrid>
+            {Array.from({ length: 10 }).map((_, cardIndex) => {
+              const globalCardIndex = sheetIndex * 10 + cardIndex;
+              return renderCard(globalCardIndex);
+            })}
+          </CardGrid>
+        </PrintSheet>
+      ));
     }
   };
 
@@ -312,25 +360,20 @@ const BusinessCardsPrintPage: React.FC = () => {
           className={viewMode === 'front' ? 'active' : ''} 
           onClick={() => setViewMode('front')}
         >
-          Front Side
+          Front Side (1 Sheet)
         </Button>
         <Button 
           className={viewMode === 'back' ? 'active' : ''} 
           onClick={() => setViewMode('back')}
         >
-          Back Side
+          Back Side (10 Sheets)
         </Button>
         <Button onClick={handlePrint}>
           Print
         </Button>
       </Controls>
 
-      <PrintSheet>
-        <SheetLabel>{viewMode === 'front' ? 'Front Side' : 'Back Side'}</SheetLabel>
-        <CardGrid>
-          {Array.from({ length: 10 }).map((_, index) => renderCard(index))}
-        </CardGrid>
-      </PrintSheet>
+      {renderSheets()}
 
       <style jsx global>{`
         @media print {

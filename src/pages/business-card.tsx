@@ -246,7 +246,7 @@ const BusinessCardPage: React.FC<BusinessCardPageProps> = () => {
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
                 <QRContainer>
                   <StyledQRCode
-                    value="https://artnight.thebarefoot.dev"
+                    value={`https://artnightdetroit.com/rewards`}
                     size={144}
                     fgColor="#2c3e50"
                     bgColor="#ffffff"
