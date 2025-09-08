@@ -127,6 +127,12 @@ export default function AdminDashboard() {
       description: 'Review and manage artist applications',
       icon: '🎭',
       path: '/admin/artist-submissions'
+    },
+    {
+      title: 'Vendor Submissions',
+      description: 'Review and manage vendor applications',
+      icon: '🏪',
+      path: '/admin/vendor-submissions'
     }
   ];
 

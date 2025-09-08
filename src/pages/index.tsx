@@ -79,6 +79,14 @@ const HomePage: React.FC<HomePageProps> = ({ events }) => {
             Submit Your Event
           </CTAButton>
         </CTAButtonContainer>
+        <CTAButtonContainer style={{ marginTop: '1rem' }}>
+          <CTAButton href="/submissions" style={{ backgroundColor: '#8E44AD', marginRight: '0.5rem' }}>
+            Artist Application
+          </CTAButton>
+          <CTAButton href="/vendor-submissions" style={{ backgroundColor: '#E67E22', marginLeft: '0.5rem' }}>
+            Vendor Application
+          </CTAButton>
+        </CTAButtonContainer>
       </CTASection>
 
       <Footer />

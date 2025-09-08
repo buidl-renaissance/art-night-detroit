@@ -12,6 +12,8 @@ const Footer: React.FC = () => {
           <FooterLink href="/about">About</FooterLink>
           <FooterLink href="/events">All Events</FooterLink>
           <FooterLink href="/contact">Contact</FooterLink>
+          <FooterLink href="/submissions">Artist Application</FooterLink>
+          <FooterLink href="/vendor-submissions">Vendor Application</FooterLink>
         </FooterLinks>
       </FooterContent>
       <FooterAbout>
