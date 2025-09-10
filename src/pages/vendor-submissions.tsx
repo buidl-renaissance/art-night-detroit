@@ -194,7 +194,7 @@ const VendorSubmissionsPage = () => {
           <FormSection>
             <SectionTitle>🏢 Vendor Application</SectionTitle>
             <p style={{ marginBottom: "1rem", color: "#666" }}>
-              Connect with Detroit's vibrant art community
+              Connect with Detroit&apos;s vibrant art community
             </p>
             
             <FormGroup>
@@ -464,12 +464,6 @@ const Label = styled.label`
   color: #888;
 `;
 
-const CanvasSubtitle = styled.p`
-  font-size: 0.9rem;
-  color: #666;
-  margin: -0.25rem 0 1rem 0;
-  line-height: 1.4;
-`;
 
 const Input = styled.input`
   width: 100%;
@@ -486,21 +480,6 @@ const Input = styled.input`
   }
 `;
 
-const TextArea = styled.textarea`
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid ${(props) => props.theme.colors.border};
-  border-radius: 4px;
-  font-size: 1rem;
-  resize: vertical;
-  min-height: 100px;
-  box-sizing: border-box;
-
-  &:focus {
-    border-color: ${(props) => props.theme.colors.primary};
-    outline: none;
-  }
-`;
 
 
 
