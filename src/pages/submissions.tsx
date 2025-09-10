@@ -1,6 +1,8 @@
 import React, { useState, ChangeEvent } from "react";
 import Head from "next/head";
 import styled from "styled-components";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBan } from "@fortawesome/free-solid-svg-icons";
 
 interface FormData {
   name: string;
@@ -17,6 +19,18 @@ interface FormData {
 }
 
 const SubmissionsPage = () => {
+  // Check if submissions are still open (before 2pm today)
+  const getDeadline = () => {
+    const deadline = new Date(2025, 8, 10, 17, 0, 0); // 2pm today
+    return deadline;
+  };
+
+  const isSubmissionOpen = () => {
+    const now = new Date();
+    const deadline = getDeadline();
+    return now < deadline;
+  };
+
   const [formData, setFormData] = useState<FormData>({
     name: "",
     artistAlias: "",
@@ -342,6 +356,15 @@ const SubmissionsPage = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    // Check if submissions are still open
+    if (!isSubmissionOpen()) {
+      setSubmitMessage({
+        type: "error",
+        text: "Submissions are now closed. The deadline was 5:00 PM today.",
+      });
+      return;
+    }
+
     // Validate phone number before submission
     const phoneValidationError = validatePhoneNumber(formData.phone);
     if (phoneValidationError) {
@@ -588,8 +611,30 @@ const SubmissionsPage = () => {
         <HeroSubtitle>Featured Artist Application</HeroSubtitle>
       </HeroSection>
 
-      <FormContainer>
-        <form onSubmit={handleSubmit}>
+      {/* Deadline Notice */}
+      <DeadlineNotice isOpen={isSubmissionOpen()}>
+        {isSubmissionOpen() ? (
+          <div>
+            <strong>⏰ Deadline:</strong> Submissions close at <strong>5:00 PM today</strong>
+          </div>
+        ) : (
+          <div>
+            <div style={{ fontSize: "4rem", marginBottom: "0.75rem", color: "#dc3545" }}>
+              <FontAwesomeIcon icon={faBan} />
+            </div>
+            <div style={{ fontSize: "1.5rem", fontWeight: "700", marginBottom: "0.5rem", color: "#ffffff" }}>
+              Submissions Closed
+            </div>
+            <div style={{ fontSize: "1.1rem", fontWeight: "400", color: "#f8f9fa", lineHeight: "1.4" }}>
+              The deadline has passed (5:00 PM today)
+            </div>
+          </div>
+        )}
+      </DeadlineNotice>
+
+      {isSubmissionOpen() && (
+        <FormContainer>
+          <form onSubmit={handleSubmit}>
           <FormSection>
             <SectionTitle>🎨 Artist Application</SectionTitle>
             <p style={{ marginBottom: "1rem", color: "#666" }}>
@@ -825,8 +870,12 @@ const SubmissionsPage = () => {
           </FormSection>
 
           <SubmitButtonContainer>
-            <SubmitButton type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Submitting..." : "Submit Artist Application"}
+            <SubmitButton type="submit" disabled={isSubmitting || !isSubmissionOpen()}>
+              {!isSubmissionOpen() 
+                ? "Submissions Closed" 
+                : isSubmitting 
+                ? "Submitting..." 
+                : "Submit Artist Application"}
             </SubmitButton>
             {submitMessage && (
               <SubmitMessage type={submitMessage.type}>
@@ -835,7 +884,8 @@ const SubmissionsPage = () => {
             )}
           </SubmitButtonContainer>
         </form>
-      </FormContainer>
+        </FormContainer>
+      )}
 
       {selectedImage && (
         <Modal onClick={() => setSelectedImage(null)}>
@@ -855,6 +905,7 @@ const PageContainer = styled.div`
   padding: 1rem;
   font-family: "Inter", sans-serif;
   background-color: #333;
+  min-height: 100vh;
 
   @media (min-width: 768px) {
     padding: 2rem;
@@ -896,6 +947,31 @@ const HeroSubtitle = styled.p`
 
   @media (min-width: 768px) {
     font-size: 1.2rem;
+  }
+`;
+
+const DeadlineNotice = styled.div<{ isOpen: boolean }>`
+  max-width: 600px;
+  margin: 1.5rem auto;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 500;
+  
+  ${(props) => props.isOpen ? `
+    padding: 1rem;
+    border-radius: 8px;
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+  ` : `
+    padding: 0.5rem 0;
+    color: #6c757d;
+    background: none;
+    border: none;
+  `}
+
+  @media (min-width: 768px) {
+    font-size: 1.1rem;
   }
 `;
 
