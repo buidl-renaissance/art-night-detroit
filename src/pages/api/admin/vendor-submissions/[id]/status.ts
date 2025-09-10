@@ -31,7 +31,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Get current user for reviewed_by field
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
-    const updateData: any = {
+    const updateData: {
+      status: string;
+      admin_notes: string | null;
+      reviewed_at: string;
+      updated_at: string;
+      reviewed_by?: string;
+    } = {
       status,
       admin_notes: admin_notes || null,
       reviewed_at: new Date().toISOString(),
