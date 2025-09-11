@@ -144,12 +144,35 @@ const ArtistSubmissionsAdmin = () => {
 
       console.log('Status updated successfully:', result);
 
-      // Refresh submissions
-      fetchSubmissions();
+      // Update local state instead of refetching
+      setSubmissions(prevSubmissions => 
+        prevSubmissions.map(submission => 
+          submission.id === submissionId 
+            ? { 
+                ...submission, 
+                status: newStatus as ArtistSubmission['status'],
+                admin_notes: notes || submission.admin_notes,
+                updated_at: new Date().toISOString()
+              }
+            : submission
+        )
+      );
+
+      // Update selected submission if it's currently open
+      if (selectedSubmission && selectedSubmission.id === submissionId) {
+        setSelectedSubmission(prev => prev ? {
+          ...prev,
+          status: newStatus as ArtistSubmission['status'],
+          admin_notes: notes || prev.admin_notes,
+          updated_at: new Date().toISOString()
+        } : null);
+      }
       
-      // Close modal
-      setSelectedSubmission(null);
-      setAdminNotes('');
+      // Close modal only if it was opened from the modal (when notes are provided)
+      if (notes !== undefined) {
+        setSelectedSubmission(null);
+        setAdminNotes('');
+      }
     } catch (error) {
       console.error('Error in updateSubmissionStatus:', error);
     }
@@ -255,86 +278,93 @@ const ArtistSubmissionsAdmin = () => {
                   </StatusBadge>
                 </SubmissionHeader>
 
-                <SubmissionDetails>
-                  <DetailRow>
-                    <FontAwesomeIcon icon={faEnvelope} />
-                    <span>{submission.email}</span>
-                  </DetailRow>
-                  <DetailRow>
-                    <FontAwesomeIcon icon={faPhone} />
-                    <span>{submission.phone}</span>
-                  </DetailRow>
-                  {submission.instagram_link && (
-                    <DetailRow>
-                      <FontAwesomeIcon icon={faInstagram} />
-                      <span>{submission.instagram_link}</span>
-                    </DetailRow>
-                  )}
-                  {submission.portfolio_link && (
-                    <DetailRow>
-                      <FontAwesomeIcon icon={faLink} />
-                      <span>{submission.portfolio_link}</span>
-                    </DetailRow>
-                  )}
-                  {submission.preferred_canvas_size && (
-                    <DetailRow>
-                      <FontAwesomeIcon icon={faPalette} />
-                      <span>
-                        Canvas: {submission.preferred_canvas_size === '18x18' && '18" x 18"'}
-                        {submission.preferred_canvas_size === '18x24' && '18" x 24"'}
-                        {submission.preferred_canvas_size === 'own-canvas' && 'Own canvas'}
-                      </span>
-                    </DetailRow>
-                  )}
-                </SubmissionDetails>
+                <CompactContent>
+                  <InfoSection>
+                    <SubmissionDetails>
+                      {submission.instagram_link && (
+                        <DetailRow>
+                          <FontAwesomeIcon icon={faInstagram} />
+                          <LinkText href={submission.instagram_link} target="_blank" rel="noopener noreferrer">
+                            {submission.instagram_link}
+                          </LinkText>
+                        </DetailRow>
+                      )}
+                      {submission.portfolio_link && (
+                        <DetailRow>
+                          <FontAwesomeIcon icon={faLink} />
+                          <LinkText href={submission.portfolio_link} target="_blank" rel="noopener noreferrer">
+                            {submission.portfolio_link}
+                          </LinkText>
+                        </DetailRow>
+                      )}
+                      {submission.preferred_canvas_size && (
+                        <DetailRow>
+                          <FontAwesomeIcon icon={faPalette} />
+                          <span>
+                            Canvas: {submission.preferred_canvas_size === '18x18' && '18" x 18"'}
+                            {submission.preferred_canvas_size === '18x24' && '18" x 24"'}
+                            {submission.preferred_canvas_size === 'own-canvas' && 'Own canvas'}
+                          </span>
+                        </DetailRow>
+                      )}
+                    </SubmissionDetails>
 
-                <PortfolioPreview>
-                  <PortfolioLabel>
-                    <FontAwesomeIcon icon={faImage} />
-                    Portfolio ({submission.portfolio_files.length} files)
-                  </PortfolioLabel>
-                  <PortfolioThumbnails>
-                    {submission.portfolio_files.map((fileUrl, index) => (
-                      <PortfolioThumbnail 
-                        key={index} 
-                        src={fileUrl} 
-                        alt={`Portfolio ${index + 1}`}
-                        onClick={() => openImageModal(fileUrl, submission.portfolio_files)}
-                      />
-                    ))}
-                  </PortfolioThumbnails>
-                </PortfolioPreview>
+                    {submission.additional_notes && (
+                      <NotesSection>
+                        <NotesLabel>Artist Statement:</NotesLabel>
+                        <CardNotesText>{submission.additional_notes}</CardNotesText>
+                      </NotesSection>
+                    )}
 
-                <SubmissionMeta>
-                  <MetaText>Submitted: {new Date(submission.created_at).toLocaleDateString()}</MetaText>
-                  {submission.willing_to_volunteer && <MetaText>• Willing to volunteer</MetaText>}
-                  {submission.interested_in_future_events && <MetaText>• Interested in future events</MetaText>}
-                </SubmissionMeta>
+                    <SubmissionMeta>
+                      <MetaText>Submitted: {new Date(submission.created_at).toLocaleDateString()}</MetaText>
+                      {submission.willing_to_volunteer && <MetaText>• Willing to volunteer</MetaText>}
+                      {submission.interested_in_future_events && <MetaText>• Interested in future events</MetaText>}
+                    </SubmissionMeta>
 
-                <ActionButtons>
-                  <ActionButton onClick={() => openSubmissionModal(submission)}>
-                    <FontAwesomeIcon icon={faEye} />
-                    View Details
-                  </ActionButton>
-                  {submission.status === 'pending_review' && (
-                    <>
-                      <ActionButton 
-                        color="success" 
-                        onClick={() => updateSubmissionStatus(submission.id, 'approved')}
-                      >
-                        <FontAwesomeIcon icon={faCheck} />
-                        Approve
+                    <ActionButtons>
+                      <ActionButton onClick={() => openSubmissionModal(submission)}>
+                        <FontAwesomeIcon icon={faEye} />
+                        View Details
                       </ActionButton>
-                      <ActionButton 
-                        color="danger" 
-                        onClick={() => updateSubmissionStatus(submission.id, 'rejected')}
-                      >
-                        <FontAwesomeIcon icon={faTimes} />
-                        Reject
-                      </ActionButton>
-                    </>
-                  )}
-                </ActionButtons>
+                      {submission.status === 'pending_review' && (
+                        <>
+                          <ActionButton 
+                            color="success" 
+                            onClick={() => updateSubmissionStatus(submission.id, 'approved')}
+                          >
+                            <FontAwesomeIcon icon={faCheck} />
+                            Approve
+                          </ActionButton>
+                          <ActionButton 
+                            color="danger" 
+                            onClick={() => updateSubmissionStatus(submission.id, 'rejected')}
+                          >
+                            <FontAwesomeIcon icon={faTimes} />
+                            Reject
+                          </ActionButton>
+                        </>
+                      )}
+                    </ActionButtons>
+                  </InfoSection>
+
+                  <PortfolioSection>
+                    <PortfolioLabel>
+                      <FontAwesomeIcon icon={faImage} />
+                      Portfolio ({submission.portfolio_files.length} files)
+                    </PortfolioLabel>
+                    <PortfolioThumbnails>
+                      {submission.portfolio_files.map((fileUrl, index) => (
+                        <PortfolioThumbnail 
+                          key={index} 
+                          src={fileUrl} 
+                          alt={`Portfolio ${index + 1}`}
+                          onClick={() => openImageModal(fileUrl, submission.portfolio_files)}
+                        />
+                      ))}
+                    </PortfolioThumbnails>
+                  </PortfolioSection>
+                </CompactContent>
               </SubmissionCard>
             ))}
           </SubmissionsGrid>
@@ -605,8 +635,8 @@ const StatLabel = styled.div`
 `;
 
 const SubmissionsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 1.5rem;
 `;
 
@@ -614,8 +644,12 @@ const SubmissionCard = styled.div`
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
+  padding: 1rem;
   transition: transform 0.2s, box-shadow 0.2s;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 
   &:hover {
     transform: translateY(-2px);
@@ -623,11 +657,29 @@ const SubmissionCard = styled.div`
   }
 `;
 
+const CompactContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+`;
+
+const InfoSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+`;
+
+const PortfolioSection = styled.div`
+  width: 100%;
+  border-top: 1px solid #e9ecef;
+  padding-top: 1rem;
+`;
+
 const SubmissionHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 `;
 
 const ArtistInfo = styled.div`
@@ -655,7 +707,10 @@ const StatusBadge = styled.span<{ color: string }>`
 `;
 
 const SubmissionDetails = styled.div`
-  margin-bottom: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
 `;
 
 const DetailRow = styled.div`
@@ -672,8 +727,54 @@ const DetailRow = styled.div`
   }
 `;
 
+const LinkText = styled.a`
+  color: #007bff;
+  text-decoration: none;
+  word-break: break-all;
+  font-size: 0.9rem;
+
+  &:hover {
+    text-decoration: underline;
+    color: #0056b3;
+  }
+`;
+
+const NotesSection = styled.div`
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 0.75rem;
+  border-left: 3px solid #007bff;
+`;
+
+const NotesLabel = styled.div`
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+`;
+
+const CardNotesText = styled.div`
+  color: #6c757d;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  max-height: 4.5rem;
+  overflow: hidden;
+  position: relative;
+
+  &:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 20px;
+    height: 1.2rem;
+    background: linear-gradient(to right, transparent, #f8f9fa);
+  }
+`;
+
 const PortfolioPreview = styled.div`
-  margin-bottom: 1rem;
+  margin-bottom: 0;
 `;
 
 const PortfolioLabel = styled.div`
@@ -693,22 +794,29 @@ const PortfolioLabel = styled.div`
 
 const PortfolioThumbnails = styled.div`
   display: flex;
-  gap: 0.5rem;
+  gap: 1rem;
   align-items: center;
   flex-wrap: wrap;
+  width: 100%;
+  overflow-x: auto;
+  padding: 0.5rem 0;
 `;
 
 const PortfolioThumbnail = styled.img`
-  width: 50px;
-  height: 50px;
+  width: 120px;
+  height: 120px;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   border: 2px solid transparent;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, transform 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
 
   &:hover {
     border-color: #007bff;
+    transform: scale(1.05);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   }
 `;
 
@@ -716,7 +824,7 @@ const SubmissionMeta = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   font-size: 0.8rem;
   color: #666;
 `;
@@ -983,9 +1091,12 @@ const ImageModalContent = styled.div`
   position: relative;
   max-width: 90vw;
   max-height: 90vh;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 `;
 
 const ImageCloseButton = styled.button`
@@ -1043,10 +1154,13 @@ const NavButton = styled.button<{ direction: 'left' | 'right' }>`
 `;
 
 const FullImage = styled.img`
-  max-width: 100%;
-  max-height: 100%;
+  max-width: calc(90vw - 4rem);
+  max-height: calc(90vh - 4rem);
+  width: auto;
+  height: auto;
   object-fit: contain;
   border-radius: 8px;
+  display: block;
 `;
 
 const ImageCounter = styled.div`
