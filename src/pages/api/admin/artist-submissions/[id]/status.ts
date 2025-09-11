@@ -1,5 +1,9 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
+import { Resend } from 'resend';
+import { generateArtistAcceptanceEmail } from '../../../../../lib/emailTemplates';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'PUT') {
@@ -48,10 +52,40 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
+    // Send acceptance email if status is being changed to 'approved'
+    let emailResult = null;
+    if (status === 'approved' && data) {
+      try {
+        // Generate email content using shared function
+        const emailContent = generateArtistAcceptanceEmail({
+          name: data.name,
+          artist_alias: data.artist_alias,
+          email: data.email,
+          preferred_canvas_size: data.preferred_canvas_size
+        });
+
+        // Send the acceptance email
+        emailResult = await resend.emails.send({
+          from: 'Art Night Detroit <noreply@artnightdetroit.com>',
+          to: data.email,
+          subject: '🎨 Congratulations! Your Artist Application Has Been Accepted',
+          text: emailContent,
+        });
+
+        console.log('Acceptance email sent successfully:', emailResult);
+      } catch (emailError) {
+        console.error('Error sending acceptance email:', emailError);
+        // Don't fail the status update if email fails
+        emailResult = { error: emailError instanceof Error ? emailError.message : 'Unknown email error' };
+      }
+    }
+
     res.status(200).json({ 
       success: true, 
       message: 'Submission status updated successfully',
-      submission: data
+      submission: data,
+      emailSent: status === 'approved' ? !!emailResult?.data?.id : false,
+      emailResult: emailResult?.error ? { error: emailResult.error } : null
     });
 
   } catch (error) {
