@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEnvelope, faPhone, faLink, faCheck, faTimes, faEye, faImage, faPalette, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { faLink, faCheck, faTimes, faEye, faImage, faPalette, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { faInstagram } from '@fortawesome/free-brands-svg-icons';
 import PageContainer from '../../components/PageContainer';
 import { Button } from '../../components/ui/Button';
@@ -771,10 +771,6 @@ const CardNotesText = styled.div`
     height: 1.2rem;
     background: linear-gradient(to right, transparent, #f8f9fa);
   }
-`;
-
-const PortfolioPreview = styled.div`
-  margin-bottom: 0;
 `;
 
 const PortfolioLabel = styled.div`
