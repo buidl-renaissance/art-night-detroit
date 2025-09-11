@@ -52,6 +52,7 @@ const SubmissionsPage = () => {
     type: "success" | "error";
     text: string;
   } | null>(null);
+  const [isSuccessfullySubmitted, setIsSuccessfullySubmitted] = useState<boolean>(false);
   const [uploadedFiles, setUploadedFiles] = useState<
     {
       id: string;
@@ -444,6 +445,7 @@ const SubmissionsPage = () => {
       const result = await response.json();
 
       if (response.ok) {
+        setIsSuccessfullySubmitted(true);
         setSubmitMessage({
           type: "success",
           text: "Thank you for your submission! We'll review your application and get back to you soon.",
@@ -634,7 +636,24 @@ const SubmissionsPage = () => {
 
       {isSubmissionOpen() && (
         <FormContainer>
-          <form onSubmit={handleSubmit}>
+          {isSuccessfullySubmitted ? (
+            <SuccessMessageContainer>
+              <SuccessIcon>✅</SuccessIcon>
+              <SuccessTitle>Application Submitted Successfully!</SuccessTitle>
+              <SuccessMessage>
+                Thank you for your submission! We&apos;ll review your application and get back to you soon.
+              </SuccessMessage>
+              <SuccessDetails>
+                <p>What happens next:</p>
+                <ul>
+                  <li>Check your email for a confirmation</li>
+                  <li>Our team will review your portfolio and application</li>
+                  <li>If selected, you&apos;ll receive details about the event</li>
+                </ul>
+              </SuccessDetails>
+            </SuccessMessageContainer>
+          ) : (
+            <form onSubmit={handleSubmit}>
           <FormSection>
             <SectionTitle>🎨 Artist Application</SectionTitle>
             <p style={{ marginBottom: "1rem", color: "#666" }}>
@@ -884,6 +903,7 @@ const SubmissionsPage = () => {
             )}
           </SubmitButtonContainer>
         </form>
+          )}
         </FormContainer>
       )}
 
@@ -1372,6 +1392,65 @@ const ErrorOverlay = styled.div`
   justify-content: center;
   border-radius: 4px;
   color: #ff4444;
+`;
+
+const SuccessMessageContainer = styled.div`
+  text-align: center;
+  padding: 3rem 2rem;
+`;
+
+const SuccessIcon = styled.div`
+  font-size: 4rem;
+  margin-bottom: 1rem;
+`;
+
+const SuccessTitle = styled.h2`
+  font-family: ${(props) => props.theme.fonts.display};
+  font-size: 2rem;
+  color: #28a745;
+  margin-bottom: 1rem;
+  
+  @media (min-width: 768px) {
+    font-size: 2.5rem;
+  }
+`;
+
+const SuccessMessage = styled.div`
+  font-size: 1.1rem;
+  color: #aaa;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+  
+  @media (min-width: 768px) {
+    font-size: 1.2rem;
+  }
+`;
+
+const SuccessDetails = styled.div`
+  text-align: left;
+  background-color: #444;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border-left: 4px solid #28a745;
+  max-width: 500px;
+  margin: 0 auto;
+  
+  p {
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: #fff;
+  }
+  
+  ul {
+    margin: 0;
+    padding-left: 1.25rem;
+  }
+  
+  li {
+    margin-bottom: 0.5rem;
+    color: #ccc;
+    line-height: 1.5;
+  }
 `;
 
 export default SubmissionsPage;
