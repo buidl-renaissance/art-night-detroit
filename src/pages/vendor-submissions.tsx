@@ -33,6 +33,7 @@ const VendorSubmissionsPage = () => {
 
   const [phoneError, setPhoneError] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
   const [submitMessage, setSubmitMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -164,6 +165,7 @@ const VendorSubmissionsPage = () => {
           type: "success",
           text: "Thank you for your vendor application! We'll review your submission and get back to you soon.",
         });
+        setIsSubmitted(true);
 
         // Reset form
         setFormData({
@@ -221,219 +223,227 @@ const VendorSubmissionsPage = () => {
       </HeroSection>
 
       <FormContainer>
-        <form onSubmit={handleSubmit}>
-          <FormSection>
-            <SectionTitle>🏢 Vendor & Workshop Application</SectionTitle>
-            <p style={{ marginBottom: "0.5rem", color: "#666" }}>Submissions close at 8 PM Tuesday, September 16th</p>
-            <p style={{ marginBottom: "1rem", color: "#6868f0" }}>Vendor Fee: $50</p>
-            
-            <FormGroup>
-              <Label>Business Name *</Label>
-              <Input
-                type="text"
-                name="businessName"
-                value={formData.businessName}
-                onChange={handleInputChange}
-                required
-              />
-            </FormGroup>
-
-            <FormGroup>
-              <Label>Contact Name *</Label>
-              <Input
-                type="text"
-                name="contactName"
-                value={formData.contactName}
-                onChange={handleInputChange}
-                required
-              />
-            </FormGroup>
-
-            <FormGroup>
-              <Label>Email *</Label>
-              <Input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                required
-              />
-            </FormGroup>
-
-            <FormGroup>
-              <Label>Phone Number *</Label>
-              <Input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleInputChange}
-                required
-                placeholder="(555) 123-4567"
-                style={{ borderColor: phoneError ? "#ff4444" : undefined }}
-              />
-              {phoneError && <ErrorMessage>{phoneError}</ErrorMessage>}
-            </FormGroup>
-
-            <FormGroup>
-              <Label>Website</Label>
-              <Input
-                type="url"
-                name="websiteLink"
-                value={formData.websiteLink}
-                onChange={handleInputChange}
-                placeholder="https://yourbusiness.com"
-              />
-            </FormGroup>
-
-            <FormGroup>
-              <Label>Instagram Handle</Label>
-              <Input
-                type="text"
-                name="instagramLink"
-                value={formData.instagramLink}
-                onChange={handleInputChange}
-                placeholder="@yourbusiness"
-              />
-            </FormGroup>
-
-            <FormGroup>
-              <Label>Business Type *</Label>
-              <RadioGroup>
-                <RadioLabel>
-                  <input
-                    type="radio"
-                    name="businessType"
-                    value="food"
-                    checked={formData.businessType === "food"}
-                    onChange={handleInputChange}
-                    required
-                  />
-                  Food & Beverage
-                </RadioLabel>
-                <RadioLabel>
-                  <input
-                    type="radio"
-                    name="businessType"
-                    value="retail"
-                    checked={formData.businessType === "retail"}
-                    onChange={handleInputChange}
-                    required
-                  />
-                  Retail & Merchandise
-                </RadioLabel>
-                <RadioLabel>
-                  <input
-                    type="radio"
-                    name="businessType"
-                    value="services"
-                    checked={formData.businessType === "services"}
-                    onChange={handleInputChange}
-                    required
-                  />
-                  Services
-                </RadioLabel>
-                <RadioLabel>
-                  <input
-                    type="radio"
-                    name="businessType"
-                    value="crafts"
-                    checked={formData.businessType === "crafts"}
-                    onChange={handleInputChange}
-                    required
-                  />
-                  Arts & Crafts
-                </RadioLabel>
-                <RadioLabel>
-                  <input
-                    type="radio"
-                    name="businessType"
-                    value="wellness"
-                    checked={formData.businessType === "wellness"}
-                    onChange={handleInputChange}
-                    required
-                  />
-                  Health & Wellness
-                </RadioLabel>
-                <RadioLabel>
-                  <input
-                    type="radio"
-                    name="businessType"
-                    value="other"
-                    checked={formData.businessType === "other"}
-                    onChange={handleInputChange}
-                    required
-                  />
-                  Other
-                </RadioLabel>
-              </RadioGroup>
-            </FormGroup>
-
-            {formData.businessType === "other" && (
+        {isSubmitted ? (
+          <SuccessContainer>
+            <SuccessIcon>✅</SuccessIcon>
+            <SuccessTitle>Application Submitted Successfully!</SuccessTitle>
+            <SuccessMessage>
+              Thank you for your vendor application! We&apos;ll review your submission and get back to you soon.
+            </SuccessMessage>
+            <SuccessSubtext>
+              You should receive a confirmation email shortly. If you have any questions, please don&apos;t hesitate to contact us.
+            </SuccessSubtext>
+          </SuccessContainer>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <FormSection>
+              <SectionTitle>🏢 Vendor & Workshop Application</SectionTitle>
+              <p style={{ marginBottom: "0.5rem", color: "#666" }}>Submissions close at 8 PM Tuesday, September 16th</p>
+              <p style={{ marginBottom: "1rem", color: "#6868f0" }}>Vendor Fee: $50</p>
+              
               <FormGroup>
-                <Label>Please specify your business type *</Label>
+                <Label>Business Name *</Label>
                 <Input
                   type="text"
-                  name="businessTypeOther"
-                  value={formData.businessTypeOther}
+                  name="businessName"
+                  value={formData.businessName}
                   onChange={handleInputChange}
-                  placeholder="e.g., Workshop, Educational Services, etc."
                   required
                 />
               </FormGroup>
-            )}
 
-            <FormGroup>
-              <Label>Business Vision *</Label>
-              <TextArea
-                name="businessVision"
-                value={formData.businessVision}
-                onChange={handleInputChange}
-                placeholder="Share your vision for your business. What drives you? What impact do you want to make in the community? (This field works for both vendors and workshops)"
-                rows={4}
-                required
-              />
-            </FormGroup>
+              <FormGroup>
+                <Label>Contact Name *</Label>
+                <Input
+                  type="text"
+                  name="contactName"
+                  value={formData.contactName}
+                  onChange={handleInputChange}
+                  required
+                />
+              </FormGroup>
 
+              <FormGroup>
+                <Label>Email *</Label>
+                <Input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required
+                />
+              </FormGroup>
 
+              <FormGroup>
+                <Label>Phone Number *</Label>
+                <Input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="(555) 123-4567"
+                  style={{ borderColor: phoneError ? "#ff4444" : undefined }}
+                />
+                {phoneError && <ErrorMessage>{phoneError}</ErrorMessage>}
+              </FormGroup>
 
-            <FormGroup>
-              <Label>Setup Requirements</Label>
-              <TextArea
-                name="setupRequirements"
-                value={formData.setupRequirements}
-                onChange={handleInputChange}
-                placeholder="Do you need electricity, water, specific space requirements, etc.?"
-                rows={2}
-              />
-            </FormGroup>
+              <FormGroup>
+                <Label>Website</Label>
+                <Input
+                  type="url"
+                  name="websiteLink"
+                  value={formData.websiteLink}
+                  onChange={handleInputChange}
+                  placeholder="https://yourbusiness.com"
+                />
+              </FormGroup>
 
+              <FormGroup>
+                <Label>Instagram Handle</Label>
+                <Input
+                  type="text"
+                  name="instagramLink"
+                  value={formData.instagramLink}
+                  onChange={handleInputChange}
+                  placeholder="@yourbusiness"
+                />
+              </FormGroup>
 
+              <FormGroup>
+                <Label>Business Type *</Label>
+                <RadioGroup>
+                  <RadioLabel>
+                    <input
+                      type="radio"
+                      name="businessType"
+                      value="food"
+                      checked={formData.businessType === "food"}
+                      onChange={handleInputChange}
+                      required
+                    />
+                    Food & Beverage
+                  </RadioLabel>
+                  <RadioLabel>
+                    <input
+                      type="radio"
+                      name="businessType"
+                      value="retail"
+                      checked={formData.businessType === "retail"}
+                      onChange={handleInputChange}
+                      required
+                    />
+                    Retail & Merchandise
+                  </RadioLabel>
+                  <RadioLabel>
+                    <input
+                      type="radio"
+                      name="businessType"
+                      value="services"
+                      checked={formData.businessType === "services"}
+                      onChange={handleInputChange}
+                      required
+                    />
+                    Services
+                  </RadioLabel>
+                  <RadioLabel>
+                    <input
+                      type="radio"
+                      name="businessType"
+                      value="crafts"
+                      checked={formData.businessType === "crafts"}
+                      onChange={handleInputChange}
+                      required
+                    />
+                    Arts & Crafts
+                  </RadioLabel>
+                  <RadioLabel>
+                    <input
+                      type="radio"
+                      name="businessType"
+                      value="wellness"
+                      checked={formData.businessType === "wellness"}
+                      onChange={handleInputChange}
+                      required
+                    />
+                    Health & Wellness
+                  </RadioLabel>
+                  <RadioLabel>
+                    <input
+                      type="radio"
+                      name="businessType"
+                      value="other"
+                      checked={formData.businessType === "other"}
+                      onChange={handleInputChange}
+                      required
+                    />
+                    Other
+                  </RadioLabel>
+                </RadioGroup>
+              </FormGroup>
 
+              {formData.businessType === "other" && (
+                <FormGroup>
+                  <Label>Please specify your business type *</Label>
+                  <Input
+                    type="text"
+                    name="businessTypeOther"
+                    value={formData.businessTypeOther}
+                    onChange={handleInputChange}
+                    placeholder="e.g., Workshop, Educational Services, etc."
+                    required
+                  />
+                </FormGroup>
+              )}
 
-            <FormGroup>
-              <Label>Additional Notes</Label>
-              <TextArea
-                name="additionalNotes"
-                value={formData.additionalNotes}
-                onChange={handleInputChange}
-                placeholder="Anything else you'd like us to know?"
-                rows={2}
-              />
-            </FormGroup>
+              <FormGroup>
+                <Label>Business Vision *</Label>
+                <TextArea
+                  name="businessVision"
+                  value={formData.businessVision}
+                  onChange={handleInputChange}
+                  placeholder="Share your vision for your business. What drives you? What impact do you want to make in the community? (This field works for both vendors and workshops)"
+                  rows={4}
+                  required
+                />
+              </FormGroup>
 
-          </FormSection>
+              <FormGroup>
+                <Label>Setup Requirements</Label>
+                <TextArea
+                  name="setupRequirements"
+                  value={formData.setupRequirements}
+                  onChange={handleInputChange}
+                  placeholder="Do you need electricity, water, specific space requirements, etc.?"
+                  rows={2}
+                />
+              </FormGroup>
 
-          <SubmitButtonContainer>
-            <SubmitButton type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Submitting..." : "Submit Vendor/Workshop Application"}
-            </SubmitButton>
-            {submitMessage && (
-              <SubmitMessage type={submitMessage.type}>
-                {submitMessage.text}
-              </SubmitMessage>
-            )}
-          </SubmitButtonContainer>
-        </form>
+              <FormGroup>
+                <Label>Additional Notes</Label>
+                <TextArea
+                  name="additionalNotes"
+                  value={formData.additionalNotes}
+                  onChange={handleInputChange}
+                  placeholder="Anything else you'd like us to know?"
+                  rows={2}
+                />
+              </FormGroup>
+
+            </FormSection>
+
+            <SubmitButtonContainer>
+              <SubmitButton type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Submitting..." : "Submit Vendor/Workshop Application"}
+              </SubmitButton>
+              {submitMessage && (
+                <SubmitMessage type={submitMessage.type}>
+                  {submitMessage.text}
+                </SubmitMessage>
+              )}
+            </SubmitButtonContainer>
+          </form>
+        )}
       </FormContainer>
 
     </PageContainer>
@@ -674,6 +684,48 @@ const TextArea = styled.textarea`
   }
 `;
 
+const SuccessContainer = styled.div`
+  text-align: center;
+  padding: 3rem 2rem;
+`;
 
+const SuccessIcon = styled.div`
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+`;
+
+const SuccessTitle = styled.h2`
+  font-family: ${(props) => props.theme.fonts.display};
+  font-size: 2rem;
+  color: #28a745;
+  margin-bottom: 1rem;
+  font-weight: 600;
+
+  @media (min-width: 768px) {
+    font-size: 2.5rem;
+  }
+`;
+
+const SuccessMessage = styled.p`
+  font-size: 1.1rem;
+  color: #333;
+  margin-bottom: 1rem;
+  line-height: 1.6;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+
+  @media (min-width: 768px) {
+    font-size: 1.2rem;
+  }
+`;
+
+const SuccessSubtext = styled.p`
+  font-size: 0.95rem;
+  color: #666;
+  line-height: 1.5;
+  max-width: 450px;
+  margin: 0 auto;
+`;
 
 export default VendorSubmissionsPage;
