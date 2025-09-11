@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
-import { generateArtistAcceptanceEmail } from '../../../../../lib/emailTemplates';
+import { generateArtistAcceptanceEmail, generateArtistRejectionEmail } from '../../../../../lib/emailTemplates';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -52,29 +52,51 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // Send acceptance email if status is being changed to 'approved'
+    // Send email if status is being changed to 'approved' or 'rejected' and not already contacted
     let emailResult = null;
-    if (status === 'approved' && data) {
-      try {
-        // Generate email content using shared function
-        const emailContent = generateArtistAcceptanceEmail({
-          name: data.name,
-          artist_alias: data.artist_alias,
-          email: data.email,
-          preferred_canvas_size: data.preferred_canvas_size
-        });
+    let emailSubject = '';
+    let emailContent = '';
 
-        // Send the acceptance email
+    if ((status === 'approved' || status === 'rejected') && data && !data.contacted) {
+      try {
+        if (status === 'approved') {
+          // Generate acceptance email content
+          emailContent = generateArtistAcceptanceEmail({
+            name: data.name,
+            artist_alias: data.artist_alias,
+            email: data.email,
+            preferred_canvas_size: data.preferred_canvas_size
+          });
+          emailSubject = '🎨 Congratulations! Your Artist Application Has Been Accepted';
+        } else if (status === 'rejected') {
+          // Generate rejection email content
+          emailContent = generateArtistRejectionEmail({
+            name: data.name,
+            artist_alias: data.artist_alias,
+            email: data.email
+          });
+          emailSubject = 'Thank You for Your Artist Application - Art Night Detroit';
+        }
+
+        // Send the email
         emailResult = await resend.emails.send({
-          from: 'Art Night Detroit <noreply@artnightdetroit.com>',
+          from: 'Art Night Detroit <john@artnightdetroit.com>',
           to: data.email,
-          subject: '🎨 Congratulations! Your Artist Application Has Been Accepted',
+          subject: emailSubject,
           text: emailContent,
         });
 
-        console.log('Acceptance email sent successfully:', emailResult);
+        console.log(`${status} email sent successfully:`, emailResult);
+
+        // Update the contacted field to true after successful email
+        if (emailResult?.data?.id) {
+          await supabase
+            .from('artist_submissions')
+            .update({ contacted: true })
+            .eq('id', id);
+        }
       } catch (emailError) {
-        console.error('Error sending acceptance email:', emailError);
+        console.error(`Error sending ${status} email:`, emailError);
         // Don't fail the status update if email fails
         emailResult = { error: emailError instanceof Error ? emailError.message : 'Unknown email error' };
       }
@@ -84,7 +106,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       success: true, 
       message: 'Submission status updated successfully',
       submission: data,
-      emailSent: status === 'approved' ? !!emailResult?.data?.id : false,
+      emailSent: (status === 'approved' || status === 'rejected') && !data.contacted ? !!emailResult?.data?.id : false,
+      emailSkipped: (status === 'approved' || status === 'rejected') && data.contacted ? 'Artist already contacted' : null,
       emailResult: emailResult?.error ? { error: emailResult.error } : null
     });
 

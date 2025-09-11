@@ -45,12 +45,6 @@ SILENT AUCTION & SALES:
 - Art Night Detroit will collect a 10% administrative fee from silent auction sales
 - You may bring prints and/or other items for sale at your table (no additional fees)
 
-IMPORTANT INFORMATION:
-- This is a community event celebrating Detroit's vibrant art scene
-- You'll be creating your artwork live during the event
-- Attendees will be able to watch and interact with artists
-- All artwork created will be part of the Murals in the Market celebration
-
 If you have any questions or need to make changes to your participation, please contact us immediately.
 
 We look forward to seeing your creativity in action at the event!
@@ -64,12 +58,63 @@ If you have any questions, please contact us at john@artnightdetroit.com
 `;
 }
 
+export function generateArtistRejectionEmail(artistData: ArtistData): string {
+  const artistName = artistData.artist_alias || artistData.name;
+
+  return `
+Dear ${artistName},
+
+Thank you for your interest in participating as a featured artist at the Art Night Detroit x Murals in the Market Opening Party. We sincerely appreciate the time and effort you put into your application.
+
+After careful consideration of all submissions, we have decided not to move forward with your application for this particular event. We received many high-quality submissions and unfortunately have limited space available for featured artists. Please know that this decision was not a reflection of your artistic talent or potential.
+
+We would love for you to still join us as a guest at the event! Here are the details:
+
+EVENT DETAILS:
+- Event: Art Night Detroit x Murals in the Market Opening Party
+- Date: September 17, 2025
+- Time: 6:00 PM - Late
+- Location: 682 E. Fisher Service Dr., Eastern Market, Detroit
+
+WHY ATTEND:
+- Experience live art creation by featured artists
+- Network with other artists and art enthusiasts
+- Enjoy the vibrant atmosphere of Eastern Market
+- Support the local art community
+- Participate in silent auctions and art sales
+- Be part of Detroit's growing art scene
+
+We encourage you to come and be inspired by the creativity on display. You never know what opportunities might arise from being part of our community!
+
+We also encourage you to apply for future Art Night Detroit events. We're always looking for talented artists to showcase.
+
+Thank you again for your interest in Art Night Detroit. We hope to see you at the event!
+
+Best regards,
+The Art Night Detroit Team
+
+---
+${artistData.isTest ? 'This is a test email for the artist rejection notification system.' : 'This email was sent because you applied to be a featured artist for our event.'}
+If you have any questions, please contact us at john@artnightdetroit.com
+`;
+}
+
 export function generateTestArtistAcceptanceEmail(): string {
   // Use the same function with test data
   return generateArtistAcceptanceEmail({
     name: 'Test Artist',
     email: 'test@example.com',
     preferred_canvas_size: '18x18',
+    isTest: true
+  });
+}
+
+export function generateTestArtistRejectionEmail(): string {
+  // Use the same function with test data
+  return generateArtistRejectionEmail({
+    name: 'Test Artist',
+    email: 'test@example.com',
+    artist_alias: 'TestAlias',
     isTest: true
   });
 }

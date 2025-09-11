@@ -1,14 +1,13 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
-import { generateArtistAcceptanceEmail } from '../../../../lib/emailTemplates';
+import { generateArtistRejectionEmail } from '../../../../lib/emailTemplates';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
-
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -26,18 +25,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Generate email content using shared function
-    const emailContent = generateArtistAcceptanceEmail(artistData);
+    const emailContent = generateArtistRejectionEmail(artistData);
 
-    // Send the acceptance email
     const result = await resend.emails.send({
       from: 'Art Night Detroit <john@artnightdetroit.com>',
       to: artistData.email,
-      subject: '🎨 Congratulations! Your Artist Application Has Been Accepted',
+      subject: 'Thank You for Your Artist Application - Art Night Detroit',
       text: emailContent,
     });
 
-    console.log('Acceptance email sent successfully:', result);
+    console.log('Rejection email sent successfully:', result);
 
     // Update the contacted field to true after successful email
     if (result?.data?.id) {
@@ -46,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           .from('artist_submissions')
           .update({ contacted: true })
           .eq('id', submissionId);
-        
+
         console.log('Contacted field updated successfully for submission:', submissionId);
       } catch (dbError) {
         console.error('Error updating contacted field:', dbError);
@@ -54,16 +51,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    return res.status(200).json({ 
-      success: true, 
-      message: 'Acceptance email sent successfully',
+    return res.status(200).json({
+      success: true,
+      message: 'Rejection email sent successfully',
       emailId: result.data?.id
     });
 
   } catch (error) {
-    console.error('Error sending acceptance email:', error);
-    return res.status(500).json({ 
-      error: 'Failed to send acceptance email',
+    console.error('Error sending rejection email:', error);
+    return res.status(500).json({
+      error: 'Failed to send rejection email',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
   }

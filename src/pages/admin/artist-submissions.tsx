@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faLink, faCheck, faTimes, faEye, faImage, faPalette, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { faLink, faCheck, faTimes, faEye, faImage, faPalette, faChevronLeft, faChevronRight, faEnvelope, faPaperPlane } from '@fortawesome/free-solid-svg-icons';
 import { faInstagram } from '@fortawesome/free-brands-svg-icons';
 import PageContainer from '../../components/PageContainer';
 import { Button } from '../../components/ui/Button';
@@ -24,6 +24,7 @@ interface ArtistSubmission {
   admin_notes?: string;
   reviewed_by?: string;
   reviewed_at?: string;
+  contacted?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -38,6 +39,8 @@ const ArtistSubmissionsAdmin = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
   const [currentSubmissionImages, setCurrentSubmissionImages] = useState<string[]>([]);
+  const [isBulkEmailing, setIsBulkEmailing] = useState<boolean>(false);
+  const [bulkEmailProgress, setBulkEmailProgress] = useState<{ sent: number; total: number }>({ sent: 0, total: 0 });
 
   const fetchSubmissions = useCallback(async () => {
     try {
@@ -178,6 +181,200 @@ const ArtistSubmissionsAdmin = () => {
     }
   };
 
+  const sendAcceptanceEmail = async (submission: ArtistSubmission) => {
+    try {
+      const response = await fetch('/api/admin/artist-submissions/send-acceptance-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          submissionId: submission.id,
+          artistData: {
+            name: submission.name,
+            artist_alias: submission.artist_alias,
+            email: submission.email,
+            preferred_canvas_size: submission.preferred_canvas_size
+          }
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('Error sending acceptance email:', result.error);
+        alert(`Failed to send email: ${result.error}`);
+        return;
+      }
+
+      console.log('Acceptance email sent successfully:', result);
+      alert('Acceptance email sent successfully!');
+      
+      // Update local state immediately to show contacted status
+      setSubmissions(prevSubmissions => 
+        prevSubmissions.map(sub => 
+          sub.id === submission.id 
+            ? { ...sub, contacted: true }
+            : sub
+        )
+      );
+
+      // Also update selected submission if it's currently open
+      if (selectedSubmission && selectedSubmission.id === submission.id) {
+        setSelectedSubmission(prev => prev ? { ...prev, contacted: true } : null);
+      }
+      
+      // Refresh submissions to ensure data consistency
+      fetchSubmissions();
+    } catch (error) {
+      console.error('Error sending acceptance email:', error);
+      alert('Failed to send acceptance email. Please try again.');
+    }
+  };
+
+  const sendBulkEmails = async () => {
+    // Get all uncontacted submissions that need emails (approved or rejected)
+    const uncontactedSubmissions = submissions.filter(
+      submission => (submission.status === 'approved' || submission.status === 'rejected') && !submission.contacted
+    );
+
+    if (uncontactedSubmissions.length === 0) {
+      alert('No uncontacted submissions found that need emails.');
+      return;
+    }
+
+    const approvedCount = uncontactedSubmissions.filter(s => s.status === 'approved').length;
+    const rejectedCount = uncontactedSubmissions.filter(s => s.status === 'rejected').length;
+
+    const confirmMessage = `Are you sure you want to send emails to ${uncontactedSubmissions.length} artists?\n\nApproval emails: ${approvedCount}\nRejection emails: ${rejectedCount}`;
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    setIsBulkEmailing(true);
+    setBulkEmailProgress({ sent: 0, total: uncontactedSubmissions.length });
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    try {
+      for (let i = 0; i < uncontactedSubmissions.length; i++) {
+        const submission = uncontactedSubmissions[i];
+        
+        try {
+          // Choose the appropriate API endpoint based on status
+          const endpoint = submission.status === 'approved' 
+            ? '/api/admin/artist-submissions/send-acceptance-email'
+            : '/api/admin/artist-submissions/send-rejection-email';
+
+          const requestBody = {
+            submissionId: submission.id,
+            artistData: submission.status === 'approved' 
+              ? {
+                  name: submission.name,
+                  artist_alias: submission.artist_alias,
+                  email: submission.email,
+                  preferred_canvas_size: submission.preferred_canvas_size
+                }
+              : {
+                  name: submission.name,
+                  artist_alias: submission.artist_alias,
+                  email: submission.email
+                }
+          };
+
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestBody),
+          });
+
+          const result = await response.json();
+
+          if (response.ok) {
+            successCount++;
+            console.log(`${submission.status} email sent successfully to ${submission.name} (${submission.email})`);
+          } else {
+            errorCount++;
+            console.error(`Failed to send ${submission.status} email to ${submission.name}:`, result.error);
+          }
+        } catch (error) {
+          errorCount++;
+          console.error(`Error sending ${submission.status} email to ${submission.name}:`, error);
+        }
+
+        // Update progress
+        setBulkEmailProgress({ sent: i + 1, total: uncontactedSubmissions.length });
+        
+        // 1 second delay to avoid overwhelming the email service
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      // Show final results
+      const message = `Bulk email completed!\n\nSent: ${successCount}\nFailed: ${errorCount}`;
+      alert(message);
+
+      // Refresh submissions to update contacted status
+      fetchSubmissions();
+
+    } catch (error) {
+      console.error('Error in bulk email process:', error);
+      alert('Bulk email process failed. Please try again.');
+    } finally {
+      setIsBulkEmailing(false);
+      setBulkEmailProgress({ sent: 0, total: 0 });
+    }
+  };
+
+  const sendRejectionEmail = async (submission: ArtistSubmission) => {
+    try {
+      const response = await fetch('/api/admin/artist-submissions/send-rejection-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          submissionId: submission.id,
+          artistData: {
+            name: submission.name,
+            artist_alias: submission.artist_alias,
+            email: submission.email
+          }
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('Error sending rejection email:', result.error);
+        alert(`Failed to send email: ${result.error}`);
+        return;
+      }
+
+      console.log('Rejection email sent successfully:', result);
+      alert('Rejection email sent successfully!');
+
+      // Update local state immediately to show contacted status
+      setSubmissions(prevSubmissions =>
+        prevSubmissions.map(sub =>
+          sub.id === submission.id
+            ? { ...sub, contacted: true }
+            : sub
+        )
+      );
+
+      // Also update selected submission if it's currently open
+      if (selectedSubmission && selectedSubmission.id === submission.id) {
+        setSelectedSubmission(prev => prev ? { ...prev, contacted: true } : null);
+      }
+
+      fetchSubmissions(); // Refresh submissions to ensure data consistency
+    } catch (error) {
+      console.error('Error sending rejection email:', error);
+      alert('Failed to send rejection email. Please try again.');
+    }
+  };
+
   const openSubmissionModal = (submission: ArtistSubmission) => {
     setSelectedSubmission(submission);
     setAdminNotes(submission.admin_notes || '');
@@ -240,6 +437,16 @@ const ArtistSubmissionsAdmin = () => {
             <option value="rejected">Rejected</option>
             <option value="contacted">Contacted</option>
           </FilterSelect>
+          <BulkEmailButton 
+            onClick={sendBulkEmails}
+            disabled={isBulkEmailing}
+          >
+            <FontAwesomeIcon icon={faPaperPlane} />
+            {isBulkEmailing 
+              ? `Sending... (${bulkEmailProgress.sent}/${bulkEmailProgress.total})` 
+              : 'Send All Emails'
+            }
+          </BulkEmailButton>
           <RefreshButton onClick={fetchSubmissions}>Refresh</RefreshButton>
         </FilterContainer>
       </AdminHeader>
@@ -320,6 +527,7 @@ const ArtistSubmissionsAdmin = () => {
                       <MetaText>Submitted: {new Date(submission.created_at).toLocaleDateString()}</MetaText>
                       {submission.willing_to_volunteer && <MetaText>• Willing to volunteer</MetaText>}
                       {submission.interested_in_future_events && <MetaText>• Interested in future events</MetaText>}
+                      {submission.contacted && <MetaText>• Email sent</MetaText>}
                     </SubmissionMeta>
 
                     <ActionButtons>
@@ -344,6 +552,26 @@ const ArtistSubmissionsAdmin = () => {
                             Reject
                           </ActionButton>
                         </>
+                      )}
+                      {submission.status === 'approved' && (
+                        <ActionButton 
+                          color="primary" 
+                          onClick={() => sendAcceptanceEmail(submission)}
+                          disabled={submission.contacted}
+                        >
+                          <FontAwesomeIcon icon={faEnvelope} />
+                          {submission.contacted ? 'Email Sent' : 'Send Email'}
+                        </ActionButton>
+                      )}
+                      {submission.status === 'rejected' && (
+                        <ActionButton 
+                          color="warning" 
+                          onClick={() => sendRejectionEmail(submission)}
+                          disabled={submission.contacted}
+                        >
+                          <FontAwesomeIcon icon={faEnvelope} />
+                          {submission.contacted ? 'Email Sent' : 'Send Rejection'}
+                        </ActionButton>
                       )}
                     </ActionButtons>
                   </InfoSection>
@@ -588,6 +816,20 @@ const RefreshButton = styled(Button)`
   
   &:hover {
     background: #0056b3;
+  }
+`;
+
+const BulkEmailButton = styled(Button)`
+  background: #28a745;
+  color: white;
+  
+  &:hover:not(:disabled) {
+    background: #1e7e34;
+  }
+  
+  &:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
   }
 `;
 
