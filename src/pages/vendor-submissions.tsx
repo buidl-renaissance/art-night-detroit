@@ -10,6 +10,10 @@ interface VendorFormData {
   websiteLink: string;
   instagramLink: string;
   businessType: string;
+  businessTypeOther: string;
+  businessVision: string;
+  setupRequirements: string;
+  additionalNotes: string;
 }
 
 const VendorSubmissionsPage = () => {
@@ -21,6 +25,10 @@ const VendorSubmissionsPage = () => {
     websiteLink: "",
     instagramLink: "",
     businessType: "",
+    businessTypeOther: "",
+    businessVision: "",
+    setupRequirements: "",
+    additionalNotes: "",
   });
 
   const [phoneError, setPhoneError] = useState<string>("");
@@ -100,10 +108,19 @@ const VendorSubmissionsPage = () => {
 
     // Validate required fields
     if (!formData.businessName || !formData.contactName || !formData.email || 
-        !formData.phone || !formData.businessType) {
+        !formData.phone || !formData.businessType || !formData.businessVision) {
       setSubmitMessage({
         type: "error",
-        text: "Please fill in all required fields: business name, contact name, email, phone, and business type",
+        text: "Please fill in all required fields: business name, contact name, email, phone, business type, and business vision",
+      });
+      return;
+    }
+
+    // Validate that if "other" is selected, the other field is filled
+    if (formData.businessType === "other" && !formData.businessTypeOther.trim()) {
+      setSubmitMessage({
+        type: "error",
+        text: "Please specify your business type in the 'Other' field",
       });
       return;
     }
@@ -118,7 +135,17 @@ const VendorSubmissionsPage = () => {
         phone: formData.phone,
         websiteLink: formData.websiteLink,
         instagramLink: formData.instagramLink,
-        businessType: formData.businessType,
+        businessType: formData.businessType === "other" ? formData.businessTypeOther : formData.businessType,
+        businessDescription: formData.businessVision, // Use business vision as description
+        productsServices: "To be discussed", // Default value since API requires it
+        setupRequirements: formData.setupRequirements,
+        insuranceCoverage: false,
+        previousEventExperience: "",
+        willingToDonatRaffleItem: false,
+        raffleItemDescription: "",
+        additionalNotes: formData.additionalNotes,
+        businessLicenseFileUrls: [],
+        productImageUrls: [],
       };
 
       // Submit to API
@@ -147,6 +174,10 @@ const VendorSubmissionsPage = () => {
           websiteLink: "",
           instagramLink: "",
           businessType: "",
+          businessTypeOther: "",
+          businessVision: "",
+          setupRequirements: "",
+          additionalNotes: "",
         });
         setPhoneError("");
       } else {
@@ -171,10 +202,10 @@ const VendorSubmissionsPage = () => {
   return (
     <PageContainer>
       <Head>
-        <title>Vendor Application - Art Night Detroit</title>
+        <title>Vendor & Workshop Application - Art Night Detroit</title>
         <meta
           name="description"
-          content="Apply to be a vendor at Art Night Detroit events. Join our community of local businesses and creators."
+          content="Apply to be a vendor or workshop facilitator at Art Night Detroit events. Join our community of local businesses, creators, and educators."
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
@@ -185,17 +216,16 @@ const VendorSubmissionsPage = () => {
       </Head>
 
       <HeroSection>
-        <HeroTitle>Art Night Detroit<br />Vendor Application</HeroTitle>
-        <HeroSubtitle>Join our community of local businesses and creators</HeroSubtitle>
+        <HeroTitle>Art Night Detroit x Murals in the Market<br />Vendor & Workshop Application</HeroTitle>
+        <HeroSubtitle>Join our community of local businesses, creators, and workshop facilitators</HeroSubtitle>
       </HeroSection>
 
       <FormContainer>
         <form onSubmit={handleSubmit}>
           <FormSection>
-            <SectionTitle>🏢 Vendor Application</SectionTitle>
-            <p style={{ marginBottom: "1rem", color: "#666" }}>
-              Connect with Detroit&apos;s vibrant art community
-            </p>
+            <SectionTitle>🏢 Vendor & Workshop Application</SectionTitle>
+            <p style={{ marginBottom: "0.5rem", color: "#666" }}>Submissions close at 8 PM Tuesday, September 16th</p>
+            <p style={{ marginBottom: "1rem", color: "#6868f0" }}>Vendor Fee: $50</p>
             
             <FormGroup>
               <Label>Business Name *</Label>
@@ -338,11 +368,64 @@ const VendorSubmissionsPage = () => {
               </RadioGroup>
             </FormGroup>
 
+            {formData.businessType === "other" && (
+              <FormGroup>
+                <Label>Please specify your business type *</Label>
+                <Input
+                  type="text"
+                  name="businessTypeOther"
+                  value={formData.businessTypeOther}
+                  onChange={handleInputChange}
+                  placeholder="e.g., Workshop, Educational Services, etc."
+                  required
+                />
+              </FormGroup>
+            )}
+
+            <FormGroup>
+              <Label>Business Vision *</Label>
+              <TextArea
+                name="businessVision"
+                value={formData.businessVision}
+                onChange={handleInputChange}
+                placeholder="Share your vision for your business. What drives you? What impact do you want to make in the community? (This field works for both vendors and workshops)"
+                rows={4}
+                required
+              />
+            </FormGroup>
+
+
+
+            <FormGroup>
+              <Label>Setup Requirements</Label>
+              <TextArea
+                name="setupRequirements"
+                value={formData.setupRequirements}
+                onChange={handleInputChange}
+                placeholder="Do you need electricity, water, specific space requirements, etc.?"
+                rows={2}
+              />
+            </FormGroup>
+
+
+
+
+            <FormGroup>
+              <Label>Additional Notes</Label>
+              <TextArea
+                name="additionalNotes"
+                value={formData.additionalNotes}
+                onChange={handleInputChange}
+                placeholder="Anything else you'd like us to know?"
+                rows={2}
+              />
+            </FormGroup>
+
           </FormSection>
 
           <SubmitButtonContainer>
             <SubmitButton type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Submitting..." : "Submit Vendor Application"}
+              {isSubmitting ? "Submitting..." : "Submit Vendor/Workshop Application"}
             </SubmitButton>
             {submitMessage && (
               <SubmitMessage type={submitMessage.type}>
@@ -396,14 +479,14 @@ const HeroTitle = styled.h1`
 `;
 
 const HeroSubtitle = styled.p`
-  font-size: 1rem;
+  font-size: 1.4rem;
   color: ${(props) => props.theme.colors.text.light};
   max-width: 600px;
   margin: 0 auto;
   line-height: 1.4;
 
   @media (min-width: 768px) {
-    font-size: 1.2rem;
+    font-size: 1rem;
   }
 `;
 
@@ -572,6 +655,25 @@ const ErrorMessage = styled.div`
   font-size: 0.875rem;
   margin-top: 0.25rem;
 `;
+
+const TextArea = styled.textarea`
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid ${(props) => props.theme.colors.border};
+  border-radius: 4px;
+  font-size: 1rem;
+  font-family: "Inter", sans-serif;
+  resize: vertical;
+  transition: border-color 0.3s;
+  box-sizing: border-box;
+  min-height: 80px;
+
+  &:focus {
+    border-color: ${(props) => props.theme.colors.primary};
+    outline: none;
+  }
+`;
+
 
 
 export default VendorSubmissionsPage;
