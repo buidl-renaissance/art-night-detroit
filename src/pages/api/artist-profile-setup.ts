@@ -67,7 +67,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('Attempting to save artist profile:', JSON.stringify(insertData, null, 2));
 
     // Check if profile already exists with this handle
-    const { data: existingProfile, error: existingError } = await supabase
+    const { data: existingProfile } = await supabase
       .from('profiles')
       .select('*')
       .eq('handle', profileData.handle)

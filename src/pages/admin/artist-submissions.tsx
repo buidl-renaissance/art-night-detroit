@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faLink, faCheck, faTimes, faEye, faImage, faPalette, faChevronLeft, faChevronRight, faEnvelope, faPaperPlane } from '@fortawesome/free-solid-svg-icons';
+import { faLink, faCheck, faTimes, faEye, faImage, faPalette, faChevronLeft, faChevronRight, faEnvelope, faPaperPlane, faBox } from '@fortawesome/free-solid-svg-icons';
 import { faInstagram } from '@fortawesome/free-brands-svg-icons';
 import PageContainer from '../../components/PageContainer';
 import { Button } from '../../components/ui/Button';
@@ -328,6 +328,83 @@ const ArtistSubmissionsAdmin = () => {
     }
   };
 
+  const sendCanvasPickupEmail = async (submission: ArtistSubmission) => {
+    try {
+      const response = await fetch('/api/admin/send-canvas-pickup-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          artistId: submission.id,
+          name: submission.name,
+          artist_alias: submission.artist_alias,
+          email: submission.email,
+          preferred_canvas_size: submission.preferred_canvas_size || '18x18'
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send canvas pickup email');
+      }
+
+      alert(`Canvas pickup email sent to ${submission.name}`);
+      await fetchSubmissions(); // Refresh the data
+    } catch (error) {
+      console.error('Error sending canvas pickup email:', error);
+      alert('Failed to send canvas pickup email. Please try again.');
+    }
+  };
+
+  const sendBulkCanvasPickupEmails = async () => {
+    // Get all approved submissions
+    const approvedSubmissions = submissions.filter(
+      submission => submission.status === 'approved'
+    );
+
+    if (approvedSubmissions.length === 0) {
+      alert('No approved submissions found.');
+      return;
+    }
+
+    if (!confirm(`Send canvas pickup emails to ${approvedSubmissions.length} approved artists?`)) {
+      return;
+    }
+
+    setIsBulkEmailing(true);
+    setBulkEmailProgress({ sent: 0, total: approvedSubmissions.length });
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    try {
+      for (let i = 0; i < approvedSubmissions.length; i++) {
+        const submission = approvedSubmissions[i];
+        
+        try {
+          await sendCanvasPickupEmail(submission);
+          successCount++;
+        } catch (error) {
+          console.error(`Error sending canvas pickup email to ${submission.name}:`, error);
+          errorCount++;
+        }
+        
+        setBulkEmailProgress(prev => ({ ...prev, sent: prev.sent + 1 }));
+      }
+
+      const message = `Canvas pickup emails completed!\n\nSent: ${successCount}\nFailed: ${errorCount}`;
+      alert(message);
+
+    } catch (error) {
+      console.error('Error in bulk canvas pickup email process:', error);
+      alert('Bulk canvas pickup email process failed. Please try again.');
+    } finally {
+      setIsBulkEmailing(false);
+      setBulkEmailProgress({ sent: 0, total: 0 });
+    }
+  };
+
   const sendRejectionEmail = async (submission: ArtistSubmission) => {
     try {
       const response = await fetch('/api/admin/artist-submissions/send-rejection-email', {
@@ -373,6 +450,17 @@ const ArtistSubmissionsAdmin = () => {
       console.error('Error sending rejection email:', error);
       alert('Failed to send rejection email. Please try again.');
     }
+  };
+
+  const getCanvasTypeBreakdown = () => {
+    const breakdown: { [key: string]: number } = {};
+    
+    submissions.forEach(submission => {
+      const canvasType = submission.preferred_canvas_size || 'Not specified';
+      breakdown[canvasType] = (breakdown[canvasType] || 0) + 1;
+    });
+    
+    return breakdown;
   };
 
   const openSubmissionModal = (submission: ArtistSubmission) => {
@@ -422,21 +510,42 @@ const ArtistSubmissionsAdmin = () => {
     return <PageContainer><ErrorMessage>Access denied. Admin privileges required.</ErrorMessage></PageContainer>;
   }
 
-  const filteredSubmissions = submissions;
+  const filteredSubmissions = submissions.filter(submission => {
+    if (filterStatus === 'all') return true;
+    return submission.status === filterStatus;
+  });
 
   return (
     <PageContainer>
       <AdminHeader>
         <Title>Artist Submissions</Title>
         <FilterContainer>
-          <FilterSelect value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-            <option value="all">All Submissions</option>
-            <option value="pending_review">Pending Review</option>
-            <option value="under_review">Under Review</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-            <option value="contacted">Contacted</option>
-          </FilterSelect>
+          <TabContainer>
+            <Tab 
+              active={filterStatus === 'all'} 
+              onClick={() => setFilterStatus('all')}
+            >
+              All
+            </Tab>
+            <Tab 
+              active={filterStatus === 'pending_review'} 
+              onClick={() => setFilterStatus('pending_review')}
+            >
+              Pending Review
+            </Tab>
+            <Tab 
+              active={filterStatus === 'approved'} 
+              onClick={() => setFilterStatus('approved')}
+            >
+              Approved
+            </Tab>
+            <Tab 
+              active={filterStatus === 'rejected'} 
+              onClick={() => setFilterStatus('rejected')}
+            >
+              Rejected
+            </Tab>
+          </TabContainer>
           <BulkEmailButton 
             onClick={sendBulkEmails}
             disabled={isBulkEmailing}
@@ -447,6 +556,16 @@ const ArtistSubmissionsAdmin = () => {
               : 'Send All Emails'
             }
           </BulkEmailButton>
+          <BulkCanvasPickupButton 
+            onClick={sendBulkCanvasPickupEmails}
+            disabled={isBulkEmailing}
+          >
+            <FontAwesomeIcon icon={faBox} />
+            {isBulkEmailing 
+              ? `Sending... (${bulkEmailProgress.sent}/${bulkEmailProgress.total})` 
+              : 'Send Canvas Pickup'
+            }
+          </BulkCanvasPickupButton>
           <RefreshButton onClick={fetchSubmissions}>Refresh</RefreshButton>
         </FilterContainer>
       </AdminHeader>
@@ -469,6 +588,18 @@ const ArtistSubmissionsAdmin = () => {
               <StatLabel>Approved</StatLabel>
             </StatCard>
           </StatsContainer>
+
+          <CanvasBreakdownContainer>
+            <CanvasBreakdownTitle>Canvas Type Breakdown</CanvasBreakdownTitle>
+            <CanvasBreakdownGrid>
+              {Object.entries(getCanvasTypeBreakdown()).map(([canvasType, count]) => (
+                <CanvasBreakdownItem key={canvasType}>
+                  <CanvasTypeLabel>{canvasType}</CanvasTypeLabel>
+                  <CanvasTypeCount>{count}</CanvasTypeCount>
+                </CanvasBreakdownItem>
+              ))}
+            </CanvasBreakdownGrid>
+          </CanvasBreakdownContainer>
 
           <SubmissionsGrid>
             {filteredSubmissions.map((submission) => (
@@ -554,14 +685,23 @@ const ArtistSubmissionsAdmin = () => {
                         </>
                       )}
                       {submission.status === 'approved' && (
-                        <ActionButton 
-                          color="primary" 
-                          onClick={() => sendAcceptanceEmail(submission)}
-                          disabled={submission.contacted}
-                        >
-                          <FontAwesomeIcon icon={faEnvelope} />
-                          {submission.contacted ? 'Email Sent' : 'Send Email'}
-                        </ActionButton>
+                        <>
+                          <ActionButton 
+                            color="primary" 
+                            onClick={() => sendAcceptanceEmail(submission)}
+                            disabled={submission.contacted}
+                          >
+                            <FontAwesomeIcon icon={faEnvelope} />
+                            {submission.contacted ? 'Email Sent' : 'Send Email'}
+                          </ActionButton>
+                          <ActionButton 
+                            color="warning" 
+                            onClick={() => sendCanvasPickupEmail(submission)}
+                          >
+                            <FontAwesomeIcon icon={faBox} />
+                            Canvas Pickup
+                          </ActionButton>
+                        </>
                       )}
                       {submission.status === 'rejected' && (
                         <ActionButton 
@@ -803,11 +943,35 @@ const FilterContainer = styled.div`
   align-items: center;
 `;
 
-const FilterSelect = styled.select`
-  padding: 0.5rem 1rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: white;
+
+const TabContainer = styled.div`
+  display: flex;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 4px;
+  gap: 2px;
+`;
+
+const Tab = styled.button<{ active: boolean }>`
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  background: ${props => props.active ? '#007bff' : 'transparent'};
+  color: ${props => props.active ? 'white' : '#666'};
+  font-weight: ${props => props.active ? '600' : '500'};
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  
+  &:hover {
+    background: ${props => props.active ? '#0056b3' : '#e9ecef'};
+    color: ${props => props.active ? 'white' : '#333'};
+  }
+  
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  }
 `;
 
 const RefreshButton = styled(Button)`
@@ -825,6 +989,20 @@ const BulkEmailButton = styled(Button)`
   
   &:hover:not(:disabled) {
     background: #1e7e34;
+  }
+  
+  &:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+  }
+`;
+
+const BulkCanvasPickupButton = styled(Button)`
+  background: #fd7e14;
+  color: white;
+  
+  &:hover:not(:disabled) {
+    background: #e55a00;
   }
   
   &:disabled {
@@ -874,6 +1052,52 @@ const StatNumber = styled.div`
 const StatLabel = styled.div`
   color: #666;
   margin-top: 0.5rem;
+`;
+
+const CanvasBreakdownContainer = styled.div`
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+`;
+
+const CanvasBreakdownTitle = styled.h3`
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 600;
+`;
+
+const CanvasBreakdownGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+`;
+
+const CanvasBreakdownItem = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 4px solid #007bff;
+`;
+
+const CanvasTypeLabel = styled.span`
+  font-weight: 500;
+  color: #333;
+`;
+
+const CanvasTypeCount = styled.span`
+  font-weight: bold;
+  color: #007bff;
+  background: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  min-width: 30px;
+  text-align: center;
 `;
 
 const SubmissionsGrid = styled.div`
