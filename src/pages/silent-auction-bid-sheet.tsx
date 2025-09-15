@@ -48,13 +48,13 @@ const SilentAuctionBidSheet = () => {
             <BidTable>
               <BidTableHeader>
                 <BidTableRow>
-                  <BidTableHeaderCell style={{ width: '40%' }}>BIDDER NAME</BidTableHeaderCell>
-                  <BidTableHeaderCell style={{ width: '40%', textAlign: 'center' }}>PHONE NUMBER</BidTableHeaderCell>
+                  <BidTableHeaderCell style={{ width: '35%' }}>BIDDER NAME</BidTableHeaderCell>
+                  <BidTableHeaderCell style={{ width: '45%', textAlign: 'center' }}>PHONE NUMBER</BidTableHeaderCell>
                   <BidTableHeaderCell style={{ width: '20%', textAlign: 'center' }}>BID</BidTableHeaderCell>
                 </BidTableRow>
               </BidTableHeader>
               <BidTableBody>
-                {Array.from({ length: 22 }, (_, index) => (
+                {Array.from({ length: 20 }, (_, index) => (
                   <BidTableRow key={index}>
                     <BidTableCell>
                       <BidLine>                                 </BidLine>
@@ -226,7 +226,7 @@ const BidTableBody = styled.tbody`
 `;
 
 const BidTableCell = styled.td`
-  padding: 0.1in 0.1in;
+  padding: 0.14in 0.1in;
   border-right: 1px solid #000;
   vertical-align: top;
   
