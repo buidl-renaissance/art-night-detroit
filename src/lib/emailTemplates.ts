@@ -118,3 +118,44 @@ export function generateTestArtistRejectionEmail(): string {
     isTest: true
   });
 }
+
+export function generateCanvasPickupEmail(artistData: ArtistData): string {
+  const artistName = artistData.artist_alias || artistData.name;
+  const canvasSize = artistData.preferred_canvas_size || '18x18';
+
+  return `
+Hello ${artistName}!
+
+Reaching out to coordinate on your canvas.
+
+Today we are building the canvases for Wednesday's event starting around 3:00 PM, with the first batch expected to be ready around 6:00 PM. 
+
+${canvasSize !== 'own-canvas' ? 'This evening, pickup is available upon request and tomorrow the studio will be open 8PM-12AM for pickup. Pickup may also be requested on Monday or Tuesday with any remaining canvases brought to the event on Wednesday.' : 'We note that you will be bringing your own canvas.'}
+
+While we encourage artists to complete their work live at the event, we also encourage you to start your work before the event to ensure you have the time to complete a work you are proud of.
+
+Text me at (313) 550-3518 to coordinate your canvas pickup or to join the build process!
+
+Best,
+John
+
+EVENT REMINDER:
+- Event: Art Night Detroit x Murals in the Market Opening Party
+- Date: Tomorrow (September 17, 2025)
+- Time: 6:00 PM - Late
+- Location: 682 E. Fisher Service Dr., Eastern Market, Detroit
+
+---
+${artistData.isTest ? 'This is a test email for the canvas pickup notification system.' : 'This email was sent because you are a confirmed artist for our event.'}
+If you have any questions, please contact us at john@artnightdetroit.com
+`;
+}
+
+export function generateTestCanvasPickupEmail(): string {
+  return generateCanvasPickupEmail({
+    name: 'Test Artist',
+    email: 'test@example.com',
+    preferred_canvas_size: '18x18',
+    isTest: true
+  });
+}
