@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faLink, faCheck, faTimes, faEye, faImage, faPalette, faChevronLeft, faChevronRight, faEnvelope, faPaperPlane, faBox } from '@fortawesome/free-solid-svg-icons';
+import { faLink, faCheck, faTimes, faEye, faImage, faPalette, faChevronLeft, faChevronRight, faEnvelope, faPaperPlane, faBox, faPhone } from '@fortawesome/free-solid-svg-icons';
 import { faInstagram } from '@fortawesome/free-brands-svg-icons';
 import PageContainer from '../../components/PageContainer';
 import { Button } from '../../components/ui/Button';
@@ -20,7 +20,7 @@ interface ArtistSubmission {
   willing_to_volunteer: boolean;
   interested_in_future_events: boolean;
   additional_notes?: string;
-  status: 'pending_review' | 'under_review' | 'approved' | 'rejected' | 'contacted';
+  status: 'pending_review' | 'under_review' | 'approved' | 'accepted' | 'rejected' | 'declined' | 'contacted';
   admin_notes?: string;
   reviewed_by?: string;
   reviewed_at?: string;
@@ -476,8 +476,12 @@ const ArtistSubmissionsAdmin = () => {
         return '#17a2b8';
       case 'approved':
         return '#28a745';
+      case 'accepted':
+        return '#20c997';
       case 'rejected':
         return '#dc3545';
+      case 'declined':
+        return '#fd7e14';
       case 'contacted':
         return '#6f42c1';
       default:
@@ -493,8 +497,12 @@ const ArtistSubmissionsAdmin = () => {
         return 'Under Review';
       case 'approved':
         return 'Approved';
+      case 'accepted':
+        return 'Accepted';
       case 'rejected':
         return 'Rejected';
+      case 'declined':
+        return 'Declined';
       case 'contacted':
         return 'Contacted';
       default:
@@ -545,6 +553,18 @@ const ArtistSubmissionsAdmin = () => {
             >
               Rejected
             </Tab>
+            <Tab 
+              active={filterStatus === 'accepted'} 
+              onClick={() => setFilterStatus('accepted')}
+            >
+              Accepted
+            </Tab>
+            <Tab 
+              active={filterStatus === 'declined'} 
+              onClick={() => setFilterStatus('declined')}
+            >
+              Declined
+            </Tab>
           </TabContainer>
           <BulkEmailButton 
             onClick={sendBulkEmails}
@@ -586,6 +606,14 @@ const ArtistSubmissionsAdmin = () => {
             <StatCard>
               <StatNumber>{submissions.filter(s => s.status === 'approved').length}</StatNumber>
               <StatLabel>Approved</StatLabel>
+            </StatCard>
+            <StatCard>
+              <StatNumber>{submissions.filter(s => s.status === 'accepted').length}</StatNumber>
+              <StatLabel>Accepted</StatLabel>
+            </StatCard>
+            <StatCard>
+              <StatNumber>{submissions.filter(s => s.status === 'declined').length}</StatNumber>
+              <StatLabel>Declined</StatLabel>
             </StatCard>
           </StatsContainer>
 
@@ -645,6 +673,14 @@ const ArtistSubmissionsAdmin = () => {
                           </span>
                         </DetailRow>
                       )}
+                      <DetailRow>
+                        <FontAwesomeIcon icon={faEnvelope} />
+                        <span>{submission.email}</span>
+                      </DetailRow>
+                      <DetailRow>
+                        <FontAwesomeIcon icon={faPhone} />
+                        <span>{submission.phone}</span>
+                      </DetailRow>
                     </SubmissionDetails>
 
                     {submission.additional_notes && (
@@ -701,6 +737,20 @@ const ArtistSubmissionsAdmin = () => {
                             <FontAwesomeIcon icon={faBox} />
                             Canvas Pickup
                           </ActionButton>
+                          <ActionButton 
+                            color="success" 
+                            onClick={() => updateSubmissionStatus(submission.id, 'accepted')}
+                          >
+                            <FontAwesomeIcon icon={faCheck} />
+                            Mark Accepted
+                          </ActionButton>
+                          <ActionButton 
+                            color="danger" 
+                            onClick={() => updateSubmissionStatus(submission.id, 'declined')}
+                          >
+                            <FontAwesomeIcon icon={faTimes} />
+                            Mark Declined
+                          </ActionButton>
                         </>
                       )}
                       {submission.status === 'rejected' && (
@@ -711,6 +761,24 @@ const ArtistSubmissionsAdmin = () => {
                         >
                           <FontAwesomeIcon icon={faEnvelope} />
                           {submission.contacted ? 'Email Sent' : 'Send Rejection'}
+                        </ActionButton>
+                      )}
+                      {submission.status === 'accepted' && (
+                        <ActionButton 
+                          color="success" 
+                          disabled
+                        >
+                          <FontAwesomeIcon icon={faCheck} />
+                          Accepted
+                        </ActionButton>
+                      )}
+                      {submission.status === 'declined' && (
+                        <ActionButton 
+                          color="danger" 
+                          disabled
+                        >
+                          <FontAwesomeIcon icon={faTimes} />
+                          Declined
                         </ActionButton>
                       )}
                     </ActionButtons>
