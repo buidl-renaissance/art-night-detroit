@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faLink, faCheck, faTimes, faEye, faImage, faPalette, faChevronLeft, faChevronRight, faEnvelope, faPaperPlane, faBox, faPhone } from '@fortawesome/free-solid-svg-icons';
+import { faLink, faCheck, faTimes, faEye, faImage, faPalette, faChevronLeft, faChevronRight, faEnvelope, faPaperPlane, faBox, faPhone, faCopy } from '@fortawesome/free-solid-svg-icons';
 import { faInstagram } from '@fortawesome/free-brands-svg-icons';
 import PageContainer from '../../components/PageContainer';
 import { Button } from '../../components/ui/Button';
@@ -405,6 +405,20 @@ const ArtistSubmissionsAdmin = () => {
     }
   };
 
+  const copyAllArtistNames = () => {
+    const artistNames = submissions.map(submission => 
+      submission.artist_alias || submission.name
+    );
+    const namesText = artistNames.join('\n');
+    
+    navigator.clipboard.writeText(namesText).then(() => {
+      alert(`Copied ${artistNames.length} artist names to clipboard!`);
+    }).catch(err => {
+      console.error('Failed to copy names:', err);
+      alert('Failed to copy names to clipboard. Please try again.');
+    });
+  };
+
   const sendRejectionEmail = async (submission: ArtistSubmission) => {
     try {
       const response = await fetch('/api/admin/artist-submissions/send-rejection-email', {
@@ -585,6 +599,12 @@ const ArtistSubmissionsAdmin = () => {
               ? `Sending... (${bulkEmailProgress.sent}/${bulkEmailProgress.total})` 
               : 'Send Canvas Pickup'
             }
+          </BulkCanvasPickupButton>
+          <BulkCanvasPickupButton 
+            onClick={copyAllArtistNames}
+          >
+            <FontAwesomeIcon icon={faCopy} />
+            Copy All Names
           </BulkCanvasPickupButton>
           <RefreshButton onClick={fetchSubmissions}>Refresh</RefreshButton>
         </FilterContainer>
