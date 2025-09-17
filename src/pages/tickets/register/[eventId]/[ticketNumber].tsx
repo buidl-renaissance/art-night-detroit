@@ -1,48 +1,60 @@
-import React, { useState } from 'react';
-import Head from 'next/head';
-import { GetServerSideProps } from 'next';
-import styled from 'styled-components';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faTimes } from '@fortawesome/free-solid-svg-icons';
-import { getEvent } from '@/data/events';
-import { Event } from '@/types/events';
-import { useRouter } from 'next/router';
+import React, { useState } from "react";
+import Head from "next/head";
+import { GetServerSideProps } from "next";
+import styled from "styled-components";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCheck, faTimes } from "@fortawesome/free-solid-svg-icons";
+import { getEvent } from "@/data/events";
+import { Event } from "@/types/events";
+import { useRouter } from "next/router";
+import { supabase } from "../../../../lib/supabaseClient";
+
+interface ExistingRegistration {
+  name: string;
+  phone: string;
+  created_at: string;
+}
 
 interface TicketRegistrationProps {
   event: Event;
   ticketNumber: string;
+  existingRegistration: ExistingRegistration | null;
 }
 
-const TicketRegistration: React.FC<TicketRegistrationProps> = ({ event, ticketNumber }) => {
+const TicketRegistration: React.FC<TicketRegistrationProps> = ({
+  event,
+  ticketNumber,
+  existingRegistration,
+}) => {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
+    name: "",
+    phone: "",
     eventId: event.id,
-    ticketNumber: ticketNumber
+    ticketNumber: ticketNumber,
   });
-  const [phoneError, setPhoneError] = useState<string>('');
+  const [phoneError, setPhoneError] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitMessage, setSubmitMessage] = useState<{
-    type: 'success' | 'error';
+    type: "success" | "error";
     text: string;
   } | null>(null);
   const [rulesAccepted, setRulesAccepted] = useState(false);
 
   const validatePhoneNumber = (phone: string): string => {
     // Remove all non-digit characters
-    const cleaned = phone.replace(/\D/g, '');
+    const cleaned = phone.replace(/\D/g, "");
 
     // Check if it's a valid US phone number (10 digits)
-    if (cleaned.length === 0) return '';
-    if (cleaned.length !== 10) return 'Phone number must be 10 digits';
+    if (cleaned.length === 0) return "";
+    if (cleaned.length !== 10) return "Phone number must be 10 digits";
 
-    return '';
+    return "";
   };
 
   const formatPhoneNumber = (phone: string): string => {
     // Remove all non-digit characters
-    const cleaned = phone.replace(/\D/g, '');
+    const cleaned = phone.replace(/\D/g, "");
 
     // Apply formatting as user types
     if (cleaned.length <= 3) return cleaned;
@@ -59,19 +71,19 @@ const TicketRegistration: React.FC<TicketRegistrationProps> = ({ event, ticketNu
       setSubmitMessage(null);
     }
 
-    if (name === 'phone') {
+    if (name === "phone") {
       const formattedPhone = formatPhoneNumber(value);
       const error = validatePhoneNumber(value);
       setPhoneError(error);
 
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        phone: formattedPhone
+        phone: formattedPhone,
       }));
     } else {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        [name]: value
+        [name]: value,
       }));
     }
   };
@@ -82,8 +94,8 @@ const TicketRegistration: React.FC<TicketRegistrationProps> = ({ event, ticketNu
     // Validate required fields
     if (!formData.name || !formData.phone) {
       setSubmitMessage({
-        type: 'error',
-        text: 'Please fill in all required fields'
+        type: "error",
+        text: "Please fill in all required fields",
       });
       return;
     }
@@ -98,10 +110,10 @@ const TicketRegistration: React.FC<TicketRegistrationProps> = ({ event, ticketNu
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/tickets/register', {
-        method: 'POST',
+      const response = await fetch("/api/tickets/register", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
       });
@@ -113,15 +125,15 @@ const TicketRegistration: React.FC<TicketRegistrationProps> = ({ event, ticketNu
         router.push(`/tickets/register/${event.id}/${ticketNumber}/success`);
       } else {
         setSubmitMessage({
-          type: 'error',
-          text: result.error || 'Registration failed. Please try again.'
+          type: "error",
+          text: result.error || "Registration failed. Please try again.",
         });
       }
     } catch (error) {
-      console.error('Error registering ticket:', error);
+      console.error("Error registering ticket:", error);
       setSubmitMessage({
-        type: 'error',
-        text: 'Network error. Please check your connection and try again.'
+        type: "error",
+        text: "Network error. Please check your connection and try again.",
       });
     } finally {
       setIsSubmitting(false);
@@ -131,15 +143,23 @@ const TicketRegistration: React.FC<TicketRegistrationProps> = ({ event, ticketNu
   return (
     <>
       <Head>
-        <title>ArtistXclusive Ticket Registration - {event.name} | Art Night Detroit</title>
-        <meta name="description" content={`Register your ArtistXclusive after-party ticket for ${event.name}`} />
+        <title>
+          ArtistXclusive Ticket Registration - {event.name} | Art Night Detroit
+        </title>
+        <meta
+          name="description"
+          content={`Register your ArtistXclusive after-party ticket for ${event.name}`}
+        />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Head>
 
       <PageContainer>
         <RegistrationCard>
           <Header hasImage={true}>
-            <EventImage src="/images/afters-ticket.png" alt="ArtistXclusive After Party" />
+            <EventImage
+              src="/images/afters-ticket.png"
+              alt="ArtistXclusive After Party"
+            />
           </Header>
 
           {/* <EventInfo>
@@ -150,27 +170,38 @@ const TicketRegistration: React.FC<TicketRegistrationProps> = ({ event, ticketNu
 
           <MarketingSection>
             <MarketingTitle>🎨 Exclusive Studio After-Party</MarketingTitle>
+
+            <TicketInfo>
+              <TicketLabel>Ticket Number</TicketLabel>
+              <TicketNumber>#{ticketNumber}</TicketNumber>
+            </TicketInfo>
+            {existingRegistration && (
+              <RegisteredPersonInfo>
+                Registered to:{" "}
+                <RegisteredPersonName>
+                  {existingRegistration.name}
+                </RegisteredPersonName>
+              </RegisteredPersonInfo>
+            )}
+
+
             <MarketingContent>
               <p>
-                Join fellow artists and creatives for an intimate after-party experience! 
-                This exclusive gathering is designed for contributing artists, creators, 
-                and art enthusiasts who want to connect and celebrate creativity.
+                Join fellow artists and creatives for an intimate after-party
+                experience! This exclusive gathering is designed for
+                contributing artists, creators, and art enthusiasts who want to
+                connect and celebrate creativity.
               </p>
 
               <p>
-                <strong>Limited capacity</strong> - This exclusive event prioritizes 
-                contributing artists and active community members. Your ticket 
-                guarantees entry to this special gathering.
+                <strong>Limited capacity</strong> - This exclusive event
+                prioritizes contributing artists and active community members.
+                Your ticket guarantees entry to this special gathering.
               </p>
             </MarketingContent>
           </MarketingSection>
 
-          <TicketInfo>
-            <TicketLabel>Ticket Number</TicketLabel>
-            <TicketNumber>#{ticketNumber}</TicketNumber>
-          </TicketInfo>
-
-          {submitMessage?.type === 'success' ? (
+          {!existingRegistration && submitMessage?.type === "success" ? (
             <SuccessContainer>
               <SuccessIcon>
                 <FontAwesomeIcon icon={faCheck} />
@@ -178,26 +209,48 @@ const TicketRegistration: React.FC<TicketRegistrationProps> = ({ event, ticketNu
               <SuccessTitle>Registration Complete!</SuccessTitle>
               <SuccessMessage>{submitMessage.text}</SuccessMessage>
               <SuccessDetails>
-                <p><strong>You&apos;re all set! Here&apos;s what happens next:</strong></p>
+                <p>
+                  <strong>
+                    You&apos;re all set! Here&apos;s what happens next:
+                  </strong>
+                </p>
                 <ul>
-                  <li>📱 <strong>Save this confirmation</strong> - Screenshot or bookmark this page</li>
-                  <li>🎫 <strong>Bring your physical ticket</strong> - Keep it safe for entry</li>
-                  <li>📍 <strong>Location details</strong> - You&apos;ll receive the exact after-party location via text</li>
-                  <li>🕐 <strong>Timing</strong> - After-party typically starts 30-60 minutes after the main event</li>
-                  <li>👥 <strong>Dress code</strong> - Creative casual, express yourself!</li>
+                  <li>
+                    📱 <strong>Save this confirmation</strong> - Screenshot or
+                    bookmark this page
+                  </li>
+                  <li>
+                    🎫 <strong>Bring your physical ticket</strong> - Keep it
+                    safe for entry
+                  </li>
+                  <li>
+                    📍 <strong>Location details</strong> - You&apos;ll receive
+                    the exact after-party location via text
+                  </li>
+                  <li>
+                    🕐 <strong>Timing</strong> - After-party typically starts
+                    30-60 minutes after the main event
+                  </li>
+                  <li>
+                    👥 <strong>Dress code</strong> - Creative casual, express
+                    yourself!
+                  </li>
                 </ul>
-                
+
                 <ExcitementBox>
-                  <p><strong>🎉 Get ready for an amazing night!</strong></p>
                   <p>
-                    You&apos;re about to join an exclusive community of artists and creatives. 
-                    Come ready to make new connections, share your passion for art, 
-                    and celebrate creativity in an intimate setting.
+                    <strong>🎉 Get ready for an amazing night!</strong>
+                  </p>
+                  <p>
+                    You&apos;re about to join an exclusive community of artists
+                    and creatives. Come ready to make new connections, share
+                    your passion for art, and celebrate creativity in an
+                    intimate setting.
                   </p>
                 </ExcitementBox>
               </SuccessDetails>
             </SuccessContainer>
-          ) : (
+          ) : !existingRegistration ? (
             <Form onSubmit={handleSubmit}>
               <FormGroup>
                 <Label htmlFor="name">Name / Handle *</Label>
@@ -222,7 +275,7 @@ const TicketRegistration: React.FC<TicketRegistrationProps> = ({ event, ticketNu
                   onChange={handleInputChange}
                   placeholder="(555) 123-4567"
                   required
-                  style={{ borderColor: phoneError ? '#ff4444' : undefined }}
+                  style={{ borderColor: phoneError ? "#ff4444" : undefined }}
                 />
                 {phoneError && <ErrorMessage>{phoneError}</ErrorMessage>}
                 <HelpText>We&apos;ll send you a confirmation text</HelpText>
@@ -250,7 +303,7 @@ const TicketRegistration: React.FC<TicketRegistrationProps> = ({ event, ticketNu
                   <HouseRule>Clean up after yourself.</HouseRule>
                   <HouseRule>Respect the art. Peace. ✌️</HouseRule>
                 </HouseRulesList>
-                
+
                 <RulesAgreement>
                   <AgreementCheckbox>
                     <input
@@ -267,11 +320,14 @@ const TicketRegistration: React.FC<TicketRegistrationProps> = ({ event, ticketNu
                 </RulesAgreement>
               </HouseRulesSection>
 
-              <SubmitButton type="submit" disabled={isSubmitting || !rulesAccepted}>
-                {isSubmitting ? 'Registering...' : 'Register Ticket'}
+              <SubmitButton
+                type="submit"
+                disabled={isSubmitting || !rulesAccepted}
+              >
+                {isSubmitting ? "Registering..." : "Register Ticket"}
               </SubmitButton>
 
-              {submitMessage && submitMessage.type === 'error' && (
+              {submitMessage && submitMessage.type === "error" && (
                 <ErrorContainer>
                   <ErrorIcon>
                     <FontAwesomeIcon icon={faTimes} />
@@ -280,10 +336,15 @@ const TicketRegistration: React.FC<TicketRegistrationProps> = ({ event, ticketNu
                 </ErrorContainer>
               )}
             </Form>
+          ) : (
+            <></>
           )}
 
           <Footer>
-            <FooterLogo src="/images/art-night-detroit-logo.png" alt="Art Night Detroit" />
+            <FooterLogo
+              src="/images/art-night-detroit-logo.png"
+              alt="Art Night Detroit"
+            />
           </Footer>
         </RegistrationCard>
       </PageContainer>
@@ -296,21 +357,30 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
   try {
     const event = await getEvent(eventId as string);
-    
+
     if (!event) {
       return {
         notFound: true,
       };
     }
 
+    // Check if ticket is already registered
+    const { data: existingRegistration } = await supabase
+      .from("ticket_registrations")
+      .select("name, phone, created_at")
+      .eq("event_id", eventId)
+      .eq("ticket_number", ticketNumber)
+      .single();
+
     return {
       props: {
         event,
         ticketNumber: ticketNumber as string,
+        existingRegistration: existingRegistration || null,
       },
     };
   } catch (error) {
-    console.error('Error fetching event:', error);
+    console.error("Error fetching event:", error);
     return {
       notFound: true,
     };
@@ -324,7 +394,7 @@ const PageContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 `;
 
 const RegistrationCard = styled.div`
@@ -341,8 +411,10 @@ const Header = styled.div<{ hasImage: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  
-  ${props => !props.hasImage && `
+
+  ${(props) =>
+    !props.hasImage &&
+    `
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 180px;
   `}
@@ -382,12 +454,13 @@ const MarketingContent = styled.div`
   }
 `;
 
-
 const TicketInfo = styled.div`
-  background: #f8f9fa;
-  padding: 1.5rem;
+  background: #fff;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  padding: 1rem;
   text-align: center;
-  border-bottom: 1px solid #dee2e6;
+  margin-bottom: 1rem;
 `;
 
 const TicketLabel = styled.div`
@@ -395,6 +468,7 @@ const TicketLabel = styled.div`
   color: #6c757d;
   margin-bottom: 0.5rem;
   text-transform: uppercase;
+  font-weight: 600;
   letter-spacing: 0.5px;
 `;
 
@@ -402,7 +476,22 @@ const TicketNumber = styled.div`
   font-size: 2rem;
   font-weight: 700;
   color: #667eea;
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
+`;
+
+const RegisteredPersonInfo = styled.div`
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
+  color: #495057;
+`;
+
+const RegisteredPersonName = styled.span`
+  background: #28a745;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-weight: 600;
+  margin-left: 0.5rem;
 `;
 
 const Form = styled.form`
@@ -470,7 +559,9 @@ const SubmitButton = styled.button`
   font-size: 1.1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 
   &:hover:not(:disabled) {
     transform: translateY(-2px);
@@ -541,7 +632,7 @@ const ExcitementBox = styled.div`
 
   p {
     margin: 0 0 1rem 0;
-    
+
     &:last-child {
       margin: 0;
     }
@@ -614,11 +705,11 @@ const HouseRule = styled.li`
   padding: 0.5rem 0;
   color: #495057;
   border-bottom: 1px solid #e9ecef;
-  
+
   &:last-child {
     border-bottom: none;
   }
-  
+
   &:before {
     content: "•";
     color: #667eea;
@@ -638,7 +729,7 @@ const AgreementCheckbox = styled.div`
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
-  
+
   input[type="checkbox"] {
     width: 18px;
     height: 18px;
@@ -646,13 +737,24 @@ const AgreementCheckbox = styled.div`
     margin-top: 2px;
     flex-shrink: 0;
   }
-  
+
   label {
     color: #495057;
     font-weight: 500;
     cursor: pointer;
     line-height: 1.4;
   }
+`;
+
+const NoFormMessage = styled.div`
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  color: #6c757d;
+  font-style: italic;
+  margin: 2rem 0;
 `;
 
 export default TicketRegistration;
