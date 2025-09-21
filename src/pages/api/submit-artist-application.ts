@@ -206,7 +206,7 @@ async function sendArtistConfirmationEmail(email: string, artistName: string, su
   `;
 
   return await resend.emails.send({
-    from: 'Art Night Detroit <noreply@artnightdetroit.com>',
+    from: 'Art Night Detroit <john@artnightdetroit.com>',
     to: email,
     subject: 'Artist Application Received - Complete Your Profile! 🎨',
     html: emailHtml,

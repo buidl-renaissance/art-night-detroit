@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faLink, faCheck, faTimes, faEye, faImage, faPalette, faChevronLeft, faChevronRight, faEnvelope, faPaperPlane, faBox, faPhone, faCopy } from '@fortawesome/free-solid-svg-icons';
+import { faLink, faCheck, faTimes, faEye, faImage, faPalette, faChevronLeft, faChevronRight, faEnvelope, faPaperPlane, faBox, faPhone, faCopy, faHeart } from '@fortawesome/free-solid-svg-icons';
 import { faInstagram } from '@fortawesome/free-brands-svg-icons';
 import PageContainer from '../../components/PageContainer';
 import { Button } from '../../components/ui/Button';
@@ -419,6 +419,44 @@ const ArtistSubmissionsAdmin = () => {
     });
   };
 
+  const sendThankYouEmails = async () => {
+    // Get all accepted submissions
+    const acceptedSubmissions = submissions.filter(
+      submission => submission.status === 'accepted'
+    );
+
+    if (acceptedSubmissions.length === 0) {
+      alert('No accepted submissions found.');
+      return;
+    }
+
+    const confirmMessage = `Send thank you emails to ${acceptedSubmissions.length} accepted artists?`;
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/admin/send-artist-thank-you-emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert(`Successfully prepared ${result.emailCount} thank you emails for accepted artists!`);
+      } else {
+        console.error('Error sending thank you emails:', result);
+        alert(`Error: ${result.error || 'Failed to send thank you emails'}`);
+      }
+    } catch (error) {
+      console.error('Error sending thank you emails:', error);
+      alert('Failed to send thank you emails. Please try again.');
+    }
+  };
+
   const sendRejectionEmail = async (submission: ArtistSubmission) => {
     try {
       const response = await fetch('/api/admin/artist-submissions/send-rejection-email', {
@@ -605,6 +643,13 @@ const ArtistSubmissionsAdmin = () => {
           >
             <FontAwesomeIcon icon={faCopy} />
             Copy All Names
+          </BulkCanvasPickupButton>
+          <BulkCanvasPickupButton 
+            onClick={sendThankYouEmails}
+            style={{ background: '#28a745' }}
+          >
+            <FontAwesomeIcon icon={faHeart} />
+            Send Thank You Emails
           </BulkCanvasPickupButton>
           <RefreshButton onClick={fetchSubmissions}>Refresh</RefreshButton>
         </FilterContainer>

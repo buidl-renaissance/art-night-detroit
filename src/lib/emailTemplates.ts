@@ -159,3 +159,44 @@ export function generateTestCanvasPickupEmail(): string {
     isTest: true
   });
 }
+
+export function generateArtistThankYouEmail(artistData: ArtistData): string {
+  const artistName = artistData.artist_alias || artistData.name;
+
+  return `${artistName},
+
+Thank you for contributing your work to last Wednesday's Art Night Detroit x Murals in the Market event. We had 25 artists showcase pieces—many created live during the evening—and the energy you brought made the night a success in every sense.
+
+Through the silent auction, we sold eight pieces, with several receiving more than one bid. While many works did not receive bids this time, the event gave us valuable insight into how we can continue to grow opportunities for artists and collectors alike.
+
+We would love your feedback:
+
+What did you think about the silent auction format?
+
+Do you have suggestions for improvements or alternative approaches for future events?
+
+Are there ways we can better support you and your work through these collaborations?
+
+Your input will help us make the next event even stronger.
+
+Artwork Pickup & Meet-Up
+Tomorrow (Sunday) starting at 8:00 PM, our studio (Russell Industrial Center, Art Building Unit 202) will be open for artwork pickup. Auction winners are also invited to stop by, which may give you the chance to meet the collectors.
+
+Thank you again for lending your talent, time, and energy to this collaboration. We look forward to building on this momentum together.
+
+With gratitude,
+The Art Night Detroit Team
+
+---
+${artistData.isTest ? 'This is a test email for the artist thank you notification system.' : 'This email was sent because you participated as a featured artist in our event.'}
+If you have any questions, please contact us at john@artnightdetroit.com`;
+}
+
+export function generateTestArtistThankYouEmail(): string {
+  return generateArtistThankYouEmail({
+    name: 'Test Artist',
+    email: 'test@example.com',
+    artist_alias: 'TestAlias',
+    isTest: true
+  });
+}

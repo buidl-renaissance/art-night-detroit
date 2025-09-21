@@ -746,15 +746,4 @@ const AgreementCheckbox = styled.div`
   }
 `;
 
-const NoFormMessage = styled.div`
-  background: #f8f9fa;
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
-  padding: 2rem;
-  text-align: center;
-  color: #6c757d;
-  font-style: italic;
-  margin: 2rem 0;
-`;
-
 export default TicketRegistration;

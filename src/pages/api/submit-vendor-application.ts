@@ -202,7 +202,7 @@ async function sendVendorConfirmationEmail(email: string, contactName: string, b
   `;
 
   return await resend.emails.send({
-    from: 'Art Night Detroit <noreply@artnightdetroit.com>',
+    from: 'Art Night Detroit <john@artnightdetroit.com>',
     to: email,
     subject: 'Vendor Application Received - Art Night Detroit x Murals in the Market 🎨',
     html: emailHtml,
